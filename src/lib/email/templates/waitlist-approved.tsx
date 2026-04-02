@@ -16,7 +16,7 @@ export function WaitlistApprovedEmail({
     <EmailLayout preview="Your PopsDrops account has been approved">
       <Text style={styles.heading}>Welcome to PopsDrops</Text>
       <Text style={styles.paragraph}>
-        {name}, your {role === "brand" ? "brand" : "creator"} account has been approved. You're ready to get started.
+        {name}, your {role === "brand" ? "brand" : "creator"} account has been approved. You&apos;re ready to get started.
       </Text>
       <Text style={styles.paragraph}>
         {role === "brand"

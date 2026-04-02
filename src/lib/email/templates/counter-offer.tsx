@@ -10,7 +10,6 @@ interface CounterOfferProps {
 }
 
 export function CounterOfferEmail({
-  creatorName = "Creator",
   campaignTitle = "Campaign",
   counterRate = 150,
   message,

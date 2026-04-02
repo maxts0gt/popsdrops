@@ -111,6 +111,7 @@ export const MARKETS = [
   "philippines",
   "poland",
   "qatar",
+  "russia",
   "saudi_arabia",
   "singapore",
   "south_africa",
@@ -160,6 +161,7 @@ export const MARKET_LABELS: Record<Market, string> = {
   philippines: "Philippines",
   poland: "Poland",
   qatar: "Qatar",
+  russia: "Russia",
   saudi_arabia: "Saudi Arabia",
   singapore: "Singapore",
   south_africa: "South Africa",
@@ -308,14 +310,14 @@ export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
 };
 
 export const CAMPAIGN_STATUS_COLORS: Record<CampaignStatus, string> = {
-  draft: "bg-slate-100 text-slate-700",
-  recruiting: "bg-blue-100 text-blue-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  publishing: "bg-amber-100 text-amber-700",
-  monitoring: "bg-purple-100 text-purple-700",
-  completed: "bg-emerald-100 text-emerald-700",
-  paused: "bg-orange-100 text-orange-700",
-  cancelled: "bg-red-100 text-red-700",
+  draft: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+  recruiting: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  publishing: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  monitoring: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
+  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  paused: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
 };
 
 export const CREATOR_TIERS = ["new", "rising", "established", "top"] as const;
@@ -330,10 +332,10 @@ export const CREATOR_TIER_LABELS: Record<CreatorTier, string> = {
 };
 
 export const CREATOR_TIER_COLORS: Record<CreatorTier, string> = {
-  new: "bg-slate-100 text-slate-700",
-  rising: "bg-amber-100 text-amber-700",
-  established: "bg-slate-200 text-slate-800",
-  top: "bg-amber-200 text-amber-800",
+  new: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
+  rising: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  established: "bg-neutral-200 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-200",
+  top: "bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
 };
 
 // ISO 3166-1 alpha-2 codes for Intl.DisplayNames translation
@@ -345,7 +347,7 @@ const MARKET_REGION_CODES: Record<Market, string> = {
   japan: "JP", jordan: "JO", kazakhstan: "KZ", kenya: "KE",
   kuwait: "KW", malaysia: "MY", mexico: "MX", morocco: "MA",
   netherlands: "NL", nigeria: "NG", oman: "OM", pakistan: "PK",
-  philippines: "PH", poland: "PL", qatar: "QA", saudi_arabia: "SA",
+  philippines: "PH", poland: "PL", qatar: "QA", russia: "RU", saudi_arabia: "SA",
   singapore: "SG", south_africa: "ZA", south_korea: "KR", spain: "ES",
   sweden: "SE", thailand: "TH", turkey: "TR", uae: "AE",
   uk: "GB", us: "US", uzbekistan: "UZ", vietnam: "VN",
@@ -440,6 +442,7 @@ export const MARKET_RATE_MULTIPLIER: Record<string, number> = {
   turkey: 0.35,
   jordan: 0.35,
   poland: 0.35,
+  russia: 0.35,
   chile: 0.35,
   argentina: 0.3,
   malaysia: 0.3,

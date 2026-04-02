@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
+const nativewindPreset = require("nativewind/preset");
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
-  presets: [require("nativewind/preset")],
+  presets: [nativewindPreset],
   theme: {
     extend: {
       colors: {

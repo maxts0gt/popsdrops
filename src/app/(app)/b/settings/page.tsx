@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
   Globe,
   Mail,
   LogOut,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { MARKET_LABELS, INDUSTRY_LABELS } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
-import type { Market, Industry } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
+import { updateBrandProfile } from "@/app/actions/profile";
+import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,7 +45,7 @@ export default function BrandSettingsPage() {
   const router = useRouter();
   const [data, setData] = useState<BrandData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isPending, startTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -77,6 +79,27 @@ export default function BrandSettingsPage() {
     load();
   }, []);
 
+  async function handleSave() {
+    if (!data) return;
+    setIsSaving(true);
+    try {
+      await updateBrandProfile({
+        company_name: data.companyName,
+        website: data.website,
+        industry: data.industry,
+        description: data.description,
+        contact_name: data.contactName,
+        contact_email: data.contactEmail,
+        target_markets: data.targetMarkets,
+      });
+      toast.success(t("toast.saved"));
+    } catch {
+      toast.error(t("toast.error"));
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function handleSignOut() {
     const supabase = createClient();
     await supabase.auth.signOut();
@@ -87,23 +110,23 @@ export default function BrandSettingsPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         <div className="space-y-2">
-          <div className="h-7 w-24 animate-pulse rounded bg-slate-100" />
-          <div className="h-4 w-40 animate-pulse rounded bg-slate-50" />
+          <div className="h-7 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-40 animate-pulse rounded bg-muted/50" />
         </div>
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-xl border border-slate-200/60 bg-white p-5"
+            className="rounded-xl border border-border/60 bg-card p-5"
           >
-            <div className="mb-4 h-5 w-28 animate-pulse rounded bg-slate-100" />
+            <div className="mb-4 h-5 w-28 animate-pulse rounded bg-muted" />
             <div className="space-y-3">
               <div className="space-y-1.5">
-                <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
-                <div className="h-10 w-full animate-pulse rounded-lg bg-slate-50" />
+                <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
+                <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
               </div>
               <div className="space-y-1.5">
-                <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
-                <div className="h-10 w-full animate-pulse rounded-lg bg-slate-50" />
+                <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
+                <div className="h-10 w-full animate-pulse rounded-lg bg-muted/50" />
               </div>
             </div>
           </div>
@@ -117,8 +140,8 @@ export default function BrandSettingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-        <p className="text-sm text-slate-500">{t("subtitle")}</p>
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       <div className="space-y-6">
@@ -126,7 +149,7 @@ export default function BrandSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Building2 className="size-5 text-slate-500" />
+              <Building2 className="size-5 text-muted-foreground" />
               <CardTitle>{t("section.company")}</CardTitle>
             </div>
           </CardHeader>
@@ -136,7 +159,10 @@ export default function BrandSettingsPage() {
                 <Label htmlFor="companyName">{t("field.companyName")}</Label>
                 <Input
                   id="companyName"
-                  defaultValue={data.companyName}
+                  value={data.companyName}
+                  onChange={(e) =>
+                    setData({ ...data, companyName: e.target.value })
+                  }
                   className="mt-1.5"
                 />
               </div>
@@ -144,7 +170,10 @@ export default function BrandSettingsPage() {
                 <Label htmlFor="website">{t("field.website")}</Label>
                 <Input
                   id="website"
-                  defaultValue={data.website}
+                  value={data.website}
+                  onChange={(e) =>
+                    setData({ ...data, website: e.target.value })
+                  }
                   className="mt-1.5"
                 />
               </div>
@@ -153,7 +182,10 @@ export default function BrandSettingsPage() {
               <Label htmlFor="industry">{t("field.industry")}</Label>
               <select
                 id="industry"
-                defaultValue={data.industry}
+                value={data.industry}
+                onChange={(e) =>
+                  setData({ ...data, industry: e.target.value })
+                }
                 className="mt-1.5 h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               >
                 {Object.entries(INDUSTRY_LABELS).map(([key, label]) => (
@@ -168,7 +200,10 @@ export default function BrandSettingsPage() {
               <textarea
                 id="description"
                 rows={3}
-                defaultValue={data.description}
+                value={data.description}
+                onChange={(e) =>
+                  setData({ ...data, description: e.target.value })
+                }
                 className="mt-1.5 w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
               />
             </div>
@@ -176,12 +211,18 @@ export default function BrandSettingsPage() {
               <Label htmlFor="contactName">{t("field.contactName")}</Label>
               <Input
                 id="contactName"
-                defaultValue={data.contactName}
+                value={data.contactName}
+                onChange={(e) =>
+                  setData({ ...data, contactName: e.target.value })
+                }
                 className="mt-1.5"
               />
             </div>
             <div className="pt-2">
-              <Button>{tc("action.save")}</Button>
+              <Button onClick={handleSave} disabled={isSaving}>
+                {isSaving && <Loader2 className="size-4 animate-spin" />}
+                {tc("action.save")}
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -190,12 +231,12 @@ export default function BrandSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Globe className="size-5 text-slate-500" />
+              <Globe className="size-5 text-muted-foreground" />
               <CardTitle>{t("section.markets")}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
-            <p className="mb-3 text-sm text-slate-500">
+            <p className="mb-3 text-sm text-muted-foreground">
               {t("markets.description")}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -204,10 +245,17 @@ export default function BrandSettingsPage() {
                 return (
                   <button
                     key={key}
+                    type="button"
+                    onClick={() => {
+                      const markets = isSelected
+                        ? data.targetMarkets.filter((m) => m !== key)
+                        : [...data.targetMarkets, key];
+                      setData({ ...data, targetMarkets: markets });
+                    }}
                     className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
                       isSelected
-                        ? "border-slate-900 bg-slate-900 font-medium text-white"
-                        : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                        ? "border-primary bg-primary font-medium text-primary-foreground"
+                        : "border-border text-muted-foreground hover:border-border hover:bg-muted/50"
                     }`}
                   >
                     {label}
@@ -222,7 +270,7 @@ export default function BrandSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Mail className="size-5 text-slate-500" />
+              <Mail className="size-5 text-muted-foreground" />
               <CardTitle>{t("section.account")}</CardTitle>
             </div>
           </CardHeader>
@@ -237,7 +285,7 @@ export default function BrandSettingsPage() {
             <Separator />
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-foreground">
                   {t("action.signOut")}
                 </p>
               </div>

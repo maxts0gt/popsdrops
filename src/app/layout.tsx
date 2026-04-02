@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Cairo } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { LocaleProvider } from "@/components/locale-provider";
 import { getLocale } from "@/lib/i18n/server";
@@ -58,10 +59,17 @@ export default async function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        <LocaleProvider locale={locale}>
-          {children}
-          <Toaster position={isRTL ? "top-left" : "top-right"} richColors />
-        </LocaleProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LocaleProvider locale={locale}>
+            {children}
+            <Toaster position={isRTL ? "top-left" : "top-right"} richColors />
+          </LocaleProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

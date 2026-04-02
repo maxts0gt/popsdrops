@@ -267,3 +267,75 @@ export async function completeCampaign(campaignId: string) {
   revalidatePath(`/b/campaigns/${campaignId}`);
   revalidatePath("/b/campaigns");
 }
+
+export async function updateCampaignDeadline(
+  campaignId: string,
+  newDeadline: string
+) {
+  const user = await getUser();
+  const supabase = await createClient();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDeadline)) {
+    throw new Error("Deadline must be a valid date");
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  if (newDeadline < today) {
+    throw new Error("Deadline must be today or later");
+  }
+
+  const normalizedDeadline = `${newDeadline}T23:59:59.999Z`;
+  const { error } = await supabase
+    .from("campaigns")
+    .update({ application_deadline: normalizedDeadline })
+    .eq("id", campaignId)
+    .eq("brand_id", user.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/b/campaigns/${campaignId}`);
+  return normalizedDeadline;
+}
+
+export async function sendCampaignAnnouncement(
+  campaignId: string,
+  message: string
+) {
+  if (!message.trim()) throw new Error("Message cannot be empty");
+
+  const user = await getUser();
+  const supabase = await createClient();
+
+  // Verify ownership
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("id, title")
+    .eq("id", campaignId)
+    .eq("brand_id", user.id)
+    .single();
+
+  if (!campaign) throw new Error("Campaign not found");
+
+  // Get all campaign members
+  const { data: members } = await supabase
+    .from("campaign_members")
+    .select("creator_id")
+    .eq("campaign_id", campaignId);
+
+  if (!members || members.length === 0) {
+    throw new Error("No members to notify");
+  }
+
+  // Create notifications for all members
+  const notifications = members.map((m) => ({
+    user_id: m.creator_id,
+    type: "new_message" as const,
+    title: `Announcement: ${campaign.title}`,
+    body: message.trim(),
+    data: { campaign_id: campaignId },
+  }));
+
+  await createPrivilegedNotifications(notifications);
+
+  revalidatePath(`/b/campaigns/${campaignId}`);
+}

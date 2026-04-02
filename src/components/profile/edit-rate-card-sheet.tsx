@@ -115,10 +115,10 @@ export function EditRateCardSheet({
             return (
               <div key={platform}>
                 <div className="mb-2.5 flex items-center gap-2">
-                  <div className="flex size-6 items-center justify-center rounded-md bg-slate-50 text-slate-600">
+                  <div className="flex size-6 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
                     <Icon className="size-3.5" />
                   </div>
-                  <span className="text-sm font-medium text-slate-900">
+                  <span className="text-sm font-medium text-foreground">
                     {PLATFORM_LABELS[platform]}
                   </span>
                 </div>
@@ -127,12 +127,12 @@ export function EditRateCardSheet({
                     <div key={format}>
                       <Label
                         htmlFor={`${platform}-${format}`}
-                        className="mb-1 text-xs text-slate-500"
+                        className="mb-1 text-xs text-muted-foreground"
                       >
                         {CONTENT_FORMAT_LABELS[format]}
                       </Label>
                       <div className="relative">
-                        <span className="absolute inset-y-0 start-0 flex items-center ps-2.5 text-xs text-slate-400">
+                        <span className="absolute inset-y-0 start-0 flex items-center ps-2.5 text-xs text-muted-foreground/70">
                           {currencySymbol}
                         </span>
                         <Input

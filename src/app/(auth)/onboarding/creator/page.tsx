@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -25,11 +24,15 @@ import {
   MARKETS,
   MARKET_LABELS,
 } from "@/lib/constants";
+import {
+  creatorOnboardingStep1Schema,
+  creatorOnboardingStep2Schema,
+} from "@/lib/validations";
 
 export default function CreatorOnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { t, isRTL } = useTranslation("onboarding.creator");
+  const { t } = useTranslation("onboarding.creator");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -43,6 +46,9 @@ export default function CreatorOnboardingPage() {
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
   const [baseRate, setBaseRate] = useState("");
   const [slug, setSlug] = useState("");
+
+  // Validation errors
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   function toggleNiche(niche: string) {
     setSelectedNiches((prev) =>
@@ -62,14 +68,24 @@ export default function CreatorOnboardingPage() {
   }
 
   async function handleSubmit() {
-    if (!fullName || !primaryMarket || !platformUrl || !selectedPlatform) {
-      toast.error(t("error.fillAll"));
+    const profileSlugValue = slug || generateSlug(fullName);
+    const step2Result = creatorOnboardingStep2Schema.safeParse({
+      niches: selectedNiches,
+      base_rate: baseRate || 0,
+      slug: profileSlugValue,
+    });
+    if (!step2Result.success) {
+      const errs: Record<string, string> = {};
+      for (const issue of step2Result.error.issues) {
+        const key = issue.path[0] as string;
+        if (!errs[key]) errs[key] = issue.message;
+      }
+      setFieldErrors(errs);
+      const firstMsg = step2Result.error.issues[0]?.message;
+      toast.error(firstMsg || t("error.fillAll"));
       return;
     }
-    if (selectedNiches.length === 0) {
-      toast.error(t("error.selectNiche"));
-      return;
-    }
+    setFieldErrors({});
 
     setLoading(true);
 
@@ -130,23 +146,23 @@ export default function CreatorOnboardingPage() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm ring-1 ring-slate-900/[0.03]">
+    <div className="rounded-xl border border-border bg-card p-8 shadow-sm ring-1 ring-ring/[0.03]">
       {/* Progress */}
       <div className="mb-6 flex gap-2">
         <div
-          className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-slate-900" : "bg-slate-200"}`}
+          className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-foreground" : "bg-border"}`}
         />
         <div
-          className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-slate-900" : "bg-slate-200"}`}
+          className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-foreground" : "bg-border"}`}
         />
       </div>
 
       {step === 1 && (
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-foreground">
             {t("step1.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("step1.desc")}
           </p>
 
@@ -163,6 +179,9 @@ export default function CreatorOnboardingPage() {
                 }}
                 className="mt-1.5"
               />
+              {fieldErrors.full_name && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.full_name}</p>
+              )}
             </div>
 
             <div>
@@ -191,8 +210,8 @@ export default function CreatorOnboardingPage() {
                     onClick={() => setSelectedPlatform(p)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       selectedPlatform === p
-                        ? "bg-slate-900 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     {PLATFORM_LABELS[p]}
@@ -207,16 +226,36 @@ export default function CreatorOnboardingPage() {
                   className="mt-2"
                 />
               )}
+              {fieldErrors.social_url && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.social_url}</p>
+              )}
+              {fieldErrors.social_platform && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.social_platform}</p>
+              )}
             </div>
           </div>
 
           <Button
             className="mt-6 w-full"
             onClick={() => {
-              if (!fullName || !primaryMarket || !platformUrl || !selectedPlatform) {
-                toast.error(t("error.fillFields"));
+              const result = creatorOnboardingStep1Schema.safeParse({
+                full_name: fullName,
+                primary_market: primaryMarket,
+                social_url: platformUrl,
+                social_platform: selectedPlatform,
+              });
+              if (!result.success) {
+                const errs: Record<string, string> = {};
+                for (const issue of result.error.issues) {
+                  const key = issue.path[0] as string;
+                  if (!errs[key]) errs[key] = issue.message;
+                }
+                setFieldErrors(errs);
+                const firstMsg = result.error.issues[0]?.message;
+                toast.error(firstMsg || t("error.fillFields"));
                 return;
               }
+              setFieldErrors({});
               setStep(2);
             }}
           >
@@ -228,10 +267,10 @@ export default function CreatorOnboardingPage() {
 
       {step === 2 && (
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-foreground">
             {t("step2.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("step2.desc")}
           </p>
 
@@ -246,14 +285,17 @@ export default function CreatorOnboardingPage() {
                     onClick={() => toggleNiche(n)}
                     className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                       selectedNiches.includes(n)
-                        ? "bg-slate-900 text-white"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        ? "bg-foreground text-background"
+                        : "bg-muted text-muted-foreground hover:bg-muted"
                     }`}
                   >
                     {NICHE_LABELS[n]}
                   </button>
                 ))}
               </div>
+              {fieldErrors.niches && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.niches}</p>
+              )}
             </div>
 
             <div>
@@ -266,15 +308,18 @@ export default function CreatorOnboardingPage() {
                 onChange={(e) => setBaseRate(e.target.value)}
                 className="mt-1.5"
               />
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-muted-foreground/70">
                 {t("field.baseRate.hint")}
               </p>
+              {fieldErrors.base_rate && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.base_rate}</p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="slug">{t("field.profileUrl")}</Label>
               <div className="mt-1.5 flex items-center gap-0">
-                <span className="rounded-s-lg border border-e-0 border-slate-200 bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+                <span className="rounded-s-lg border border-e-0 border-border bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
                   popsdrops.com/c/
                 </span>
                 <Input
@@ -291,6 +336,9 @@ export default function CreatorOnboardingPage() {
                   placeholder={t("field.profileUrl.placeholder")}
                 />
               </div>
+              {fieldErrors.slug && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.slug}</p>
+              )}
             </div>
           </div>
 

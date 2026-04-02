@@ -10,7 +10,6 @@ interface ApplicationReceivedProps {
 }
 
 export function ApplicationReceivedEmail({
-  brandName = "Brand",
   creatorName = "Creator",
   campaignTitle = "Campaign",
   proposedRate = 200,

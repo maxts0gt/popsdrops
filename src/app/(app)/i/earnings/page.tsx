@@ -10,9 +10,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlatformIcon } from "@/components/platform-icons";
 import { LinkButton } from "@/components/ui/link-button";
-import { PLATFORM_LABELS, formatCurrency, type Platform } from "@/lib/constants";
+import { formatCurrency, type Platform } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +29,32 @@ interface EarningEntry {
   joined_at: string;
 }
 
+interface EarningRecord {
+  accepted_rate: number | null;
+  payment_status: string | null;
+  joined_at: string;
+  campaigns:
+    | {
+        id: string;
+        title: string | null;
+        platforms: Platform[] | null;
+        profiles:
+          | { full_name: string | null }
+          | { full_name: string | null }[]
+          | null;
+      }
+    | {
+        id: string;
+        title: string | null;
+        platforms: Platform[] | null;
+        profiles:
+          | { full_name: string | null }
+          | { full_name: string | null }[]
+          | null;
+      }[]
+    | null;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -41,10 +68,10 @@ function formatDate(dateStr: string, locale = "en"): string {
 }
 
 const statusStyles: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700",
-  invoiced: "bg-blue-50 text-blue-700",
-  paid: "bg-emerald-50 text-emerald-700",
-  overdue: "bg-red-50 text-red-700",
+  pending: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+  invoiced: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+  paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+  overdue: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400",
 };
 
 const statusLabelKeys: Record<string, string> = {
@@ -85,15 +112,20 @@ export default function EarningsPage() {
         .order("joined_at", { ascending: false });
 
       if (data) {
-        const mapped: EarningEntry[] = data.map((m: any) => ({
-          campaign_id: m.campaigns?.id || "",
-          campaign_title: m.campaigns?.title || "Campaign",
-          brand_name: m.campaigns?.profiles?.full_name || "Brand",
-          platforms: m.campaigns?.platforms || [],
-          accepted_rate: m.accepted_rate || 0,
-          payment_status: m.payment_status || "pending",
-          joined_at: m.joined_at,
-        }));
+        const mapped: EarningEntry[] = (data as EarningRecord[]).map((membership) => {
+          const campaign = getSingleRelation(membership.campaigns);
+          const brand = getSingleRelation(campaign?.profiles);
+
+          return {
+            campaign_id: campaign?.id || "",
+            campaign_title: campaign?.title || "Campaign",
+            brand_name: brand?.full_name || "Brand",
+            platforms: campaign?.platforms || [],
+            accepted_rate: membership.accepted_rate || 0,
+            payment_status: membership.payment_status || "pending",
+            joined_at: membership.joined_at,
+          };
+        });
         setEarnings(mapped);
       }
       setLoading(false);
@@ -145,7 +177,7 @@ export default function EarningsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-6">
-      <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+      <h1 className="text-xl font-semibold tracking-tight text-foreground">
         {t("title")}
       </h1>
 
@@ -156,31 +188,31 @@ export default function EarningsPage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="rounded-xl border border-slate-200/60 bg-white p-4"
+                className="rounded-xl border border-border/60 bg-card p-4"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="size-9 animate-pulse rounded-lg bg-slate-50" />
+                  <div className="size-9 animate-pulse rounded-lg bg-muted/50" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-5 w-14 animate-pulse rounded bg-slate-100" />
-                    <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
+                    <div className="h-5 w-14 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
           {/* Earnings table skeleton */}
-          <div className="rounded-xl border border-slate-200/60 bg-white">
+          <div className="rounded-xl border border-border/60 bg-card">
             <div className="flex items-center justify-between px-5 py-4">
-              <div className="h-4 w-28 animate-pulse rounded bg-slate-100" />
+              <div className="h-4 w-28 animate-pulse rounded bg-muted" />
             </div>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 border-t border-slate-50 px-5 py-3">
-                <div className="size-8 animate-pulse rounded-lg bg-slate-50" />
+              <div key={i} className="flex items-center gap-4 border-t border-border/30 px-5 py-3">
+                <div className="size-8 animate-pulse rounded-lg bg-muted/50" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 w-32 animate-pulse rounded bg-slate-100" />
-                  <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
+                  <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
                 </div>
-                <div className="h-3 w-14 animate-pulse rounded bg-slate-50" />
+                <div className="h-3 w-14 animate-pulse rounded bg-muted/50" />
               </div>
             ))}
           </div>
@@ -193,17 +225,17 @@ export default function EarningsPage() {
               <Card key={s.label}>
                 <CardContent className="py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
                       <s.icon className="size-4" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-slate-400">{s.label}</p>
-                      <p className="text-lg font-semibold tabular-nums text-slate-900">
+                      <p className="text-[11px] text-muted-foreground/70">{s.label}</p>
+                      <p className="text-lg font-semibold tabular-nums text-foreground">
                         {s.value}
                       </p>
                     </div>
                   </div>
-                  <p className="mt-1.5 text-[11px] text-slate-400">
+                  <p className="mt-1.5 text-[11px] text-muted-foreground/70">
                     {s.sublabel}
                   </p>
                 </CardContent>
@@ -215,13 +247,13 @@ export default function EarningsPage() {
           {earnings.length === 0 ? (
             <Card>
               <CardContent className="py-10 text-center">
-                <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-slate-50">
-                  <DollarSign className="size-5 text-slate-400" />
+                <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted/50">
+                  <DollarSign className="size-5 text-muted-foreground/70" />
                 </div>
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-foreground">
                   {t("empty")}
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground/70">
                   {t("empty.detail")}
                 </p>
                 <LinkButton
@@ -252,10 +284,10 @@ export default function EarningsPage() {
                         className="flex items-center gap-3 rounded-lg p-2"
                       >
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-sm font-medium text-slate-900">
+                          <p className="truncate text-sm font-medium text-foreground">
                             {e.campaign_title}
                           </p>
-                          <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+                          <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground/70">
                             <span>{e.brand_name}</span>
                             {e.platforms.slice(0, 2).map((p) => {
                               const Icon = PlatformIcon[p];
@@ -274,7 +306,7 @@ export default function EarningsPage() {
                           </div>
                         </div>
                         <div className="text-end">
-                          <p className="text-sm font-semibold tabular-nums text-slate-900">
+                          <p className="text-sm font-semibold tabular-nums text-foreground">
                             {formatCurrency(e.accepted_rate, locale)}
                           </p>
                           <span

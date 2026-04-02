@@ -36,7 +36,7 @@ export function MetricSourceBadge({ source, className = "" }: MetricSourceBadgeP
   // manual
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500 ring-1 ring-slate-900/[0.06] ${className}`}
+      className={`inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[10px] font-medium text-muted-foreground ring-1 ring-ring/[0.06] ${className}`}
     >
       <AlertCircle className="size-3" />
       Self-reported

@@ -15,10 +15,10 @@ export function ApplicationAcceptedEmail({
   campaignUrl = "https://popsdrops.com",
 }: ApplicationAcceptedProps) {
   return (
-    <EmailLayout preview={`You've been accepted to "${campaignTitle}"`}>
-      <Text style={styles.heading}>You're in</Text>
+    <EmailLayout preview={`You have been accepted to "${campaignTitle}"`}>
+      <Text style={styles.heading}>You&apos;re in</Text>
       <Text style={styles.paragraph}>
-        Congratulations, {creatorName}. You've been accepted to this campaign.
+        Congratulations, {creatorName}. You&apos;ve been accepted to this campaign.
       </Text>
       <Section style={styles.card}>
         <Text style={styles.label}>Campaign</Text>

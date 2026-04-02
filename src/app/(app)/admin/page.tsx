@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Clock,
   ArrowRight,
-  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
@@ -143,19 +142,19 @@ export default function AdminDashboardPage() {
   }
 
   const priorityColors: Record<string, string> = {
-    high: "bg-red-50 text-red-700 border-red-200",
-    medium: "bg-amber-50 text-amber-700 border-amber-200",
-    low: "bg-slate-50 text-slate-600 border-slate-200",
+    high: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400 border-red-200",
+    medium: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400 border-amber-200",
+    low: "bg-muted/50 text-muted-foreground border-border",
   };
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Alert Banner */}
       {stats && stats.overdueApprovals > 0 && (
-        <div className="mb-6 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+        <div className="mb-6 flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50 px-4 py-3">
           <AlertTriangle className="size-5 shrink-0 text-amber-600" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-amber-800">
+            <p className="text-sm font-medium text-amber-800 dark:text-amber-300">
               {stats.overdueApprovals} approval{stats.overdueApprovals > 1 ? "s" : ""} pending for more than 24 hours
             </p>
             <p className="text-xs text-amber-600">SLA target: approve within 24h of application</p>
@@ -167,18 +166,18 @@ export default function AdminDashboardPage() {
       )}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="text-sm text-slate-500">Platform overview and action items</p>
+        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-sm text-muted-foreground">Platform overview and action items</p>
       </div>
 
       {loading ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 xl:grid-cols-5">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-100" />
+              <div key={i} className="h-24 animate-pulse rounded-xl bg-muted" />
             ))}
           </div>
-          <div className="h-64 animate-pulse rounded-xl bg-slate-100" />
+          <div className="h-64 animate-pulse rounded-xl bg-muted" />
         </div>
       ) : (
         <>
@@ -187,13 +186,13 @@ export default function AdminDashboardPage() {
             {kpis.map((kpi) => (
               <Card key={kpi.label}>
                 <CardContent className="flex items-center gap-3">
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                  <div className="flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                     <kpi.icon className="size-5" />
                   </div>
                   <div>
-                    <p className="text-xl font-bold text-slate-900">{kpi.value}</p>
-                    <p className="text-xs text-slate-500">{kpi.label}</p>
-                    <p className="text-xs text-slate-400">{kpi.detail}</p>
+                    <p className="text-xl font-bold text-foreground">{kpi.value}</p>
+                    <p className="text-xs text-muted-foreground">{kpi.label}</p>
+                    <p className="text-xs text-muted-foreground/70">{kpi.detail}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -214,7 +213,7 @@ export default function AdminDashboardPage() {
                       className={`flex items-center justify-between rounded-lg border px-4 py-3 ${priorityColors[item.priority]}`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className={`size-2 rounded-full ${item.priority === "high" ? "bg-red-500" : item.priority === "medium" ? "bg-amber-500" : "bg-slate-400"}`} />
+                        <span className={`size-2 rounded-full ${item.priority === "high" ? "bg-red-500" : item.priority === "medium" ? "bg-amber-500" : "bg-muted-foreground/50"}`} />
                         <span className="text-sm">{item.label}</span>
                       </div>
                       <LinkButton href={item.href} variant="ghost" size="sm">
@@ -231,9 +230,9 @@ export default function AdminDashboardPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <Card>
               <CardContent className="text-center">
-                <ShieldCheck className="mx-auto mb-2 size-8 text-slate-300" />
-                <p className="text-sm font-medium text-slate-700">Approvals</p>
-                <p className="mb-3 text-xs text-slate-400">{stats?.pendingApprovals ?? 0} pending</p>
+                <ShieldCheck className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-foreground">Approvals</p>
+                <p className="mb-3 text-xs text-muted-foreground/70">{stats?.pendingApprovals ?? 0} pending</p>
                 <LinkButton href="/admin/approvals" variant="outline" size="sm">
                   Review Queue
                 </LinkButton>
@@ -241,9 +240,9 @@ export default function AdminDashboardPage() {
             </Card>
             <Card>
               <CardContent className="text-center">
-                <Users className="mx-auto mb-2 size-8 text-slate-300" />
-                <p className="text-sm font-medium text-slate-700">Users</p>
-                <p className="mb-3 text-xs text-slate-400">{stats?.totalUsers ?? 0} total</p>
+                <Users className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-foreground">Users</p>
+                <p className="mb-3 text-xs text-muted-foreground/70">{stats?.totalUsers ?? 0} total</p>
                 <LinkButton href="/admin/users" variant="outline" size="sm">
                   Manage Users
                 </LinkButton>
@@ -251,9 +250,9 @@ export default function AdminDashboardPage() {
             </Card>
             <Card>
               <CardContent className="text-center">
-                <Megaphone className="mx-auto mb-2 size-8 text-slate-300" />
-                <p className="text-sm font-medium text-slate-700">Campaigns</p>
-                <p className="mb-3 text-xs text-slate-400">{stats?.activeCampaigns ?? 0} active</p>
+                <Megaphone className="mx-auto mb-2 size-8 text-muted-foreground/50" />
+                <p className="text-sm font-medium text-foreground">Campaigns</p>
+                <p className="mb-3 text-xs text-muted-foreground/70">{stats?.activeCampaigns ?? 0} active</p>
                 <LinkButton href="/admin/campaigns" variant="outline" size="sm">
                   View All
                 </LinkButton>

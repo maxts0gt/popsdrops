@@ -74,7 +74,7 @@ export function EditBioSheet({
                   ? "font-medium text-red-500"
                   : remaining <= 20
                     ? "text-amber-500"
-                    : "text-slate-400"
+                    : "text-muted-foreground/70"
               }`}
             >
               {remaining}

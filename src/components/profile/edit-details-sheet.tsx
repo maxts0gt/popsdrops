@@ -17,8 +17,6 @@ import {
   MARKET_LABELS,
   LANGUAGES,
   LANGUAGE_LABELS,
-  type Market,
-  type Language,
 } from "@/lib/constants";
 import { updateCreatorProfile } from "@/app/actions/profile";
 
@@ -62,7 +60,7 @@ export function EditMarketSheet({
         <SheetHeader>
           <SheetTitle>Primary Market</SheetTitle>
           <SheetDescription>
-            Where you're primarily based. Helps brands find you.
+            Where you&apos;re primarily based. Helps brands find you.
           </SheetDescription>
         </SheetHeader>
 
@@ -83,15 +81,15 @@ export function EditMarketSheet({
                   onClick={() => setSelected(market)}
                   className={`flex w-full items-center rounded-lg px-3 py-2.5 text-start text-sm transition-colors ${
                     selected === market
-                      ? "bg-slate-900 font-medium text-white"
-                      : "text-slate-700 hover:bg-slate-50"
+                      ? "bg-foreground font-medium text-white"
+                      : "text-foreground hover:bg-muted/50"
                   }`}
                 >
                   {MARKET_LABELS[market]}
                 </button>
               ))}
               {filtered.length === 0 && (
-                <p className="py-6 text-center text-sm text-slate-400">
+                <p className="py-6 text-center text-sm text-muted-foreground/70">
                   No markets match &ldquo;{search}&rdquo;
                 </p>
               )}
@@ -190,8 +188,8 @@ export function EditLanguagesSheet({
                     onClick={() => toggle(lang)}
                     className={`flex w-full items-center justify-between rounded-lg px-3 py-2.5 text-start text-sm transition-colors ${
                       isSelected
-                        ? "bg-slate-900 font-medium text-white"
-                        : "text-slate-700 hover:bg-slate-50"
+                        ? "bg-foreground font-medium text-white"
+                        : "text-foreground hover:bg-muted/50"
                     }`}
                   >
                     {LANGUAGE_LABELS[lang]}
@@ -202,7 +200,7 @@ export function EditLanguagesSheet({
                 );
               })}
               {filtered.length === 0 && (
-                <p className="py-6 text-center text-sm text-slate-400">
+                <p className="py-6 text-center text-sm text-muted-foreground/70">
                   No languages match &ldquo;{search}&rdquo;
                 </p>
               )}
@@ -279,11 +277,11 @@ export function EditSlugSheet({
         </SheetHeader>
 
         <div className="px-4">
-          <Label htmlFor="slug" className="mb-1.5 text-xs text-slate-500">
+          <Label htmlFor="slug" className="mb-1.5 text-xs text-muted-foreground">
             Slug
           </Label>
-          <div className="flex items-center gap-0 rounded-lg ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-slate-900">
-            <span className="shrink-0 ps-3 text-sm text-slate-400">
+          <div className="flex items-center gap-0 rounded-lg ring-1 ring-border focus-within:ring-2 focus-within:ring-ring">
+            <span className="shrink-0 ps-3 text-sm text-muted-foreground/70">
               popsdrops.com/c/
             </span>
             <input
@@ -291,7 +289,7 @@ export function EditSlugSheet({
               type="text"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent py-2 pe-3 text-sm font-medium text-slate-900 outline-none"
+              className="min-w-0 flex-1 bg-transparent py-2 pe-3 text-sm font-medium text-foreground outline-none"
               maxLength={30}
               autoFocus
             />

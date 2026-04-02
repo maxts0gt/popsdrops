@@ -80,7 +80,7 @@ export function ReviewDialog({
                 <button
                   key={star}
                   type="button"
-                  className="rounded-sm p-0.5 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900"
+                  className="rounded-sm p-0.5 transition-transform hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   onMouseEnter={() => setHoveredRating(star)}
                   onMouseLeave={() => setHoveredRating(0)}
                   onClick={() => setRating(star)}
@@ -89,14 +89,14 @@ export function ReviewDialog({
                     className={`size-7 transition-colors ${
                       star <= displayRating
                         ? "fill-amber-400 text-amber-400"
-                        : "text-slate-200"
+                        : "text-border"
                     }`}
                   />
                 </button>
               ))}
             </div>
             {displayRating > 0 && (
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-muted-foreground">
                 {displayRating === 1 && "Poor"}
                 {displayRating === 2 && "Below average"}
                 {displayRating === 3 && "Average"}

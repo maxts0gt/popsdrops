@@ -31,10 +31,10 @@ import {
   formatBudgetRange,
   type Platform,
   type Niche,
-  type Market,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
+import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +60,25 @@ interface CampaignCard {
     logo_url: string | null;
   };
 }
+
+type CampaignCardRecord = Omit<CampaignCard, "brand"> & {
+  profiles?:
+    | {
+        full_name: string | null;
+        brand_profiles:
+          | CampaignCard["brand"]
+          | CampaignCard["brand"][]
+          | null;
+      }
+    | {
+        full_name: string | null;
+        brand_profiles:
+          | CampaignCard["brand"]
+          | CampaignCard["brand"][]
+          | null;
+      }[]
+    | null;
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -163,7 +182,7 @@ function FilterSheet({
         <div className="flex-1 space-y-5 overflow-y-auto px-4">
           {/* Platforms */}
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
               {t("filter.platform")}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -177,8 +196,8 @@ function FilterSheet({
                     onClick={() => togglePlatform(p)}
                     className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                       active
-                        ? "bg-slate-900 text-white"
-                        : "bg-slate-50 text-slate-600 ring-1 ring-slate-900/[0.06] hover:bg-slate-100"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground ring-1 ring-border hover:bg-muted"
                     }`}
                   >
                     <Icon className="size-3.5" />
@@ -191,7 +210,7 @@ function FilterSheet({
 
           {/* Niches */}
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
               {t("filter.niche")}
             </p>
             <div className="flex flex-wrap gap-2">
@@ -204,8 +223,8 @@ function FilterSheet({
                     onClick={() => toggleNiche(n)}
                     className={`rounded-full px-3 py-1.5 text-xs font-medium transition-all ${
                       active
-                        ? "bg-slate-900 text-white"
-                        : "bg-slate-50 text-slate-600 ring-1 ring-slate-900/[0.06] hover:bg-slate-100"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted/50 text-muted-foreground ring-1 ring-border hover:bg-muted"
                     }`}
                   >
                     {NICHE_KEYS[n] ? tGlobal("ui.common", NICHE_KEYS[n]) : n}
@@ -217,7 +236,7 @@ function FilterSheet({
 
           {/* Market */}
           <div>
-            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-slate-400">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
               {t("filter.market")}
             </p>
             <select
@@ -225,7 +244,7 @@ function FilterSheet({
               onChange={(e) =>
                 setLocal((prev) => ({ ...prev, market: e.target.value }))
               }
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-700 outline-none focus:ring-2 focus:ring-slate-900"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
             >
               <option value="">{t("filter.allMarkets")}</option>
               {MARKETS.map((m) => (
@@ -268,7 +287,15 @@ export default function DiscoverPage() {
     niches: new Set(),
     market: "",
   });
-  const [saved, setSaved] = useState<Set<string>>(new Set());
+  const [saved, setSaved] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set<string>();
+    try {
+      const stored = localStorage.getItem("popsdrops:saved_campaigns");
+      return stored ? new Set<string>(JSON.parse(stored)) : new Set<string>();
+    } catch {
+      return new Set<string>();
+    }
+  });
 
   useEffect(() => {
     async function load() {
@@ -293,11 +320,12 @@ export default function DiscoverPage() {
         .order("application_deadline", { ascending: true });
 
       if (data) {
-        const mapped: CampaignCard[] = data.map((c: any) => {
-          const profile = c.profiles;
-          const bp = profile?.brand_profiles?.[0] || profile?.brand_profiles;
+        const mapped: CampaignCard[] = (data as CampaignCardRecord[]).map((campaign) => {
+          const profile = getSingleRelation(campaign.profiles);
+          const bp = getSingleRelation(profile?.brand_profiles);
+
           return {
-            ...c,
+            ...campaign,
             brand: bp
               ? bp
               : {
@@ -346,20 +374,28 @@ export default function DiscoverPage() {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
+      try {
+        localStorage.setItem(
+          "popsdrops:saved_campaigns",
+          JSON.stringify(Array.from(next)),
+        );
+      } catch {
+        // localStorage full or unavailable — ignore
+      }
       return next;
     });
   }
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
-      <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+      <h1 className="text-xl font-semibold tracking-tight text-foreground">
         {t("title")}
       </h1>
 
       {/* Search + Filter bar */}
       <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-slate-400" />
+          <Search className="pointer-events-none absolute inset-y-0 start-3 my-auto size-4 text-muted-foreground/70" />
           <Input
             type="search"
             placeholder={t("search.placeholder")}
@@ -370,7 +406,7 @@ export default function DiscoverPage() {
           {search && (
             <button
               onClick={() => setSearch("")}
-              className="absolute inset-y-0 end-2 my-auto flex size-5 items-center justify-center rounded-full text-slate-300 hover:text-slate-500"
+              className="absolute inset-y-0 end-2 my-auto flex size-5 items-center justify-center rounded-full text-muted-foreground/50 hover:text-muted-foreground"
             >
               <X className="size-3.5" />
             </button>
@@ -384,7 +420,7 @@ export default function DiscoverPage() {
         >
           <SlidersHorizontal className="size-4" />
           {activeFilterCount > 0 && (
-            <span className="absolute -end-1 -top-1 flex size-4 items-center justify-center rounded-full bg-slate-900 text-[10px] font-bold text-white">
+            <span className="absolute -end-1 -top-1 flex size-4 items-center justify-center rounded-full bg-foreground text-[10px] font-bold text-background">
               {activeFilterCount}
             </span>
           )}
@@ -397,7 +433,7 @@ export default function DiscoverPage() {
           {Array.from(filters.platforms).map((p) => (
             <span
               key={p}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
             >
               {PLATFORM_LABELS[p]}
               <button
@@ -408,7 +444,7 @@ export default function DiscoverPage() {
                     return { ...prev, platforms: next };
                   })
                 }
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground/70 hover:text-muted-foreground"
               >
                 <X className="size-3" />
               </button>
@@ -417,7 +453,7 @@ export default function DiscoverPage() {
           {Array.from(filters.niches).map((n) => (
             <span
               key={n}
-              className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+              className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground"
             >
               {NICHE_KEYS[n as Niche] ? tGlobal("ui.common", NICHE_KEYS[n as Niche]) : n}
               <button
@@ -428,18 +464,18 @@ export default function DiscoverPage() {
                     return { ...prev, niches: next };
                   })
                 }
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground/70 hover:text-muted-foreground"
               >
                 <X className="size-3" />
               </button>
             </span>
           ))}
           {filters.market && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
               {getMarketLabel(filters.market, locale)}
               <button
                 onClick={() => setFilters((prev) => ({ ...prev, market: "" }))}
-                className="text-slate-400 hover:text-slate-600"
+                className="text-muted-foreground/70 hover:text-muted-foreground"
               >
                 <X className="size-3" />
               </button>
@@ -453,7 +489,7 @@ export default function DiscoverPage() {
                 market: "",
               })
             }
-            className="text-xs text-slate-400 hover:text-slate-600"
+            className="text-xs text-muted-foreground/70 hover:text-muted-foreground"
           >
             {t("filter.clearAll")}
           </button>
@@ -466,34 +502,34 @@ export default function DiscoverPage() {
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-slate-200/60 bg-white p-4"
+              className="rounded-xl border border-border/60 bg-card p-4"
             >
               {/* Brand row */}
               <div className="flex items-center gap-2">
-                <div className="size-8 animate-pulse rounded-lg bg-slate-100" />
+                <div className="size-8 animate-pulse rounded-lg bg-muted" />
                 <div className="space-y-1.5">
-                  <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
-                  <div className="h-2.5 w-16 animate-pulse rounded bg-slate-50" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+                  <div className="h-2.5 w-16 animate-pulse rounded bg-muted/50" />
                 </div>
               </div>
               {/* Title */}
-              <div className="mt-3 h-4 w-3/4 animate-pulse rounded bg-slate-100" />
+              <div className="mt-3 h-4 w-3/4 animate-pulse rounded bg-muted" />
               {/* Description */}
               <div className="mt-2 space-y-1.5">
-                <div className="h-3 w-full animate-pulse rounded bg-slate-50" />
-                <div className="h-3 w-2/3 animate-pulse rounded bg-slate-50" />
+                <div className="h-3 w-full animate-pulse rounded bg-muted/50" />
+                <div className="h-3 w-2/3 animate-pulse rounded bg-muted/50" />
               </div>
               {/* Platform pills */}
               <div className="mt-3 flex gap-1.5">
-                <div className="h-5 w-20 animate-pulse rounded-full bg-slate-50" />
-                <div className="h-5 w-16 animate-pulse rounded-full bg-slate-50" />
-                <div className="h-5 w-14 animate-pulse rounded-full bg-slate-50" />
+                <div className="h-5 w-20 animate-pulse rounded-full bg-muted/50" />
+                <div className="h-5 w-16 animate-pulse rounded-full bg-muted/50" />
+                <div className="h-5 w-14 animate-pulse rounded-full bg-muted/50" />
               </div>
               {/* Bottom row */}
               <div className="mt-3 flex gap-4">
-                <div className="h-3 w-16 animate-pulse rounded bg-slate-100" />
-                <div className="h-3 w-14 animate-pulse rounded bg-slate-50" />
-                <div className="h-3 w-12 animate-pulse rounded bg-slate-50" />
+                <div className="h-3 w-16 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-14 animate-pulse rounded bg-muted/50" />
+                <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
               </div>
             </div>
           ))}
@@ -501,15 +537,15 @@ export default function DiscoverPage() {
       ) : filtered.length === 0 ? (
         <Card>
           <CardContent className="py-12 text-center">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-slate-50">
-              <Search className="size-5 text-slate-400" />
+            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted/50">
+              <Search className="size-5 text-muted-foreground/70" />
             </div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-foreground">
               {campaigns.length === 0
                 ? t("empty.none")
                 : t("empty")}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-muted-foreground/70">
               {campaigns.length === 0
                 ? t("empty.noneDetail")
                 : t("empty.filterDetail")}
@@ -534,7 +570,7 @@ export default function DiscoverPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          <p className="text-xs text-slate-400">
+          <p className="text-xs text-muted-foreground/70">
             {filtered.length === 1 ? t("results.countSingle") : t("results.count", { count: String(filtered.length) })}
           </p>
           {filtered.map((campaign) => {
@@ -556,24 +592,24 @@ export default function DiscoverPage() {
                         e.stopPropagation();
                         toggleSave(campaign.id);
                       }}
-                      className="absolute end-4 top-4 rounded-lg p-1 text-slate-300 transition-colors hover:text-slate-600"
+                      className="absolute end-4 top-4 rounded-lg p-1 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
                     >
                       <Bookmark
-                        className={`size-4 ${isSaved ? "fill-slate-900 text-slate-900" : ""}`}
+                        className={`size-4 ${isSaved ? "fill-foreground text-foreground" : ""}`}
                       />
                     </button>
 
                     {/* Brand */}
                     <div className="flex items-center gap-2">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-slate-100 text-xs font-bold text-slate-600">
+                      <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
                         {brandInitials(campaign.brand?.company_name)}
                       </div>
                       <div>
-                        <p className="text-xs font-medium text-slate-600">
+                        <p className="text-xs font-medium text-muted-foreground">
                           {campaign.brand?.company_name}
                         </p>
                         {campaign.brand?.rating > 0 && (
-                          <p className="text-[11px] text-slate-400">
+                          <p className="text-[11px] text-muted-foreground/70">
                             ★ {campaign.brand.rating.toFixed(1)} ·{" "}
                             {campaign.brand.review_count} {t("card.reviews")}
                           </p>
@@ -582,13 +618,13 @@ export default function DiscoverPage() {
                     </div>
 
                     {/* Title */}
-                    <h3 className="mt-2.5 pe-8 text-sm font-semibold text-slate-900">
+                    <h3 className="mt-2.5 pe-8 text-sm font-semibold text-foreground">
                       {campaign.title}
                     </h3>
 
                     {/* Description preview */}
                     {campaign.brief_description && (
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">
+                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                         {campaign.brief_description}
                       </p>
                     )}
@@ -600,7 +636,7 @@ export default function DiscoverPage() {
                         return Icon ? (
                           <span
                             key={p}
-                            className="inline-flex items-center gap-1 rounded-full bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-900/[0.04]"
+                            className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/50"
                           >
                             <Icon className="size-3" />
                             {PLATFORM_LABELS[p as Platform]}
@@ -610,13 +646,13 @@ export default function DiscoverPage() {
                       {campaign.markets.slice(0, 3).map((m) => (
                         <span
                           key={m}
-                          className="rounded-full bg-slate-50 px-2 py-0.5 text-[11px] text-slate-400 ring-1 ring-slate-900/[0.04]"
+                          className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground/70 ring-1 ring-border/50"
                         >
                           {getMarketLabel(m, locale)}
                         </span>
                       ))}
                       {campaign.markets.length > 3 && (
-                        <span className="text-[11px] text-slate-400">
+                        <span className="text-[11px] text-muted-foreground/70">
                           +{campaign.markets.length - 3}
                         </span>
                       )}
@@ -624,7 +660,7 @@ export default function DiscoverPage() {
 
                     {/* Bottom row: budget + deadline + spots */}
                     <div className="mt-3 flex items-center gap-4 text-xs">
-                      <span className="font-semibold tabular-nums text-slate-900">
+                      <span className="font-semibold tabular-nums text-foreground">
                         {formatBudgetRange(
                           campaign.budget_min,
                           campaign.budget_max,
@@ -636,14 +672,14 @@ export default function DiscoverPage() {
                         className={`inline-flex items-center gap-1 ${
                           dl.urgent
                             ? "font-medium text-red-500"
-                            : "text-slate-400"
+                            : "text-muted-foreground/70"
                         }`}
                       >
                         <Clock className="size-3" />
                         {dl.text}
                       </span>
                       {campaign.max_creators && (
-                        <span className="inline-flex items-center gap-1 text-slate-400">
+                        <span className="inline-flex items-center gap-1 text-muted-foreground/70">
                           <Users className="size-3" />
                           {t("card.spots", { count: String(campaign.max_creators) })}
                         </span>

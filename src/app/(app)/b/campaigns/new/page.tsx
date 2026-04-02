@@ -55,7 +55,7 @@ const playbooks = [
     titleKey: "playbook.productSeeding",
     descKey: "playbook.productSeeding.desc",
     icon: Gift,
-    color: "bg-slate-100 text-slate-600",
+    color: "bg-muted text-muted-foreground",
     defaults: {
       platforms: ["tiktok", "instagram"] as Platform[],
       formats: ["short_video", "story"] as ContentFormat[],
@@ -68,7 +68,7 @@ const playbooks = [
     titleKey: "playbook.brandAwareness",
     descKey: "playbook.brandAwareness.desc",
     icon: Megaphone,
-    color: "bg-slate-100 text-slate-600",
+    color: "bg-muted text-muted-foreground",
     defaults: {
       platforms: ["tiktok", "instagram", "snapchat"] as Platform[],
       formats: ["short_video", "reel"] as ContentFormat[],
@@ -81,7 +81,7 @@ const playbooks = [
     titleKey: "playbook.conversion",
     descKey: "playbook.conversion.desc",
     icon: Target,
-    color: "bg-slate-100 text-slate-600",
+    color: "bg-muted text-muted-foreground",
     defaults: {
       platforms: ["instagram", "youtube"] as Platform[],
       formats: ["short_video", "carousel"] as ContentFormat[],
@@ -94,7 +94,7 @@ const playbooks = [
     titleKey: "playbook.ugc",
     descKey: "playbook.ugc.desc",
     icon: Repeat,
-    color: "bg-slate-100 text-slate-600",
+    color: "bg-muted text-muted-foreground",
     defaults: {
       platforms: ["tiktok"] as Platform[],
       formats: ["short_video"] as ContentFormat[],
@@ -107,7 +107,7 @@ const playbooks = [
     titleKey: "playbook.eventLaunch",
     descKey: "playbook.eventLaunch.desc",
     icon: Zap,
-    color: "bg-slate-100 text-slate-600",
+    color: "bg-muted text-muted-foreground",
     defaults: {
       platforms: ["tiktok", "instagram", "snapchat"] as Platform[],
       formats: ["short_video", "story", "live"] as ContentFormat[],
@@ -162,8 +162,8 @@ function MultiSelect({
             }
             className={`rounded-lg border px-3 py-1.5 text-sm transition-colors ${
               isSelected
-                ? "border-slate-900 bg-slate-900 font-medium text-white"
-                : "border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                ? "border-primary bg-primary font-medium text-primary-foreground"
+                : "border-border text-muted-foreground hover:border-border hover:bg-muted/50"
             }`}
           >
             {label}
@@ -344,8 +344,8 @@ export default function CreateCampaignPage() {
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-        <p className="text-sm text-slate-500">
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">
           {step === 0
             ? t("playbook.choose")
             : t("step.of", { step: String(step), total: String(STEP_KEYS.length - 1) })}
@@ -355,16 +355,16 @@ export default function CreateCampaignPage() {
       {/* Progress bar */}
       {step > 0 && (
         <div className="mb-8">
-          <div className="mb-2 flex justify-between text-xs text-slate-500">
+          <div className="mb-2 flex justify-between text-xs text-muted-foreground">
             {STEP_KEYS.slice(1).map((key, i) => (
-              <span key={key} className={i + 1 <= step ? "font-medium text-slate-900" : ""}>
+              <span key={key} className={i + 1 <= step ? "font-medium text-foreground" : ""}>
                 {t(key)}
               </span>
             ))}
           </div>
-          <div className="h-1.5 w-full rounded-full bg-slate-100">
+          <div className="h-1.5 w-full rounded-full bg-muted">
             <div
-              className="h-1.5 rounded-full bg-slate-900 transition-all"
+              className="h-1.5 rounded-full bg-primary transition-all"
               style={{ width: `${(step / (STEP_KEYS.length - 1)) * 100}%` }}
             />
           </div>
@@ -381,26 +381,26 @@ export default function CreateCampaignPage() {
                 onClick={() => selectPlaybook(pb.id)}
                 className={`rounded-xl border-2 p-4 text-start transition-all hover:shadow-md ${
                   selectedPlaybook === pb.id
-                    ? "border-slate-900 bg-slate-50"
-                    : "border-slate-200 hover:border-slate-300"
+                    ? "border-primary bg-muted/50"
+                    : "border-border hover:border-border"
                 }`}
               >
                 <div className={`mb-3 inline-flex size-10 items-center justify-center rounded-lg ${pb.color}`}>
                   <pb.icon className="size-5" />
                 </div>
-                <h3 className="mb-1 font-medium text-slate-900">{t(pb.titleKey)}</h3>
-                <p className="text-sm text-slate-500">{t(pb.descKey)}</p>
+                <h3 className="mb-1 font-medium text-foreground">{t(pb.titleKey)}</h3>
+                <p className="text-sm text-muted-foreground">{t(pb.descKey)}</p>
               </button>
             ))}
             <button
               onClick={() => selectPlaybook(null)}
-              className="rounded-xl border-2 border-dashed border-slate-300 p-4 text-start transition-all hover:border-slate-400 hover:bg-slate-50"
+              className="rounded-xl border-2 border-dashed border-border p-4 text-start transition-all hover:border-border hover:bg-muted/50"
             >
-              <div className="mb-3 inline-flex size-10 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+              <div className="mb-3 inline-flex size-10 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                 <Sparkles className="size-5" />
               </div>
-              <h3 className="mb-1 font-medium text-slate-900">{t("playbook.scratch")}</h3>
-              <p className="text-sm text-slate-500">{t("playbook.scratch.desc")}</p>
+              <h3 className="mb-1 font-medium text-foreground">{t("playbook.scratch")}</h3>
+              <p className="text-sm text-muted-foreground">{t("playbook.scratch.desc")}</p>
             </button>
           </div>
         </div>
@@ -419,7 +419,14 @@ export default function CreateCampaignPage() {
                 id="title"
                 placeholder={t("field.name.placeholder")}
                 value={title}
-                onChange={(e) => { setTitle(e.target.value); setErrors((prev) => { const { title: _, ...rest } = prev; return rest; }); }}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.title;
+                    return next;
+                  });
+                }}
                 className={`mt-1.5 ${errors.title ? "border-red-500" : ""}`}
               />
               {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
@@ -430,7 +437,14 @@ export default function CreateCampaignPage() {
                 <MultiSelect
                   options={PLATFORM_LABELS}
                   selected={platforms}
-                  onChange={(v) => { setPlatforms(v); setErrors((prev) => { const { platforms: _, ...rest } = prev; return rest; }); }}
+                  onChange={(v) => {
+                    setPlatforms(v);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.platforms;
+                      return next;
+                    });
+                  }}
                 />
               </div>
               {errors.platforms && <p className="mt-1 text-xs text-red-500">{errors.platforms}</p>}
@@ -441,7 +455,14 @@ export default function CreateCampaignPage() {
                 <MultiSelect
                   options={marketLabels}
                   selected={markets}
-                  onChange={(v) => { setMarkets(v); setErrors((prev) => { const { markets: _, ...rest } = prev; return rest; }); }}
+                  onChange={(v) => {
+                    setMarkets(v);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.markets;
+                      return next;
+                    });
+                  }}
                 />
               </div>
               {errors.markets && <p className="mt-1 text-xs text-red-500">{errors.markets}</p>}
@@ -474,7 +495,14 @@ export default function CreateCampaignPage() {
                 rows={4}
                 placeholder={t("field.briefDescription.placeholder")}
                 value={description}
-                onChange={(e) => { setDescription(e.target.value); setErrors((prev) => { const { description: _, ...rest } = prev; return rest; }); }}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.description;
+                    return next;
+                  });
+                }}
                 className={`mt-1.5 ${errors.description ? "border-red-500" : ""}`}
               />
               {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
@@ -554,10 +582,10 @@ export default function CreateCampaignPage() {
                       }}
                       className="w-20"
                     />
-                    <span className="text-xs text-slate-500">{t("label.perCreator")}</span>
+                    <span className="text-xs text-muted-foreground">{t("label.perCreator")}</span>
                     {deliverables.length > 1 && (
                       <Button variant="ghost" size="icon-sm" onClick={() => removeDeliverable(i)}>
-                        <Trash2 className="size-3.5 text-slate-400" />
+                        <Trash2 className="size-3.5 text-muted-foreground/70" />
                       </Button>
                     )}
                   </div>
@@ -584,7 +612,7 @@ export default function CreateCampaignPage() {
                   value={budgetMin}
                   onChange={(e) => setBudgetMin(e.target.value)}
                 />
-                <span className="text-slate-400">{t("field.budgetRange.to")}</span>
+                <span className="text-muted-foreground/70">{t("field.budgetRange.to")}</span>
                 <Input
                   type="number"
                   placeholder={t("field.budgetMax")}
@@ -612,7 +640,14 @@ export default function CreateCampaignPage() {
                   id="startDate"
                   type="date"
                   value={startDate}
-                  onChange={(e) => { setStartDate(e.target.value); setErrors((prev) => { const { dates: _, ...rest } = prev; return rest; }); }}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.dates;
+                      return next;
+                    });
+                  }}
                   className="mt-1.5"
                 />
               </div>
@@ -642,7 +677,14 @@ export default function CreateCampaignPage() {
                   id="endDate"
                   type="date"
                   value={endDate}
-                  onChange={(e) => { setEndDate(e.target.value); setErrors((prev) => { const { dates: _, ...rest } = prev; return rest; }); }}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.dates;
+                      return next;
+                    });
+                  }}
                   className="mt-1.5"
                 />
               </div>
@@ -668,8 +710,8 @@ export default function CreateCampaignPage() {
                     key={opt.value}
                     className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
                       usageRights === opt.value
-                        ? "border-slate-900 bg-slate-50"
-                        : "border-slate-200 hover:bg-slate-50"
+                        ? "border-primary bg-muted/50"
+                        : "border-border hover:bg-muted/50"
                     }`}
                   >
                     <input
@@ -678,11 +720,11 @@ export default function CreateCampaignPage() {
                       value={opt.value}
                       checked={usageRights === opt.value}
                       onChange={(e) => setUsageRights(e.target.value)}
-                      className="mt-0.5 accent-slate-900"
+                      className="mt-0.5 accent-primary"
                     />
                     <div>
-                      <p className="text-sm font-medium text-slate-900">{t(opt.labelKey)}</p>
-                      <p className="text-xs text-slate-500">{t(opt.descKey)}</p>
+                      <p className="text-sm font-medium text-foreground">{t(opt.labelKey)}</p>
+                      <p className="text-xs text-muted-foreground">{t(opt.descKey)}</p>
                     </div>
                   </label>
                 ))}
@@ -699,7 +741,7 @@ export default function CreateCampaignPage() {
                 onChange={(e) => setMaxRevisions(e.target.value)}
                 className="mt-1.5 w-32"
               />
-              <p className="mt-1 text-xs text-slate-500">{t("field.maxRevisions.hint")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{t("field.maxRevisions.hint")}</p>
             </div>
             <div>
               <Label htmlFor="complianceNotes">{t("field.complianceNotes")}</Label>
@@ -723,64 +765,64 @@ export default function CreateCampaignPage() {
             <CardTitle>{t("step.reviewPublish")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-lg bg-slate-50 p-4">
-              <h3 className="mb-3 font-medium text-slate-900">{t("review.summary")}</h3>
+            <div className="rounded-lg bg-muted/50 p-4">
+              <h3 className="mb-3 font-medium text-foreground">{t("review.summary")}</h3>
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.title")}</dt>
-                  <dd className="font-medium text-slate-900">{title || t("review.untitled")}</dd>
+                  <dt className="text-muted-foreground">{t("review.label.title")}</dt>
+                  <dd className="font-medium text-foreground">{title || t("review.untitled")}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.playbook")}</dt>
-                  <dd className="text-slate-700">{selectedPbTitle}</dd>
+                  <dt className="text-muted-foreground">{t("review.label.playbook")}</dt>
+                  <dd className="text-foreground">{selectedPbTitle}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.platforms")}</dt>
-                  <dd className="text-slate-700">
+                  <dt className="text-muted-foreground">{t("review.label.platforms")}</dt>
+                  <dd className="text-foreground">
                     {platforms.map((p) => PLATFORM_LABELS[p as Platform]).join(", ") || t("review.none")}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.markets")}</dt>
-                  <dd className="text-slate-700">
+                  <dt className="text-muted-foreground">{t("review.label.markets")}</dt>
+                  <dd className="text-foreground">
                     {markets.map((m) => marketLabels[m as Market]).join(", ") || t("review.none")}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.niches")}</dt>
-                  <dd className="text-slate-700">
+                  <dt className="text-muted-foreground">{t("review.label.niches")}</dt>
+                  <dd className="text-foreground">
                     {niches.map((n) => nicheLabels[n as Niche]).join(", ") || t("review.none")}
                   </dd>
                 </div>
                 <Separator />
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.budget")}</dt>
-                  <dd className="text-slate-700">{formatBudgetRange(Number(budgetMin) || 0, Number(budgetMax) || 0, locale)}</dd>
+                  <dt className="text-muted-foreground">{t("review.label.budget")}</dt>
+                  <dd className="text-foreground">{formatBudgetRange(Number(budgetMin) || 0, Number(budgetMax) || 0, locale)}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.creators")}</dt>
-                  <dd className="text-slate-700">{creatorsCount}</dd>
+                  <dt className="text-muted-foreground">{t("review.label.creators")}</dt>
+                  <dd className="text-foreground">{creatorsCount}</dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.deliverables")}</dt>
-                  <dd className="text-slate-700">
+                  <dt className="text-muted-foreground">{t("review.label.deliverables")}</dt>
+                  <dd className="text-foreground">
                     {deliverables.map((d) => `${d.quantity}x ${formatLabels[d.format as ContentFormat]}`).join(", ")}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.timeline")}</dt>
-                  <dd className="text-slate-700">
+                  <dt className="text-muted-foreground">{t("review.label.timeline")}</dt>
+                  <dd className="text-foreground">
                     {startDate || t("review.tbd")} — {endDate || t("review.tbd")}
                   </dd>
                 </div>
                 <div className="flex justify-between">
-                  <dt className="text-slate-500">{t("review.label.maxRevisions")}</dt>
-                  <dd className="text-slate-700">{maxRevisions}</dd>
+                  <dt className="text-muted-foreground">{t("review.label.maxRevisions")}</dt>
+                  <dd className="text-foreground">{maxRevisions}</dd>
                 </div>
               </dl>
             </div>
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-              <p className="text-sm text-amber-800">{t("review.publishWarning")}</p>
+            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50 p-3">
+              <p className="text-sm text-amber-800 dark:text-amber-300">{t("review.publishWarning")}</p>
             </div>
           </CardContent>
         </Card>

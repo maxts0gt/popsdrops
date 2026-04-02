@@ -5,31 +5,23 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Calendar,
-  Check,
   CheckCircle2,
   Circle,
   Clock,
-  DollarSign,
   FileUp,
-  Globe,
   ExternalLink,
   Shield,
   ThumbsDown,
   ThumbsUp,
-  Users,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { PlatformIcon } from "@/components/platform-icons";
 import {
   PLATFORM_LABELS,
   FORMAT_KEYS,
-  getMarketLabel,
   type Platform,
-  type Market,
   type ContentFormat,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
@@ -37,6 +29,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ReviewDialog } from "@/components/shared/review-dialog";
 import { ContentSubmitForm } from "@/components/shared/content-submit-form";
 import { PerformanceForm } from "@/components/shared/performance-form";
+import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,6 +82,44 @@ interface Submission {
   published_url: string | null;
 }
 
+interface BrandProfileRecord {
+  company_name: string | null;
+  description: string | null;
+  website: string | null;
+  rating: number | null;
+}
+
+interface CampaignBrandRecord {
+  full_name: string | null;
+  brand_profiles: BrandProfileRecord | BrandProfileRecord[] | null;
+}
+
+interface CampaignRecord {
+  id: string;
+  title: string;
+  status: string;
+  brand_id: string;
+  platforms: Platform[] | null;
+  markets: string[] | null;
+  brief_description: string | null;
+  brief_requirements: string | null;
+  brief_dos: string | null;
+  brief_donts: string | null;
+  content_due_date: string | null;
+  posting_window_start: string | null;
+  posting_window_end: string | null;
+  max_revisions: number | null;
+  compliance_notes: string | null;
+  profiles: CampaignBrandRecord | CampaignBrandRecord[] | null;
+}
+
+interface CampaignMemberRecord {
+  id: string;
+  accepted_rate: number | null;
+  joined_at: string;
+  campaigns: CampaignRecord | CampaignRecord[] | null;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -134,11 +165,11 @@ function splitLines(text: string | null): string[] {
 }
 
 const submissionStatusStyles: Record<string, string> = {
-  draft: "bg-slate-50 text-slate-500",
-  submitted: "bg-blue-50 text-blue-700",
-  approved: "bg-emerald-50 text-emerald-700",
-  revision_requested: "bg-amber-50 text-amber-700",
-  published: "bg-slate-900 text-white",
+  draft: "bg-muted/50 text-muted-foreground",
+  submitted: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
+  approved: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
+  revision_requested: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+  published: "bg-primary text-primary-foreground",
 };
 
 const submissionStatusKeys: Record<string, string> = {
@@ -195,15 +226,21 @@ export default function CampaignRoomPage() {
         .eq("creator_id", user.id)
         .single();
 
-      if (memberData) {
-        const c = (memberData as any).campaigns;
-        const bp =
-          c?.profiles?.brand_profiles?.[0] || c?.profiles?.brand_profiles;
+      const member = memberData as CampaignMemberRecord | null;
+      if (member) {
+        const c = getSingleRelation(member.campaigns);
+        const brandProfileOwner = getSingleRelation(c?.profiles);
+        const bp = getSingleRelation(brandProfileOwner?.brand_profiles);
+        if (!c) {
+          setLoading(false);
+          return;
+        }
+
         setRoom({
           id: c.id,
           title: c.title,
           brand_id: c.brand_id,
-          brand_name: bp?.company_name || c?.profiles?.full_name || "Brand",
+          brand_name: bp?.company_name || brandProfileOwner?.full_name || "Brand",
           brand_description: bp?.description || null,
           brand_website: bp?.website || null,
           brand_rating: bp?.rating || 0,
@@ -219,9 +256,9 @@ export default function CampaignRoomPage() {
           posting_window_end: c.posting_window_end,
           max_revisions: c.max_revisions ?? 3,
           compliance_notes: c.compliance_notes,
-          accepted_rate: memberData.accepted_rate || 0,
-          member_id: memberData.id,
-          joined_at: memberData.joined_at,
+          accepted_rate: member.accepted_rate ?? 0,
+          member_id: member.id,
+          joined_at: member.joined_at,
         });
       }
 
@@ -235,11 +272,11 @@ export default function CampaignRoomPage() {
       if (delData) setDeliverables(delData as Deliverable[]);
 
       // Fetch submissions for this member
-      if (memberData) {
+      if (member) {
         const { data: subData } = await supabase
           .from("content_submissions")
           .select("*")
-          .eq("campaign_member_id", memberData.id)
+          .eq("campaign_member_id", member.id)
           .order("created_at", { ascending: false });
 
         if (subData) setSubmissions(subData as Submission[]);
@@ -255,41 +292,41 @@ export default function CampaignRoomPage() {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
         {/* Back link */}
-        <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
+        <div className="h-4 w-24 animate-pulse rounded bg-muted" />
         {/* Header: brand initials + title + meta */}
         <div className="flex items-start gap-3">
-          <div className="size-10 animate-pulse rounded-xl bg-slate-100" />
+          <div className="size-10 animate-pulse rounded-xl bg-muted" />
           <div className="flex-1 space-y-2">
-            <div className="h-5 w-48 animate-pulse rounded bg-slate-100" />
+            <div className="h-5 w-48 animate-pulse rounded bg-muted" />
             <div className="flex gap-3">
-              <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
-              <div className="h-3 w-16 animate-pulse rounded bg-slate-50" />
-              <div className="h-3 w-12 animate-pulse rounded bg-slate-50" />
+              <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-16 animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
             </div>
           </div>
         </div>
         {/* Action banner */}
-        <div className="h-16 animate-pulse rounded-xl bg-blue-50/50" />
+        <div className="h-16 animate-pulse rounded-xl bg-blue-50/50 dark:bg-blue-950/30" />
         {/* Tab bar */}
         <div className="flex gap-1">
-          <div className="h-9 w-16 animate-pulse rounded-lg bg-slate-100" />
-          <div className="h-9 w-16 animate-pulse rounded-lg bg-slate-50" />
-          <div className="h-9 w-16 animate-pulse rounded-lg bg-slate-50" />
+          <div className="h-9 w-16 animate-pulse rounded-lg bg-muted" />
+          <div className="h-9 w-16 animate-pulse rounded-lg bg-muted/50" />
+          <div className="h-9 w-16 animate-pulse rounded-lg bg-muted/50" />
         </div>
         {/* Brief content */}
         <div className="space-y-4">
           <div className="space-y-2">
-            <div className="h-3 w-20 animate-pulse rounded bg-slate-100" />
-            <div className="h-3 w-full animate-pulse rounded bg-slate-50" />
-            <div className="h-3 w-3/4 animate-pulse rounded bg-slate-50" />
+            <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+            <div className="h-3 w-full animate-pulse rounded bg-muted/50" />
+            <div className="h-3 w-3/4 animate-pulse rounded bg-muted/50" />
           </div>
           <div className="space-y-2">
-            <div className="h-3 w-24 animate-pulse rounded bg-slate-100" />
-            <div className="flex items-start gap-3 rounded-xl bg-slate-50 p-3">
-              <div className="size-8 animate-pulse rounded-lg bg-slate-100" />
+            <div className="h-3 w-24 animate-pulse rounded bg-muted" />
+            <div className="flex items-start gap-3 rounded-xl bg-muted/50 p-3">
+              <div className="size-8 animate-pulse rounded-lg bg-muted" />
               <div className="flex-1 space-y-1.5">
-                <div className="h-3.5 w-32 animate-pulse rounded bg-slate-100" />
-                <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
+                <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
               </div>
             </div>
           </div>
@@ -303,17 +340,17 @@ export default function CampaignRoomPage() {
       <div className="mx-auto max-w-2xl p-4 lg:p-6">
         <Link
           href="/i/campaigns"
-          className="mb-6 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-900"
+          className="mb-6 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-4" />
           {tc("nav.campaigns")}
         </Link>
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-foreground">
               {t("room.notFound")}
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-muted-foreground/70">
               {t("room.notFoundDetail")}
             </p>
           </CardContent>
@@ -355,19 +392,19 @@ export default function CampaignRoomPage() {
     banner = {
       text: t("room.revisionRequested"),
       detail: revSub?.feedback || t("room.revisionDetail"),
-      style: "border-amber-200 bg-amber-50 text-amber-800",
+      style: "border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300",
     };
   } else if (!hasSubmissions) {
     banner = {
       text: dueDays !== null ? t("room.contentDueIn", { days: String(dueDays) }) : t("room.uploadContent"),
       detail: t("room.submitForReview"),
-      style: "border-blue-200 bg-blue-50 text-blue-800",
+      style: "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300",
     };
   } else if (allApproved) {
     banner = {
       text: t("room.contentApproved"),
       detail: t("room.publishPrompt"),
-      style: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      style: "border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300",
     };
   }
 
@@ -376,7 +413,7 @@ export default function CampaignRoomPage() {
       {/* Back */}
       <Link
         href="/i/campaigns"
-        className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 transition-colors hover:text-slate-900"
+        className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground transition-colors hover:text-foreground"
       >
         <ArrowLeft className="size-4" />
         {tc("nav.campaigns")}
@@ -384,14 +421,14 @@ export default function CampaignRoomPage() {
 
       {/* Header */}
       <div className="flex items-start gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-xs font-bold text-slate-600">
+        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-xs font-bold text-muted-foreground">
           {brandInitials(room.brand_name)}
         </div>
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-semibold tracking-tight text-slate-900">
+          <h1 className="text-lg font-semibold tracking-tight text-foreground">
             {room.title}
           </h1>
-          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500">
+          <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <span>{room.brand_name}</span>
             {dueDays !== null && (
               <span
@@ -407,7 +444,7 @@ export default function CampaignRoomPage() {
                   : t("status.dueIn", { days: String(dueDays) })}
               </span>
             )}
-            <span className="font-medium tabular-nums text-slate-700">
+            <span className="font-medium tabular-nums text-foreground">
               {formatCurrency(room.accepted_rate, locale)}
             </span>
           </div>
@@ -426,10 +463,10 @@ export default function CampaignRoomPage() {
 
       {/* Review CTA for completed campaigns */}
       {room.status === "completed" && (
-        <div className="mt-4 flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3">
+        <div className="mt-4 flex items-center justify-between rounded-xl border border-border bg-card px-4 py-3">
           <div>
-            <p className="text-sm font-medium text-slate-900">{t("room.completed")}</p>
-            <p className="mt-0.5 text-xs text-slate-500">{t("room.completedDetail", { name: room.brand_name })}</p>
+            <p className="text-sm font-medium text-foreground">{t("room.completed")}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground">{t("room.completedDetail", { name: room.brand_name })}</p>
           </div>
           <ReviewDialog
             campaignId={room.id}
@@ -459,10 +496,10 @@ export default function CampaignRoomPage() {
           <TabsContent value="brief" className="mt-4 space-y-6">
             {room.brief_description && (
               <div>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
                   {t("brief.label")}
                 </h3>
-                <p className="text-sm leading-relaxed text-slate-600">
+                <p className="text-sm leading-relaxed text-muted-foreground">
                   {room.brief_description}
                 </p>
               </div>
@@ -471,7 +508,7 @@ export default function CampaignRoomPage() {
             {/* Deliverables */}
             {deliverables.length > 0 && (
               <div>
-                <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
                   {t("brief.deliverables")}
                 </h3>
                 <div className="space-y-2">
@@ -480,17 +517,17 @@ export default function CampaignRoomPage() {
                     return (
                       <div
                         key={d.id}
-                        className="flex items-start gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-900/[0.04]"
+                        className="flex items-start gap-3 rounded-xl bg-muted/50 p-3 ring-1 ring-border/50"
                       >
-                        <div className="flex size-8 items-center justify-center rounded-lg bg-white text-slate-500 shadow-sm">
+                        <div className="flex size-8 items-center justify-center rounded-lg bg-card text-muted-foreground shadow-sm">
                           <Icon className="size-4" />
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-slate-900">
+                          <p className="text-sm font-medium text-foreground">
                             {d.quantity}×{" "}
                             {FORMAT_KEYS[d.content_type as ContentFormat] ? tGlobal("ui.common", FORMAT_KEYS[d.content_type as ContentFormat]) : d.content_type}
                           </p>
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-muted-foreground">
                             {PLATFORM_LABELS[d.platform]}
                             {d.notes && ` · ${d.notes}`}
                           </p>
@@ -505,16 +542,16 @@ export default function CampaignRoomPage() {
             {/* Requirements */}
             {room.brief_requirements && (
               <div>
-                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+                <h3 className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
                   {t("brief.requirements")}
                 </h3>
                 <ul className="space-y-1.5">
                   {splitLines(room.brief_requirements).map((req, i) => (
                     <li
                       key={i}
-                      className="flex items-start gap-2 text-sm text-slate-600"
+                      className="flex items-start gap-2 text-sm text-muted-foreground"
                     >
-                      <span className="mt-2 size-1 shrink-0 rounded-full bg-slate-400" />
+                      <span className="mt-2 size-1 shrink-0 rounded-full bg-muted-foreground/50" />
                       {req}
                     </li>
                   ))}
@@ -526,8 +563,8 @@ export default function CampaignRoomPage() {
             {(room.brief_dos || room.brief_donts) && (
               <div className="grid gap-4 sm:grid-cols-2">
                 {room.brief_dos && (
-                  <div className="rounded-xl bg-emerald-50/50 p-4 ring-1 ring-emerald-500/10">
-                    <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                  <div className="rounded-xl border border-border p-4">
+                    <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
                       <ThumbsUp className="size-3.5" />
                       {t("brief.dos")}
                     </div>
@@ -535,7 +572,7 @@ export default function CampaignRoomPage() {
                       {splitLines(room.brief_dos).map((item, i) => (
                         <li
                           key={i}
-                          className="text-xs leading-relaxed text-emerald-800"
+                          className="text-xs leading-relaxed text-muted-foreground"
                         >
                           {item}
                         </li>
@@ -544,8 +581,8 @@ export default function CampaignRoomPage() {
                   </div>
                 )}
                 {room.brief_donts && (
-                  <div className="rounded-xl bg-red-50/50 p-4 ring-1 ring-red-500/10">
-                    <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-red-700">
+                  <div className="rounded-xl border border-border p-4">
+                    <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-foreground">
                       <ThumbsDown className="size-3.5" />
                       {t("brief.donts")}
                     </div>
@@ -553,7 +590,7 @@ export default function CampaignRoomPage() {
                       {splitLines(room.brief_donts).map((item, i) => (
                         <li
                           key={i}
-                          className="text-xs leading-relaxed text-red-800"
+                          className="text-xs leading-relaxed text-muted-foreground"
                         >
                           {item}
                         </li>
@@ -566,7 +603,7 @@ export default function CampaignRoomPage() {
 
             {/* Timeline */}
             <div>
-              <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              <h3 className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70">
                 {t("brief.timeline")}
               </h3>
               <div className="space-y-2">
@@ -584,8 +621,8 @@ export default function CampaignRoomPage() {
                       key={i}
                       className="flex items-center justify-between text-sm"
                     >
-                      <span className="text-slate-500">{item.label}</span>
-                      <span className="font-medium tabular-nums text-slate-900">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-medium tabular-nums text-foreground">
                         {formatDate(item.date, locale)}
                       </span>
                     </div>
@@ -594,15 +631,15 @@ export default function CampaignRoomPage() {
             </div>
 
             {/* Usage rights */}
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-slate-600">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
               <span>{t("brief.maxRevisions", { count: String(room.max_revisions) })}</span>
             </div>
 
             {/* Compliance */}
             {room.compliance_notes && (
-              <div className="flex items-start gap-2 rounded-xl bg-amber-50/50 p-3 ring-1 ring-amber-500/10">
+              <div className="flex items-start gap-2 rounded-xl bg-amber-50/50 dark:bg-amber-950/30 p-3 ring-1 ring-amber-500/10">
                 <Shield className="mt-0.5 size-4 shrink-0 text-amber-600" />
-                <p className="text-xs leading-relaxed text-amber-800">
+                <p className="text-xs leading-relaxed text-amber-800 dark:text-amber-300">
                   {room.compliance_notes}
                 </p>
               </div>
@@ -616,13 +653,13 @@ export default function CampaignRoomPage() {
                 <div
                   key={i}
                   className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm ${
-                    t.done ? "text-slate-400" : "text-slate-700"
+                    t.done ? "text-muted-foreground/70" : "text-foreground"
                   }`}
                 >
                   {t.done ? (
                     <CheckCircle2 className="size-5 shrink-0 text-emerald-500" />
                   ) : (
-                    <Circle className="size-5 shrink-0 text-slate-300" />
+                    <Circle className="size-5 shrink-0 text-muted-foreground/50" />
                   )}
                   <span className={t.done ? "line-through" : ""}>
                     {t.label}
@@ -630,7 +667,7 @@ export default function CampaignRoomPage() {
                 </div>
               ))}
             </div>
-            <div className="mt-4 text-xs text-slate-400">
+            <div className="mt-4 text-xs text-muted-foreground/70">
               {t("task.progress", { done: String(tasks.filter((tk) => tk.done).length), total: String(tasks.length) })}
             </div>
           </TabsContent>
@@ -649,8 +686,8 @@ export default function CampaignRoomPage() {
                   <CardContent>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <FileUp className="size-4 text-slate-400" />
-                        <span className="text-sm font-medium text-slate-900">
+                        <FileUp className="size-4 text-muted-foreground/70" />
+                        <span className="text-sm font-medium text-foreground">
                           {s.platform
                             ? PLATFORM_LABELS[s.platform]
                             : t("label.content")}{" "}
@@ -664,15 +701,15 @@ export default function CampaignRoomPage() {
                       </span>
                     </div>
                     {s.submitted_at && (
-                      <p className="mt-1 text-xs text-slate-400">
+                      <p className="mt-1 text-xs text-muted-foreground/70">
                         {t("room.submitted", { date: formatDate(s.submitted_at, locale) })}
                       </p>
                     )}
                     {s.caption && (
-                      <p className="mt-2 text-xs text-slate-500">{s.caption}</p>
+                      <p className="mt-2 text-xs text-muted-foreground">{s.caption}</p>
                     )}
                     {s.status === "revision_requested" && s.feedback && (
-                      <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 ring-1 ring-amber-500/10">
+                      <div className="mt-3 rounded-lg bg-amber-50 dark:bg-amber-950/50 px-3 py-2 text-xs text-amber-700 ring-1 ring-amber-500/10">
                         <span className="font-medium">{t("room.brandFeedback")} </span>
                         {s.feedback}
                       </div>
@@ -687,7 +724,7 @@ export default function CampaignRoomPage() {
                         href={s.published_url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-slate-700 hover:text-slate-900"
+                        className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-foreground hover:text-foreground"
                       >
                         <ExternalLink className="size-3" />
                         {t("room.viewPublished")}
@@ -701,7 +738,7 @@ export default function CampaignRoomPage() {
             {/* Content submission form */}
             <Card>
               <CardContent>
-                <h3 className="mb-4 text-sm font-semibold text-slate-900">
+                <h3 className="mb-4 text-sm font-semibold text-foreground">
                   {hasRevisionNeeded ? t("submit.titleRevised") : t("submit.title")}
                 </h3>
                 <ContentSubmitForm
@@ -716,10 +753,10 @@ export default function CampaignRoomPage() {
             {submissions.some((s) => s.status === "published") && (
               <Card>
                 <CardContent>
-                  <h3 className="mb-4 text-sm font-semibold text-slate-900">
+                  <h3 className="mb-4 text-sm font-semibold text-foreground">
                     {t("submit.reportPerformance")}
                   </h3>
-                  <p className="mb-4 text-xs text-slate-500">
+                  <p className="mb-4 text-xs text-muted-foreground">
                     {t("submit.reportPerformanceDetail")}
                   </p>
                   {submissions
@@ -737,7 +774,7 @@ export default function CampaignRoomPage() {
             )}
 
             {submissions.length === 0 && (
-              <p className="text-center text-xs text-slate-400">
+              <p className="text-center text-xs text-muted-foreground/70">
                 {t("room.noSubmissions")}
               </p>
             )}

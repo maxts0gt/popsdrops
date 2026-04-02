@@ -1,4 +1,6 @@
+import Image from "next/image";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
   ExternalLink,
@@ -148,10 +150,10 @@ const tierLabels: Record<CreatorTier, string> = {
 };
 
 const tierStyles: Record<CreatorTier, string> = {
-  new: "bg-slate-50 text-slate-600 ring-1 ring-slate-200",
+  new: "bg-muted/50 text-muted-foreground ring-1 ring-border",
   rising: "bg-amber-50 text-amber-700 ring-1 ring-amber-200/60",
-  established: "bg-slate-900 text-white",
-  top: "bg-slate-900 text-white ring-2 ring-amber-400/40",
+  established: "bg-foreground text-background",
+  top: "bg-foreground text-background ring-2 ring-amber-400/40",
 };
 
 function platformUrl(platform: Platform, handle: string): string {
@@ -253,7 +255,7 @@ export default async function CreatorMediaKitPage({
   const tier = (creator.tier || "new") as CreatorTier;
 
   return (
-    <div className="min-h-svh bg-white">
+    <div className="min-h-svh bg-card">
       {/* ---- Hero strip ---- */}
       <div className="h-32 bg-slate-950">
         <div className="mx-auto h-full max-w-xl px-4 sm:px-6" />
@@ -262,12 +264,15 @@ export default async function CreatorMediaKitPage({
       <div className="mx-auto max-w-xl px-4 sm:px-6">
         {/* ---- Avatar (overlapping hero) ---- */}
         <div className="-mt-16 mb-4 flex justify-center">
-          <div className="flex size-32 items-center justify-center rounded-full bg-slate-900 text-3xl font-semibold tracking-tight text-white ring-4 ring-white shadow-xl">
+          <div className="relative flex size-32 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-3xl font-semibold tracking-tight text-white ring-4 ring-card shadow-xl">
             {avatarUrl ? (
-              <img
+              <Image
                 src={avatarUrl}
                 alt={name}
-                className="size-full rounded-full object-cover"
+                fill
+                unoptimized
+                sizes="128px"
+                className="object-cover"
               />
             ) : (
               initials
@@ -277,7 +282,7 @@ export default async function CreatorMediaKitPage({
 
         {/* ---- Identity ---- */}
         <header className="text-center">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             {name}
           </h1>
 
@@ -293,7 +298,7 @@ export default async function CreatorMediaKitPage({
           </div>
 
           {/* Location + languages */}
-          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-slate-500">
+          <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
             {creator.primary_market && (
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="size-3.5" />
@@ -310,7 +315,7 @@ export default async function CreatorMediaKitPage({
 
           {/* Bio */}
           {creator.bio && (
-            <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-slate-500">
+            <p className="mx-auto mt-5 max-w-md text-sm leading-relaxed text-muted-foreground">
               {creator.bio}
             </p>
           )}
@@ -321,7 +326,7 @@ export default async function CreatorMediaKitPage({
               {niches.map((n) => (
                 <span
                   key={n}
-                  className="rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/[0.06]"
+                  className="rounded-full bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground ring-1 ring-border"
                 >
                   {NICHE_LABELS[n] || n}
                 </span>
@@ -380,25 +385,24 @@ export default async function CreatorMediaKitPage({
             <SectionTitle>Platforms</SectionTitle>
             <div className="space-y-2">
               {platforms.map((p) => {
-                const Icon = PlatformIcon[p.platform];
                 return (
                   <div
                     key={p.platform}
-                    className="group flex items-center gap-4 rounded-2xl bg-white p-4 ring-1 ring-slate-900/[0.04] transition-shadow hover:shadow-md"
+                    className="group flex items-center gap-4 rounded-2xl bg-card p-4 ring-1 ring-border/50 transition-shadow hover:shadow-md"
                   >
                     <PlatformBadge platform={p.platform} />
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-slate-900">
+                        <span className="text-sm font-semibold text-foreground">
                           {PLATFORM_LABELS[p.platform]}
                         </span>
                         {p.verified && (
                           <BadgeCheck className="size-4 text-blue-500" />
                         )}
                       </div>
-                      <div className="mt-0.5 flex items-center gap-3 text-xs text-slate-400">
-                        <span className="font-medium text-slate-600">
+                      <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground/70">
+                        <span className="font-medium text-muted-foreground">
                           {formatFollowers(p.followers)} followers
                         </span>
                         <span className="truncate">{p.handle}</span>
@@ -409,7 +413,7 @@ export default async function CreatorMediaKitPage({
                       href={p.url || platformUrl(p.platform, p.handle)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-xl p-2.5 text-slate-300 transition-colors group-hover:bg-slate-50 group-hover:text-slate-500"
+                      className="rounded-xl p-2.5 text-muted-foreground/70 transition-colors group-hover:bg-muted/50 group-hover:text-muted-foreground"
                     >
                       <ExternalLink className="size-4" />
                     </a>
@@ -424,28 +428,28 @@ export default async function CreatorMediaKitPage({
         {rateEntries.length > 0 && (
           <section className="mt-10">
             <SectionTitle>Rate Card</SectionTitle>
-            <div className="overflow-hidden rounded-2xl ring-1 ring-slate-900/[0.04]">
+            <div className="overflow-hidden rounded-2xl ring-1 ring-border/50">
               {rateEntries.map((r, i) => {
                 const Icon = PlatformIcon[r.platform];
                 return (
                   <div
                     key={`${r.platform}-${r.format}`}
                     className={`flex items-center justify-between px-4 py-3.5 ${
-                      i > 0 ? "border-t border-slate-100" : ""
+                      i > 0 ? "border-t border-border/50" : ""
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex size-7 items-center justify-center rounded-lg bg-slate-50 text-slate-600">
+                      <div className="flex size-7 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
                         <Icon className="size-3.5" />
                       </div>
                       <div>
-                        <span className="text-sm text-slate-700">{r.format}</span>
-                        <span className="ms-1.5 text-xs text-slate-400">
+                        <span className="text-sm text-foreground">{r.format}</span>
+                        <span className="ms-1.5 text-xs text-muted-foreground/70">
                           {PLATFORM_LABELS[r.platform]}
                         </span>
                       </div>
                     </div>
-                    <span className="text-sm font-semibold tabular-nums text-slate-900">
+                    <span className="text-sm font-semibold tabular-nums text-foreground">
                       {formatRate(r.rate, creator.rate_currency || "USD")}
                     </span>
                   </div>
@@ -458,19 +462,19 @@ export default async function CreatorMediaKitPage({
         {/* ---- Track Record ---- */}
         {(creator.campaigns_completed || 0) > 0 && (
           <section className="mt-10">
-            <div className="flex items-center justify-between rounded-2xl p-5 ring-1 ring-slate-900/[0.04]">
+            <div className="flex items-center justify-between rounded-2xl p-5 ring-1 ring-border/50">
               <div>
-                <p className="text-sm font-medium text-slate-900">
+                <p className="text-sm font-medium text-foreground">
                   {creator.campaigns_completed} campaigns completed
                 </p>
-                <p className="mt-0.5 text-xs text-slate-400">on PopsDrops</p>
+                <p className="mt-0.5 text-xs text-muted-foreground/70">on PopsDrops</p>
               </div>
               <div className="flex items-center gap-1.5">
                 <Star className="size-4 text-amber-500" />
-                <span className="text-base font-semibold tabular-nums text-slate-900">
+                <span className="text-base font-semibold tabular-nums text-foreground">
                   {creator.rating?.toFixed(1)}
                 </span>
-                <span className="text-xs text-slate-400">
+                <span className="text-xs text-muted-foreground/70">
                   ({creator.review_count})
                 </span>
               </div>
@@ -480,26 +484,26 @@ export default async function CreatorMediaKitPage({
 
         {/* ---- CTA ---- */}
         <section className="mt-10">
-          <a
+          <Link
             href={`/request-invite?type=brand&creator=${creator.slug}`}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-4 text-sm font-semibold text-white shadow-sm transition-all hover:bg-slate-800 active:translate-y-px"
+            className="flex w-full items-center justify-center gap-2 rounded-2xl bg-foreground px-6 py-4 text-sm font-semibold text-background shadow-sm transition-all hover:bg-foreground/90 active:translate-y-px"
           >
             Work with {name} on PopsDrops
-          </a>
+          </Link>
         </section>
 
         {/* ---- Footer ---- */}
-        <footer className="mt-12 border-t border-slate-100 py-6 text-center">
-          <a
+        <footer className="mt-12 border-t border-border/50 py-6 text-center">
+          <Link
             href="/"
-            className="inline-flex items-center gap-2 text-xs text-slate-400 transition-colors hover:text-slate-600"
+            className="inline-flex items-center gap-2 text-xs text-muted-foreground/70 transition-colors hover:text-muted-foreground"
           >
-            <span className="text-sm font-bold tracking-tight text-slate-900">
+            <span className="text-sm font-bold tracking-tight text-foreground">
               PopsDrops
             </span>
-            <span className="text-slate-300">|</span>
+            <span className="text-muted-foreground/70">|</span>
             <span>Creator Campaigns Without Borders</span>
-          </a>
+          </Link>
         </footer>
       </div>
 
@@ -530,7 +534,7 @@ export default async function CreatorMediaKitPage({
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-400">
+    <h2 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.15em] text-muted-foreground/70">
       {children}
     </h2>
   );
@@ -546,10 +550,10 @@ function StatCard({
   label: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-1.5 rounded-2xl p-4 ring-1 ring-slate-900/[0.04]">
-      <div className="text-slate-400">{icon}</div>
-      <span className="text-xl font-semibold tabular-nums text-slate-900">{value}</span>
-      <span className="text-[11px] text-slate-400">{label}</span>
+    <div className="flex flex-col items-center gap-1.5 rounded-2xl p-4 ring-1 ring-border/50">
+      <div className="text-muted-foreground/70">{icon}</div>
+      <span className="text-xl font-semibold tabular-nums text-foreground">{value}</span>
+      <span className="text-[11px] text-muted-foreground/70">{label}</span>
     </div>
   );
 }

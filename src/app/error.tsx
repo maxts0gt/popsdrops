@@ -17,18 +17,18 @@ export default function GlobalError({
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="mx-auto max-w-sm text-center">
-        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-slate-100">
-          <AlertTriangle className="size-6 text-slate-500" />
+        <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-full bg-muted">
+          <AlertTriangle className="size-6 text-muted-foreground" />
         </div>
-        <h2 className="mb-2 text-lg font-semibold text-slate-900">
+        <h2 className="mb-2 text-lg font-semibold text-foreground">
           Something went wrong
         </h2>
-        <p className="mb-6 text-sm text-slate-500">
+        <p className="mb-6 text-sm text-muted-foreground">
           An unexpected error occurred. Please try again.
         </p>
         <button
           onClick={reset}
-          className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+          className="inline-flex items-center gap-2 rounded-lg bg-foreground px-4 py-2.5 text-sm font-medium text-background hover:bg-foreground/90"
         >
           <RotateCcw className="size-4" />
           Try again

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
+  Check,
+  Copy,
   DollarSign,
   Eye,
-  Heart,
+  LinkIcon,
   FileText,
   Users,
   Star,
@@ -45,6 +47,10 @@ import {
   counterOffer,
 } from "@/app/actions/applications";
 import { approveContent, requestRevision } from "@/app/actions/content";
+import {
+  updateCampaignDeadline,
+  sendCampaignAnnouncement,
+} from "@/app/actions/campaigns";
 import { toast } from "sonner";
 import type { CampaignStatus, Platform, Niche } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
@@ -185,7 +191,7 @@ function getPrimaryPlatform(cp: MemberRow["creator_profiles"]): string | null {
 }
 
 const submissionStatusStyles: Record<string, string> = {
-  draft: "bg-slate-100 text-slate-700",
+  draft: "bg-muted text-foreground",
   submitted: "bg-amber-100 text-amber-700",
   approved: "bg-emerald-100 text-emerald-700",
   revision_requested: "bg-red-100 text-red-700",
@@ -201,7 +207,7 @@ const submissionStatusKeys: Record<string, string> = {
 };
 
 const paymentStatusStyles: Record<string, string> = {
-  pending: "bg-slate-100 text-slate-700",
+  pending: "bg-muted text-foreground",
   invoiced: "bg-amber-100 text-amber-700",
   paid: "bg-emerald-100 text-emerald-700",
   overdue: "bg-red-100 text-red-700",
@@ -213,6 +219,84 @@ const paymentStatusKeys: Record<string, string> = {
   paid: "status.completed",
   overdue: "status.rejected",
 };
+
+// ---------------------------------------------------------------------------
+// Invite Link Card
+// ---------------------------------------------------------------------------
+
+function InviteLinkCard({
+  campaignId,
+  t,
+}: {
+  campaignId: string;
+  t: (key: string, vars?: Record<string, string>) => string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const inviteUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/apply/${campaignId}`
+      : `/apply/${campaignId}`;
+
+  const handleCopy = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(inviteUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const input = document.createElement("input");
+      input.value = inviteUrl;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      document.body.removeChild(input);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  }, [inviteUrl]);
+
+  return (
+    <div className="mb-6 rounded-xl border border-border bg-card p-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+        <LinkIcon className="size-4" />
+        {t("invite.title")}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {t("invite.description")}
+      </p>
+      <div className="mt-3 flex items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <label className="sr-only">{t("invite.linkLabel")}</label>
+          <input
+            type="text"
+            readOnly
+            value={inviteUrl}
+            className="w-full truncate rounded-lg border border-border bg-muted/50 px-3 py-2 text-xs text-muted-foreground focus:outline-none"
+            onClick={(e) => (e.target as HTMLInputElement).select()}
+          />
+        </div>
+        <Button
+          variant={copied ? "default" : "outline"}
+          size="sm"
+          onClick={handleCopy}
+          className="shrink-0 gap-1.5"
+        >
+          {copied ? (
+            <>
+              <Check className="size-3.5" />
+              {t("invite.copied")}
+            </>
+          ) : (
+            <>
+              <Copy className="size-3.5" />
+              {t("invite.copyLink")}
+            </>
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -230,13 +314,16 @@ export default function CampaignRoomPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messageInput, setMessageInput] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [counterDialog, setCounterDialog] = useState<string | null>(null);
   const [counterRate, setCounterRate] = useState("");
   const [counterMessage, setCounterMessage] = useState("");
   const [revisionDialog, setRevisionDialog] = useState<string | null>(null);
   const [revisionFeedback, setRevisionFeedback] = useState("");
+  const [showAnnouncementDialog, setShowAnnouncementDialog] = useState(false);
+  const [announcementText, setAnnouncementText] = useState("");
+  const [showDeadlineDialog, setShowDeadlineDialog] = useState(false);
+  const [newDeadline, setNewDeadline] = useState("");
 
   useEffect(() => {
     async function load() {
@@ -269,7 +356,7 @@ export default function CampaignRoomPage() {
       if (apps) {
         // Fetch creator_profiles for all applicant creator IDs
         const appCreatorIds = apps.map((a: Record<string, unknown>) => a.creator_id as string).filter(Boolean);
-        let cpMap = new Map<string, Record<string, unknown>>();
+        const cpMap = new Map<string, Record<string, unknown>>();
         if (appCreatorIds.length > 0) {
           const { data: cps } = await supabase
             .from("creator_profiles")
@@ -301,7 +388,7 @@ export default function CampaignRoomPage() {
       if (mems) {
         // Fetch creator_profiles for all member creator IDs
         const memCreatorIds = mems.map((m: Record<string, unknown>) => m.creator_id as string).filter(Boolean);
-        let memCpMap = new Map<string, Record<string, unknown>>();
+        const memCpMap = new Map<string, Record<string, unknown>>();
         if (memCreatorIds.length > 0) {
           const { data: cps } = await supabase
             .from("creator_profiles")
@@ -433,45 +520,45 @@ export default function CampaignRoomPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* Header skeleton */}
         <div className="space-y-2">
-          <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
-          <div className="h-7 w-64 animate-pulse rounded-lg bg-slate-100" />
-          <div className="h-4 w-80 animate-pulse rounded bg-slate-50" />
+          <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          <div className="h-7 w-64 animate-pulse rounded-lg bg-muted" />
+          <div className="h-4 w-80 animate-pulse rounded bg-muted/50" />
         </div>
         {/* KPI cards skeleton */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="rounded-xl border border-slate-200/60 bg-white p-5">
+            <div key={i} className="rounded-xl border border-border/60 bg-card p-5">
               <div className="flex items-center gap-3">
-                <div className="size-9 animate-pulse rounded-lg bg-slate-100" />
+                <div className="size-9 animate-pulse rounded-lg bg-muted" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-5 w-16 animate-pulse rounded bg-slate-100" />
-                  <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
+                  <div className="h-5 w-16 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
                 </div>
               </div>
             </div>
           ))}
         </div>
         {/* Tabs skeleton */}
-        <div className="flex gap-6 border-b border-slate-200 pb-3">
+        <div className="flex gap-6 border-b border-border pb-3">
           {[80, 100, 72, 88].map((w, i) => (
-            <div key={i} className="h-4 animate-pulse rounded bg-slate-100" style={{ width: w }} />
+            <div key={i} className="h-4 animate-pulse rounded bg-muted" style={{ width: w }} />
           ))}
         </div>
         {/* Content skeleton */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-slate-200/60 bg-white p-6">
+          <div className="rounded-xl border border-border/60 bg-card p-6">
             <div className="space-y-3">
-              <div className="h-5 w-32 animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-full animate-pulse rounded bg-slate-50" />
-              <div className="h-3 w-3/4 animate-pulse rounded bg-slate-50" />
-              <div className="h-3 w-5/6 animate-pulse rounded bg-slate-50" />
+              <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-full animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-3/4 animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-5/6 animate-pulse rounded bg-muted/50" />
             </div>
           </div>
-          <div className="rounded-xl border border-slate-200/60 bg-white p-6">
+          <div className="rounded-xl border border-border/60 bg-card p-6">
             <div className="space-y-3">
-              <div className="h-5 w-24 animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-2/3 animate-pulse rounded bg-slate-50" />
-              <div className="h-3 w-1/2 animate-pulse rounded bg-slate-50" />
+              <div className="h-5 w-24 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-2/3 animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-1/2 animate-pulse rounded bg-muted/50" />
             </div>
           </div>
         </div>
@@ -490,59 +577,62 @@ export default function CampaignRoomPage() {
       <div className="mb-6">
         <Link
           href="/b/campaigns"
-          className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" /> {t("back")}
         </Link>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-slate-900">{campaign.title}</h1>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground">{campaign.title}</h1>
               <span
-                className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                  CAMPAIGN_STATUS_COLORS[campaign.status as CampaignStatus] || "bg-slate-100 text-slate-700"
+                className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                  CAMPAIGN_STATUS_COLORS[campaign.status as CampaignStatus] || "bg-muted text-foreground"
                 }`}
               >
                 {tc(`status.${campaign.status === "in_progress" ? "inProgress" : campaign.status}`)}
               </span>
             </div>
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-500">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
               {campaign.platforms?.map((p) => (
-                <span key={p} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">
+                <span key={p} className="rounded bg-muted px-1.5 py-0.5 text-xs">
                   {PLATFORM_LABELS[p as Platform] || p}
                 </span>
               ))}
               {campaign.markets?.length > 0 && (
                 <>
-                  <span className="text-slate-300">|</span>
+                  <span className="text-muted-foreground/50">|</span>
                   <span>
                     {campaign.markets.map((m) => getMarketLabel(m, locale)).join(", ")}
                   </span>
                 </>
               )}
-              <span className="text-slate-300">|</span>
+              <span className="text-muted-foreground/50">|</span>
               <span>{formatDate(campaign.posting_window_start, locale)} — {formatDate(campaign.posting_window_end, locale)}</span>
             </div>
           </div>
           <Link
             href={`/b/campaigns/${campaign.id}/report`}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/50"
           >
             <BarChart3 className="size-4" /> {t("action.viewReport")}
           </Link>
         </div>
       </div>
 
+      {/* Invite Link */}
+      <InviteLinkCard campaignId={campaign.id} t={t} />
+
       {/* Phase KPI Cards */}
       <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
           <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <DollarSign className="size-4" />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">{formatCurrency(spent, locale)}</p>
-              <p className="text-xs text-slate-500">
+              <p className="text-lg font-bold text-foreground">{formatCurrency(spent, locale)}</p>
+              <p className="text-xs text-muted-foreground">
                 {t("kpi.budget", { total: formatCurrency(budget, locale) })}
               </p>
             </div>
@@ -550,34 +640,34 @@ export default function CampaignRoomPage() {
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Users className="size-4" />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">{members.length}</p>
-              <p className="text-xs text-slate-500">{tc("metric.creators")}</p>
+              <p className="text-lg font-bold text-foreground">{members.length}</p>
+              <p className="text-xs text-muted-foreground">{tc("metric.creators")}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <FileText className="size-4" />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">{approvedContent}/{totalContent}</p>
-              <p className="text-xs text-slate-500">{t("kpi.pipeline")}</p>
+              <p className="text-lg font-bold text-foreground">{approvedContent}/{totalContent}</p>
+              <p className="text-xs text-muted-foreground">{t("kpi.pipeline")}</p>
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground">
               <Send className="size-4" />
             </div>
             <div>
-              <p className="text-lg font-bold text-slate-900">{pendingApps.length}</p>
-              <p className="text-xs text-slate-500">{t("applicants.title")}</p>
+              <p className="text-lg font-bold text-foreground">{pendingApps.length}</p>
+              <p className="text-xs text-muted-foreground">{t("applicants.title")}</p>
             </div>
           </CardContent>
         </Card>
@@ -606,30 +696,30 @@ export default function CampaignRoomPage() {
                 <CardHeader>
                   <CardTitle>{t("section.brief")}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 overflow-hidden">
                   {campaign.brief_description && (
-                    <p className="text-sm leading-relaxed text-slate-700">{campaign.brief_description}</p>
+                    <p className="break-words text-sm leading-relaxed text-foreground">{campaign.brief_description}</p>
                   )}
                   {campaign.brief_requirements && (
                     <div>
-                      <p className="mb-1 text-xs font-medium uppercase text-slate-400">
+                      <p className="mb-1 text-xs font-medium uppercase text-muted-foreground/70">
                         {t("section.requirements")}
                       </p>
-                      <p className="text-sm text-slate-600">{campaign.brief_requirements}</p>
+                      <p className="break-words text-sm text-muted-foreground">{campaign.brief_requirements}</p>
                     </div>
                   )}
                   {(dosItems.length > 0 || dontsItems.length > 0) && (
                     <div className="grid gap-4 sm:grid-cols-2">
                       {dosItems.length > 0 && (
                         <div>
-                          <p className="mb-2 text-xs font-medium uppercase text-slate-400">
+                          <p className="mb-2 text-xs font-medium uppercase text-muted-foreground/70">
                             {t("section.dos")}
                           </p>
                           <ul className="space-y-1">
                             {dosItems.map((d, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                                 <CheckCircle className="mt-0.5 size-3.5 shrink-0 text-emerald-500" />
-                                {d}
+                                <span className="break-words min-w-0">{d}</span>
                               </li>
                             ))}
                           </ul>
@@ -637,14 +727,14 @@ export default function CampaignRoomPage() {
                       )}
                       {dontsItems.length > 0 && (
                         <div>
-                          <p className="mb-2 text-xs font-medium uppercase text-slate-400">
+                          <p className="mb-2 text-xs font-medium uppercase text-muted-foreground/70">
                             {t("section.donts")}
                           </p>
                           <ul className="space-y-1">
                             {dontsItems.map((d, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-slate-600">
+                              <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
                                 <XCircle className="mt-0.5 size-3.5 shrink-0 text-red-400" />
-                                {d}
+                                <span className="break-words min-w-0">{d}</span>
                               </li>
                             ))}
                           </ul>
@@ -663,27 +753,27 @@ export default function CampaignRoomPage() {
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">{t("label.start")}</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-muted-foreground">{t("label.start")}</span>
+                    <span className="font-medium text-foreground">
                       {formatDate(campaign.posting_window_start, locale)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">{t("label.contentDeadline")}</span>
+                    <span className="text-muted-foreground">{t("label.contentDeadline")}</span>
                     <span className="font-medium text-amber-600">
                       {formatDate(campaign.content_due_date, locale)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">{t("label.end")}</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-muted-foreground">{t("label.end")}</span>
+                    <span className="font-medium text-foreground">
                       {formatDate(campaign.posting_window_end, locale)}
                     </span>
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">{t("label.maxRevisions")}</span>
-                    <span className="font-medium text-slate-900">
+                    <span className="text-muted-foreground">{t("label.maxRevisions")}</span>
+                    <span className="font-medium text-foreground">
                       {campaign.max_revisions ?? 2}
                     </span>
                   </div>
@@ -695,15 +785,113 @@ export default function CampaignRoomPage() {
                   <CardTitle>{t("section.quickActions")}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start">
-                    <Users className="size-4" /> {t("action.inviteCreators")}
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => setShowAnnouncementDialog((v) => !v)}
+                  >
                     <MessageCircle className="size-4" /> {t("action.sendAnnouncement")}
                   </Button>
-                  <Button variant="outline" className="w-full justify-start">
+                  {showAnnouncementDialog && (
+                    <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                      <Label className="text-xs">{t("action.sendAnnouncement")}</Label>
+                      <Textarea
+                        value={announcementText}
+                        onChange={(e) => setAnnouncementText(e.target.value)}
+                        placeholder={t("chat.placeholder")}
+                        className="min-h-[80px] text-sm"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowAnnouncementDialog(false);
+                            setAnnouncementText("");
+                          }}
+                        >
+                          {tc("action.cancel")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={!announcementText.trim() || actionLoading === "announcement"}
+                          onClick={async () => {
+                            setActionLoading("announcement");
+                            try {
+                              await sendCampaignAnnouncement(campaignId, announcementText);
+                              toast.success(t("announcement.sent"));
+                              setAnnouncementText("");
+                              setShowAnnouncementDialog(false);
+                            } catch {
+                              toast.error(tc("error.generic"));
+                            } finally {
+                              setActionLoading(null);
+                            }
+                          }}
+                        >
+                          <Send className="size-3.5" />
+                          {actionLoading === "announcement" ? t("announcement.sending") : tc("action.submit")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={() => {
+                      setShowDeadlineDialog((v) => !v);
+                      if (!newDeadline && campaign?.application_deadline) {
+                        setNewDeadline(campaign.application_deadline.split("T")[0]);
+                      }
+                    }}
+                  >
                     <Clock className="size-4" /> {t("action.extendDeadline")}
                   </Button>
+                  {showDeadlineDialog && (
+                    <div className="space-y-2 rounded-lg border border-border bg-muted/30 p-3">
+                      <Label className="text-xs">{t("action.extendDeadline")}</Label>
+                      <Input
+                        type="date"
+                        value={newDeadline}
+                        onChange={(e) => setNewDeadline(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="text-sm"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setShowDeadlineDialog(false);
+                            setNewDeadline("");
+                          }}
+                        >
+                          {tc("action.cancel")}
+                        </Button>
+                        <Button
+                          size="sm"
+                          disabled={!newDeadline || actionLoading === "deadline"}
+                          onClick={async () => {
+                            setActionLoading("deadline");
+                            try {
+                              const updatedDeadline = await updateCampaignDeadline(campaignId, newDeadline);
+                              toast.success(t("deadline.updated"));
+                              setCampaign((prev) =>
+                                prev ? { ...prev, application_deadline: updatedDeadline } : prev
+                              );
+                              setShowDeadlineDialog(false);
+                            } catch {
+                              toast.error(tc("error.generic"));
+                            } finally {
+                              setActionLoading(null);
+                            }
+                          }}
+                        >
+                          {actionLoading === "deadline" ? t("deadline.updating") : tc("action.save")}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
@@ -713,9 +901,9 @@ export default function CampaignRoomPage() {
         {/* Applicants Tab */}
         <TabsContent value="applicants">
           {applications.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center">
-              <Users className="mx-auto mb-3 size-8 text-slate-300" />
-              <p className="text-sm text-slate-500">{t("empty.noApplicants")}</p>
+            <div className="rounded-lg border border-dashed border-border py-12 text-center">
+              <Users className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">{t("empty.noApplicants")}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -735,14 +923,14 @@ export default function CampaignRoomPage() {
                           </Avatar>
                           <div>
                             <div className="flex items-center gap-2">
-                              <h3 className="font-medium text-slate-900">{name}</h3>
+                              <h3 className="font-medium text-foreground">{name}</h3>
                               {cp && cp.rating > 0 && (
                                 <div className="flex items-center gap-1 text-xs text-amber-500">
                                   <Star className="size-3 fill-amber-500" /> {cp.rating.toFixed(1)}
                                 </div>
                               )}
                             </div>
-                            <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                            <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                               {cp?.primary_market && (
                                 <>
                                   <MapPin className="size-3" />
@@ -760,9 +948,9 @@ export default function CampaignRoomPage() {
                               </div>
                             )}
                             {app.pitch && (
-                              <p className="mt-2 text-sm text-slate-600">{app.pitch}</p>
+                              <p className="mt-2 text-sm text-muted-foreground">{app.pitch}</p>
                             )}
-                            <p className="mt-1 text-xs text-slate-400">
+                            <p className="mt-1 text-xs text-muted-foreground/70">
                               {timeAgo(app.created_at, tc, locale)}
                               {app.proposed_rate != null && ` · $${app.proposed_rate}`}
                             </p>
@@ -802,7 +990,7 @@ export default function CampaignRoomPage() {
                                 ? "bg-emerald-100 text-emerald-700"
                                 : app.status === "rejected"
                                   ? "bg-red-100 text-red-700"
-                                  : "bg-slate-100 text-slate-700"
+                                  : "bg-muted text-foreground"
                             }`}
                           >
                             {tc(`status.${app.status}`)}
@@ -820,9 +1008,9 @@ export default function CampaignRoomPage() {
         {/* Members Tab */}
         <TabsContent value="members">
           {members.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center">
-              <Users className="mx-auto mb-3 size-8 text-slate-300" />
-              <p className="text-sm text-slate-500">{t("empty.noMembers")}</p>
+            <div className="rounded-lg border border-dashed border-border py-12 text-center">
+              <Users className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">{t("empty.noMembers")}</p>
             </div>
           ) : (
             <Card>
@@ -830,7 +1018,7 @@ export default function CampaignRoomPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b text-start text-xs font-medium text-slate-500">
+                      <tr className="border-b text-start text-xs font-medium text-muted-foreground">
                         <th className="pb-3 pe-4">{t("members.creator")}</th>
                         <th className="pb-3 pe-4">{t("members.market")}</th>
                         <th className="pb-3 pe-4">{t("members.platform")}</th>
@@ -846,10 +1034,10 @@ export default function CampaignRoomPage() {
                         const name = m.profiles?.full_name || "";
                         const market = m.creator_profiles?.primary_market;
                         const platform = getPrimaryPlatform(m.creator_profiles);
-                        const payStyle = paymentStatusStyles[m.payment_status] || "bg-slate-100 text-slate-700";
+                        const payStyle = paymentStatusStyles[m.payment_status] || "bg-muted text-foreground";
                         const payKey = paymentStatusKeys[m.payment_status] || "status.pending";
                         return (
-                          <tr key={m.id} className="border-b border-slate-100 last:border-0">
+                          <tr key={m.id} className="border-b border-border/50 last:border-0">
                             <td className="py-3 pe-4">
                               <div className="flex items-center gap-2">
                                 <Avatar className="size-7">
@@ -860,16 +1048,16 @@ export default function CampaignRoomPage() {
                                     {getInitials(name)}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="font-medium text-slate-900">{name}</span>
+                                <span className="font-medium text-foreground">{name}</span>
                               </div>
                             </td>
-                            <td className="py-3 pe-4 text-slate-600">
+                            <td className="py-3 pe-4 text-muted-foreground">
                               {market ? getMarketLabel(market, locale) : "—"}
                             </td>
-                            <td className="py-3 pe-4 text-slate-600">
+                            <td className="py-3 pe-4 text-muted-foreground">
                               {platform ? PLATFORM_LABELS[platform as Platform] || platform : "—"}
                             </td>
-                            <td className="py-3 pe-4 font-medium text-slate-900">
+                            <td className="py-3 pe-4 font-medium text-foreground">
                               {m.accepted_rate != null ? formatCurrency(m.accepted_rate, locale) : "—"}
                             </td>
                             <td className="py-3 pe-4">
@@ -905,16 +1093,16 @@ export default function CampaignRoomPage() {
         {/* Content Tab */}
         <TabsContent value="content">
           {submissions.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center">
-              <ImageIcon className="mx-auto mb-3 size-8 text-slate-300" />
-              <p className="text-sm text-slate-500">{t("empty.noContent")}</p>
+            <div className="rounded-lg border border-dashed border-border py-12 text-center">
+              <ImageIcon className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">{t("empty.noContent")}</p>
             </div>
           ) : (
             <div className="space-y-4">
               {submissions.map((cs) => {
                 const creatorName = cs.campaign_members?.profiles?.full_name || "";
                 const creatorAvatar = cs.campaign_members?.profiles?.avatar_url;
-                const statusStyle = submissionStatusStyles[cs.status] || "bg-slate-100 text-slate-700";
+                const statusStyle = submissionStatusStyles[cs.status] || "bg-muted text-foreground";
                 const statusKey = submissionStatusKeys[cs.status] || "status.pending";
                 const platformLabel = cs.platform ? PLATFORM_LABELS[cs.platform as Platform] || cs.platform : "";
                 const revCount = cs.revision_count ?? 0;
@@ -931,10 +1119,10 @@ export default function CampaignRoomPage() {
                             <AvatarFallback className="text-xs">{getInitials(creatorName)}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <p className="font-medium text-slate-900">{creatorName}</p>
-                            <div className="flex items-center gap-2 text-xs text-slate-500">
+                            <p className="font-medium text-foreground">{creatorName}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
                               {platformLabel && (
-                                <span className="rounded bg-slate-100 px-1.5 py-0.5">{platformLabel}</span>
+                                <span className="rounded bg-muted px-1.5 py-0.5">{platformLabel}</span>
                               )}
                               {cs.submitted_at && (
                                 <span>{timeAgo(cs.submitted_at, tc, locale)}</span>
@@ -952,12 +1140,12 @@ export default function CampaignRoomPage() {
 
                       {/* Content URL */}
                       {cs.content_url && (
-                        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div className="mt-4 rounded-lg border border-border bg-muted/50 p-3">
                           <a
                             href={cs.content_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-900 hover:text-teal-700"
+                            className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-teal-700"
                           >
                             <Eye className="size-3.5 shrink-0" />
                             <span className="truncate">{cs.content_url}</span>
@@ -968,16 +1156,16 @@ export default function CampaignRoomPage() {
                       {/* Caption */}
                       {cs.caption && (
                         <div className="mt-3">
-                          <p className="text-xs font-medium uppercase text-slate-400">{t("content.caption")}</p>
-                          <p className="mt-1 text-sm text-slate-600">{cs.caption}</p>
+                          <p className="text-xs font-medium uppercase text-muted-foreground/70">{t("content.caption")}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{cs.caption}</p>
                         </div>
                       )}
 
                       {/* Previous feedback (for revision_requested or resubmissions) */}
                       {cs.feedback && cs.status === "revision_requested" && (
-                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/50 p-3">
                           <p className="text-xs font-medium text-amber-700">{t("content.yourFeedback")}</p>
-                          <p className="mt-1 text-sm text-amber-800">{cs.feedback}</p>
+                          <p className="mt-1 text-sm text-amber-800 dark:text-amber-300">{cs.feedback}</p>
                           {revCount > 0 && (
                             <p className="mt-1.5 text-xs text-amber-600">
                               {t("content.revisionCount", { current: String(revCount), max: String(maxRev) })}
@@ -1027,8 +1215,8 @@ export default function CampaignRoomPage() {
       {/* Counter-Offer Dialog */}
       {counterDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">{t("applicants.counterTitle")}</h3>
+          <div className="mx-4 w-full max-w-md rounded-xl bg-card p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-foreground">{t("applicants.counterTitle")}</h3>
             <div className="space-y-4">
               <div>
                 <Label>{t("applicants.counterRate")}</Label>
@@ -1067,8 +1255,8 @@ export default function CampaignRoomPage() {
       {/* Revision Dialog */}
       {revisionDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">{t("content.revisionTitle")}</h3>
+          <div className="mx-4 w-full max-w-md rounded-xl bg-card p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-semibold text-foreground">{t("content.revisionTitle")}</h3>
             <div className="space-y-4">
               <div>
                 <Label>{t("content.revisionFeedback")}</Label>

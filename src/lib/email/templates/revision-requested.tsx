@@ -9,7 +9,6 @@ interface RevisionRequestedProps {
 }
 
 export function RevisionRequestedEmail({
-  creatorName = "Creator",
   campaignTitle = "Campaign",
   feedback = "Please adjust the intro.",
   campaignUrl = "https://popsdrops.com",

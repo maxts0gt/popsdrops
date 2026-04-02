@@ -18,10 +18,10 @@ export default function OnboardingPage() {
   return (
     <div>
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="text-2xl font-bold text-foreground">
           {t("selectRole.title")}
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           {t("selectRole.subtitle")}
         </p>
       </div>
@@ -30,19 +30,19 @@ export default function OnboardingPage() {
         <button
           onClick={() => selectRole("creator")}
           className={cn(
-            "group rounded-xl border-2 p-6 text-start transition-all hover:border-slate-900 hover:shadow-md",
+            "group rounded-xl border-2 p-6 text-start transition-all hover:border-foreground hover:shadow-md",
             suggestedRole === "creator"
-              ? "border-slate-900 bg-slate-50"
-              : "border-slate-200 bg-white"
+              ? "border-foreground bg-muted/50"
+              : "border-border bg-card"
           )}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
-            <Sparkles className="h-6 w-6 text-slate-600" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+            <Sparkles className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">
+          <h2 className="mt-4 text-lg font-semibold text-foreground">
             {t("selectRole.creator")}
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("selectRole.creator.desc")}
           </p>
         </button>
@@ -50,19 +50,19 @@ export default function OnboardingPage() {
         <button
           onClick={() => selectRole("brand")}
           className={cn(
-            "group rounded-xl border-2 p-6 text-start transition-all hover:border-slate-900 hover:shadow-md",
+            "group rounded-xl border-2 p-6 text-start transition-all hover:border-foreground hover:shadow-md",
             suggestedRole === "brand"
-              ? "border-slate-900 bg-slate-50"
-              : "border-slate-200 bg-white"
+              ? "border-foreground bg-muted/50"
+              : "border-border bg-card"
           )}
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100">
-            <Building2 className="h-6 w-6 text-slate-600" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
+            <Building2 className="h-6 w-6 text-muted-foreground" />
           </div>
-          <h2 className="mt-4 text-lg font-semibold text-slate-900">
+          <h2 className="mt-4 text-lg font-semibold text-foreground">
             {t("selectRole.brand")}
           </h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("selectRole.brand.desc")}
           </p>
         </button>

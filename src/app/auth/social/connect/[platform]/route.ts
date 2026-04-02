@@ -8,7 +8,7 @@
 
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { randomBytes, createHash } from "crypto";
+import { randomBytes } from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { getAdapter, getOAuthConfig, isOAuthPlatform, isMockMode } from "@/lib/oauth";
 import type { PlatformType } from "@/types/database";

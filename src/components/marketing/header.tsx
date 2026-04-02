@@ -26,10 +26,8 @@ export function MarketingHeader() {
   const isLight = !hasDarkHero || scrolled;
 
   useEffect(() => {
-    if (!hasDarkHero) {
-      setScrolled(true);
-      return;
-    }
+    if (!hasDarkHero) return;
+
     const onScroll = () => setScrolled(window.scrollY > 20);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });

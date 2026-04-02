@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useRef, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -47,8 +48,9 @@ import {
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
+import { updateAvatar } from "@/app/actions/profile";
 import { getSocialConnections, disconnectSocialAccount } from "@/app/actions/metrics";
-import type { Platform, Niche, Market, Language, ContentFormat } from "@/lib/constants";
+import type { Platform, Niche, Language, ContentFormat } from "@/lib/constants";
 import type { SocialAccount, RateCard, CreatorTier, PlatformType } from "@/types/database";
 
 // ---------------------------------------------------------------------------
@@ -139,10 +141,10 @@ const tierLabelKeys: Record<CreatorTier, string> = {
 };
 
 const tierStyles: Record<CreatorTier, string> = {
-  new: "bg-slate-100 text-slate-700",
-  rising: "bg-amber-50 text-amber-700",
-  established: "bg-slate-900 text-white",
-  top: "bg-slate-900 text-white",
+  new: "bg-muted text-foreground",
+  rising: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
+  established: "bg-primary text-primary-foreground",
+  top: "bg-primary text-primary-foreground",
 };
 
 function getCompleteness(profile: ProfileData, creator: CreatorData, labels: Record<string, string>) {
@@ -173,7 +175,6 @@ function getCompleteness(profile: ProfileData, creator: CreatorData, labels: Rec
 
 export default function ProfilePage() {
   const { t } = useTranslation("creator.profile");
-  const { t: tc } = useTranslation("ui.common");
   const { locale, t: tGlobal } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -184,6 +185,8 @@ export default function ProfilePage() {
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [disconnecting, setDisconnecting] = useState<string | null>(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   // Sheet states
   const [bioOpen, setBioOpen] = useState(false);
@@ -224,7 +227,7 @@ export default function ProfilePage() {
       url.searchParams.delete("social_error");
       router.replace(url.pathname, { scroll: false });
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, t]);
 
   useEffect(() => {
     async function load() {
@@ -295,52 +298,102 @@ export default function ProfilePage() {
     });
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error(t("avatar.invalidType"));
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error(t("avatar.tooLarge"));
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${user.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(path);
+
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      await updateAvatar(avatarUrl);
+
+      setProfile((prev) => (prev ? { ...prev, avatar_url: avatarUrl } : prev));
+      toast.success(t("avatar.updated"));
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : t("avatar.uploadFailed"),
+      );
+    } finally {
+      setUploadingAvatar(false);
+      // Reset file input so same file can be re-selected
+      if (avatarInputRef.current) avatarInputRef.current.value = "";
+    }
+  };
+
   // Loading skeleton
   if (loading || !profile || !creator) {
     return (
       <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-6">
-        <div className="h-6 w-20 animate-pulse rounded bg-slate-100" />
+        <div className="h-6 w-20 animate-pulse rounded bg-muted" />
         {/* Avatar + name card */}
-        <div className="rounded-xl border border-slate-200/60 bg-white p-5">
+        <div className="rounded-xl border border-border/60 bg-card p-5">
           <div className="flex items-center gap-4">
-            <div className="size-16 animate-pulse rounded-full bg-slate-100" />
+            <div className="size-16 animate-pulse rounded-full bg-muted" />
             <div className="flex-1 space-y-2">
-              <div className="h-5 w-32 animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-48 animate-pulse rounded bg-slate-50" />
+              <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-48 animate-pulse rounded bg-muted/50" />
             </div>
           </div>
           {/* Completeness bar */}
           <div className="mt-4 space-y-2">
             <div className="flex justify-between">
-              <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
-              <div className="h-3 w-8 animate-pulse rounded bg-slate-50" />
+              <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
+              <div className="h-3 w-8 animate-pulse rounded bg-muted/50" />
             </div>
-            <div className="h-1.5 w-full animate-pulse rounded-full bg-slate-50" />
+            <div className="h-1.5 w-full animate-pulse rounded-full bg-muted/50" />
           </div>
         </div>
         {/* Social accounts */}
-        <div className="rounded-xl border border-slate-200/60 bg-white p-5">
-          <div className="mb-3 h-4 w-28 animate-pulse rounded bg-slate-100" />
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <div className="mb-3 h-4 w-28 animate-pulse rounded bg-muted" />
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
               <div key={i} className="flex items-center gap-3">
-                <div className="size-8 animate-pulse rounded-lg bg-slate-50" />
+                <div className="size-8 animate-pulse rounded-lg bg-muted/50" />
                 <div className="flex-1 space-y-1.5">
-                  <div className="h-3.5 w-28 animate-pulse rounded bg-slate-100" />
-                  <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
+                  <div className="h-3.5 w-28 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
                 </div>
               </div>
             ))}
           </div>
         </div>
         {/* Rate card */}
-        <div className="rounded-xl border border-slate-200/60 bg-white p-5">
-          <div className="mb-3 h-4 w-20 animate-pulse rounded bg-slate-100" />
+        <div className="rounded-xl border border-border/60 bg-card p-5">
+          <div className="mb-3 h-4 w-20 animate-pulse rounded bg-muted" />
           <div className="space-y-2">
             {[1, 2].map((i) => (
               <div key={i} className="flex justify-between">
-                <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
-                <div className="h-3 w-12 animate-pulse rounded bg-slate-50" />
+                <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
+                <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
               </div>
             ))}
           </div>
@@ -378,29 +431,43 @@ export default function ProfilePage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-6">
-      <h1 className="text-xl font-semibold tracking-tight text-slate-900">
+      <h1 className="text-xl font-semibold tracking-tight text-foreground">
         {t("title")}
       </h1>
 
       {/* ---- Identity Card ---- */}
       <Card className="overflow-hidden">
-        <div className="h-20 bg-slate-950" />
+        <div className="h-20 bg-foreground" />
         <CardContent className="-mt-10">
           <div className="flex items-end gap-4">
             {/* Avatar */}
             <div className="relative">
-              <div className="flex size-20 items-center justify-center rounded-full bg-slate-900 text-xl font-semibold text-white ring-4 ring-white shadow-lg">
+              <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xl font-semibold text-white ring-4 ring-card shadow-lg">
                 {profile.avatar_url ? (
-                  <img
+                  <Image
                     src={profile.avatar_url}
                     alt={profile.full_name}
-                    className="size-full rounded-full object-cover"
+                    fill
+                    unoptimized
+                    sizes="80px"
+                    className="object-cover"
                   />
                 ) : (
                   getInitials(profile.full_name)
                 )}
               </div>
-              <button className="absolute -bottom-1 -end-1 flex size-7 items-center justify-center rounded-full border-2 border-white bg-slate-900 text-white shadow-sm transition-colors hover:bg-slate-700">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarUpload}
+              />
+              <button
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={uploadingAvatar}
+                className="absolute -bottom-1 -end-1 flex size-7 items-center justify-center rounded-full border-2 border-card bg-primary text-primary-foreground shadow-sm transition-colors hover:bg-primary/80"
+              >
                 <Camera className="size-3.5" />
               </button>
             </div>
@@ -408,7 +475,7 @@ export default function ProfilePage() {
             {/* Name + tier */}
             <div className="flex-1 pb-1">
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-semibold text-slate-900">
+                <h2 className="text-lg font-semibold text-foreground">
                   {profile.full_name}
                 </h2>
                 <span
@@ -417,10 +484,10 @@ export default function ProfilePage() {
                   {t(tierLabelKeys[creator.tier])}
                 </span>
               </div>
-              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-slate-500">
+              <div className="mt-0.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-muted-foreground">
                 <button
                   onClick={() => setMarketOpen(true)}
-                  className="inline-flex items-center gap-1 transition-colors hover:text-slate-700"
+                  className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
                 >
                   <MapPin className="size-3" />
                   {creator.primary_market
@@ -429,7 +496,7 @@ export default function ProfilePage() {
                 </button>
                 <button
                   onClick={() => setLanguagesOpen(true)}
-                  className="inline-flex items-center gap-1 transition-colors hover:text-slate-700"
+                  className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
                 >
                   <Globe className="size-3" />
                   {creator.languages.length > 0
@@ -451,34 +518,34 @@ export default function ProfilePage() {
             className="mt-4 block w-full text-start"
           >
             {creator.bio ? (
-              <p className="text-sm leading-relaxed text-slate-500 transition-colors hover:text-slate-700">
+              <p className="text-sm leading-relaxed text-muted-foreground transition-colors hover:text-foreground">
                 {creator.bio}
               </p>
             ) : (
-              <p className="text-sm italic text-slate-300 transition-colors hover:text-slate-500">
+              <p className="text-sm italic text-muted-foreground/50 transition-colors hover:text-muted-foreground">
                 {t("empty.bio")}
               </p>
             )}
           </button>
 
           {/* Quick stats */}
-          <div className="mt-4 flex items-center gap-5 text-xs text-slate-500">
+          <div className="mt-4 flex items-center gap-5 text-xs text-muted-foreground">
             <span className="inline-flex items-center gap-1.5">
               <Users className="size-3.5" />
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-foreground">
                 {formatFollowers(totalFollowers)}
               </span>{" "}
               {t("label.followers")}
             </span>
             <span className="inline-flex items-center gap-1.5">
               <Star className="size-3.5 text-amber-500" />
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-foreground">
                 {creator.rating.toFixed(1)}
               </span>{" "}
               ({t("label.reviews", { count: String(creator.review_count) })})
             </span>
             <span>
-              <span className="font-medium text-slate-700">
+              <span className="font-medium text-foreground">
                 {creator.campaigns_completed}
               </span>{" "}
               {t("label.campaigns")}
@@ -486,17 +553,17 @@ export default function ProfilePage() {
           </div>
 
           {/* Media kit link */}
-          <div className="mt-4 flex items-center gap-2 rounded-xl bg-slate-50 px-3 py-2.5 ring-1 ring-slate-900/[0.04]">
-            <Globe className="size-4 text-slate-400" />
+          <div className="mt-4 flex items-center gap-2 rounded-xl bg-muted/50 px-3 py-2.5 ring-1 ring-border/50">
+            <Globe className="size-4 text-muted-foreground/70" />
             <button
               onClick={() => setSlugOpen(true)}
-              className="flex-1 truncate text-start text-sm font-medium text-slate-700 transition-colors hover:text-slate-900"
+              className="flex-1 truncate text-start text-sm font-medium text-foreground transition-colors hover:text-foreground"
             >
               popsdrops.com/c/{creator.slug}
             </button>
             <button
               onClick={copyLink}
-              className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              className="rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-muted-foreground"
               title={t("action.copyLink")}
             >
               {copied ? (
@@ -508,7 +575,7 @@ export default function ProfilePage() {
             <Link
               href={`/c/${creator.slug}`}
               target="_blank"
-              className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+              className="rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-muted-foreground"
               title={t("action.viewMediaKit")}
             >
               <ExternalLink className="size-4" />
@@ -534,7 +601,7 @@ export default function ProfilePage() {
             return (
               <div
                 key={platform}
-                className="rounded-xl ring-1 ring-slate-900/[0.04] transition-colors"
+                className="rounded-xl ring-1 ring-border/50 transition-colors"
               >
                 {/* Main row */}
                 <div className="flex items-center gap-3 p-3">
@@ -544,7 +611,7 @@ export default function ProfilePage() {
                   {account ? (
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium text-slate-900">
+                        <span className="text-sm font-medium text-foreground">
                           {PLATFORM_LABELS[platform]}
                         </span>
                         {isConnectedViaOAuth && (
@@ -554,8 +621,8 @@ export default function ProfilePage() {
                           <BadgeCheck className="size-3.5 text-blue-500" />
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-xs text-slate-400">
-                        <span className="font-medium text-slate-600">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground/70">
+                        <span className="font-medium text-muted-foreground">
                           {formatFollowers(account.followers)}
                         </span>
                         <span className="truncate">{account.handle}</span>
@@ -565,7 +632,7 @@ export default function ProfilePage() {
                           </span>
                         )}
                         {isExpired && (
-                          <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
+                          <span className="rounded-full bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
                             {t("social.expired")}
                           </span>
                         )}
@@ -578,10 +645,10 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="flex-1">
-                      <span className="text-sm text-slate-400">
+                      <span className="text-sm text-muted-foreground/70">
                         {PLATFORM_LABELS[platform]}
                       </span>
-                      <p className="text-xs text-slate-300">{t("social.notConnected")}</p>
+                      <p className="text-xs text-muted-foreground/50">{t("social.notConnected")}</p>
                     </div>
                   )}
 
@@ -591,7 +658,7 @@ export default function ProfilePage() {
                       {/* Edit manual data */}
                       <button
                         onClick={() => setConnectPlatform(platform)}
-                        className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+                        className="rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-muted hover:text-muted-foreground"
                         title={t("social.edit")}
                       >
                         <Pencil className="size-3.5" />
@@ -601,7 +668,7 @@ export default function ProfilePage() {
                         <button
                           onClick={() => handleOAuthDisconnect(platform)}
                           disabled={disconnecting === platform}
-                          className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                          className="rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-500"
                           title={t("social.disconnect")}
                         >
                           <Unlink className="size-3.5" />
@@ -611,14 +678,14 @@ export default function ProfilePage() {
                   ) : oauthSupported ? (
                     <a
                       href={`/auth/social/connect/${platform}`}
-                      className="shrink-0 rounded-full bg-slate-900 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-slate-700"
+                      className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary/80"
                     >
                       {t("social.connect")}
                     </a>
                   ) : (
                     <button
                       onClick={() => setConnectPlatform(platform)}
-                      className="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200"
+                      className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted"
                     >
                       {t("social.addManually")}
                     </button>
@@ -627,7 +694,7 @@ export default function ProfilePage() {
 
                 {/* Re-authenticate banner for expired/error connections */}
                 {account && oauthSupported && (isExpired || hasError) && (
-                  <div className="border-t border-slate-100 px-3 py-2">
+                  <div className="border-t border-border/50 px-3 py-2">
                     <a
                       href={`/auth/social/connect/${platform}`}
                       className="flex items-center gap-2 text-xs font-medium text-amber-600 transition-colors hover:text-amber-700"
@@ -640,10 +707,10 @@ export default function ProfilePage() {
 
                 {/* OAuth upsell for manually-connected accounts */}
                 {account && oauthSupported && !connection && (
-                  <div className="border-t border-slate-100 px-3 py-2">
+                  <div className="border-t border-border/50 px-3 py-2">
                     <a
                       href={`/auth/social/connect/${platform}`}
-                      className="flex items-center gap-2 text-xs text-slate-400 transition-colors hover:text-slate-600"
+                      className="flex items-center gap-2 text-xs text-muted-foreground/70 transition-colors hover:text-muted-foreground"
                     >
                       <ShieldCheck className="size-3" />
                       {t("social.verifyWith", { platform: PLATFORM_LABELS[platform] })}
@@ -677,7 +744,7 @@ export default function ProfilePage() {
               {(creator.niches as Niche[]).map((n) => (
                 <span
                   key={n}
-                  className="rounded-full bg-slate-50 px-3 py-1 text-xs font-medium text-slate-600 ring-1 ring-slate-900/[0.06]"
+                  className="rounded-full bg-muted/50 px-3 py-1 text-xs font-medium text-muted-foreground ring-1 ring-border"
                 >
                   {NICHE_KEYS[n] ? tGlobal("ui.common", NICHE_KEYS[n]) : n}
                 </span>
@@ -686,7 +753,7 @@ export default function ProfilePage() {
           ) : (
             <button
               onClick={() => setNichesOpen(true)}
-              className="text-sm text-slate-400 transition-colors hover:text-slate-600"
+              className="text-sm text-muted-foreground/70 transition-colors hover:text-muted-foreground"
             >
               {t("empty.niches")}
             </button>
@@ -722,17 +789,17 @@ export default function ProfilePage() {
                       className="flex items-center justify-between rounded-lg px-1 py-2"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="flex size-6 items-center justify-center rounded-md bg-slate-50 text-slate-500">
+                        <div className="flex size-6 items-center justify-center rounded-md bg-muted/50 text-muted-foreground">
                           <Icon className="size-3.5" />
                         </div>
-                        <span className="text-sm text-slate-700">
+                        <span className="text-sm text-foreground">
                           {FORMAT_KEYS[r.format as ContentFormat] ? tGlobal("ui.common", FORMAT_KEYS[r.format as ContentFormat]) : r.format}
                         </span>
-                        <span className="text-xs text-slate-400">
+                        <span className="text-xs text-muted-foreground/70">
                           {PLATFORM_LABELS[r.platform]}
                         </span>
                       </div>
-                      <span className="text-sm font-semibold tabular-nums text-slate-900">
+                      <span className="text-sm font-semibold tabular-nums text-foreground">
                         {formatRate(r.rate, creator.rate_currency, locale)}
                       </span>
                     </div>
@@ -742,7 +809,7 @@ export default function ProfilePage() {
           ) : (
             <button
               onClick={() => setRateCardOpen(true)}
-              className="text-sm text-slate-400 transition-colors hover:text-slate-600"
+              className="text-sm text-muted-foreground/70 transition-colors hover:text-muted-foreground"
             >
               {t("empty.rateCard")}
             </button>
@@ -755,13 +822,13 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle className="text-sm">
             {t("section.completeness")}
-            <span className="ms-2 font-normal text-slate-400">{pct}%</span>
+            <span className="ms-2 font-normal text-muted-foreground/70">{pct}%</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-slate-100">
+          <div className="mb-4 h-1.5 overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-slate-900 transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -774,11 +841,11 @@ export default function ProfilePage() {
                 {c.done ? (
                   <CheckCircle2 className="size-4 text-emerald-500" />
                 ) : (
-                  <Circle className="size-4 text-slate-200" />
+                  <Circle className="size-4 text-muted-foreground/30" />
                 )}
                 <span
                   className={
-                    c.done ? "text-slate-400 line-through" : "text-slate-700"
+                    c.done ? "text-muted-foreground/70 line-through" : "text-foreground"
                   }
                 >
                   {c.label}
@@ -796,16 +863,16 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
-            <Mail className="size-4 text-slate-400" />
+            <Mail className="size-4 text-muted-foreground/70" />
             <div>
-              <p className="text-sm text-slate-700">{profile.email}</p>
-              <p className="text-xs text-slate-400">{t("section.signedInWith")}</p>
+              <p className="text-sm text-foreground">{profile.email}</p>
+              <p className="text-xs text-muted-foreground/70">{t("section.signedInWith")}</p>
             </div>
           </div>
           <Separator />
           <Button
             variant="ghost"
-            className="w-full text-red-600 hover:bg-red-50 hover:text-red-700"
+            className="w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-700"
             onClick={handleSignOut}
             disabled={isPending}
           >

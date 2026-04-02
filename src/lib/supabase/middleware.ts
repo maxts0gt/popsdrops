@@ -52,7 +52,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({ request });
@@ -87,7 +87,8 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     publicPaths.includes(pathname) ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/c/");
+    pathname.startsWith("/c/") ||
+    pathname.startsWith("/apply/");
 
   if (isPublic) {
     return supabaseResponse;

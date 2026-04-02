@@ -155,7 +155,8 @@ export function I18nProvider({
    * Kept for API compatibility with useTranslation hook.
    */
   const preload = useCallback(
-    async (..._pageKeys: PageKey[]) => {
+    async (...pageKeys: PageKey[]) => {
+      void pageKeys;
       // All translations are fetched by the provider's useEffect.
     },
     [],
