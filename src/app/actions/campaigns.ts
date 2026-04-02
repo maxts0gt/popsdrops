@@ -275,21 +275,26 @@ export async function updateCampaignDeadline(
   const user = await getUser();
   const supabase = await createClient();
 
-  // Validate date
-  const date = new Date(newDeadline);
-  if (isNaN(date.getTime()) || date < new Date()) {
-    throw new Error("Deadline must be a valid future date");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(newDeadline)) {
+    throw new Error("Deadline must be a valid date");
   }
 
+  const today = new Date().toISOString().split("T")[0];
+  if (newDeadline < today) {
+    throw new Error("Deadline must be today or later");
+  }
+
+  const normalizedDeadline = `${newDeadline}T23:59:59.999Z`;
   const { error } = await supabase
     .from("campaigns")
-    .update({ application_deadline: newDeadline })
+    .update({ application_deadline: normalizedDeadline })
     .eq("id", campaignId)
     .eq("brand_id", user.id);
 
   if (error) throw new Error(error.message);
 
   revalidatePath(`/b/campaigns/${campaignId}`);
+  return normalizedDeadline;
 }
 
 export async function sendCampaignAnnouncement(

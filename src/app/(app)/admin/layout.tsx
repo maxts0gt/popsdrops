@@ -43,7 +43,13 @@ const navItems = [
   { href: "/admin/audit", label: "Audit", icon: ScrollText },
 ];
 
-function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
+function SidebarContent({
+  onNavigate,
+  showSearch = true,
+}: {
+  onNavigate?: () => void;
+  showSearch?: boolean;
+}) {
   const pathname = usePathname();
 
   return (
@@ -53,9 +59,11 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <span className="text-lg font-bold text-foreground">PopsDrops</span>
         </Link>
       </div>
-      <div className="px-3 pt-3">
-        <AdminSearch />
-      </div>
+      {showSearch && (
+        <div className="px-3 pt-3">
+          <AdminSearch />
+        </div>
+      )}
       <nav className="flex-1 overflow-y-auto no-scrollbar px-3 py-4">
         <div className="flex flex-col gap-1">
           {navItems.map((item) => {
@@ -109,7 +117,7 @@ export default function AdminLayout({
           </SheetTrigger>
           <SheetContent side="left" className="w-60 p-0" showCloseButton={false}>
             <SheetTitle className="sr-only">Navigation</SheetTitle>
-            <SidebarContent onNavigate={() => setSidebarOpen(false)} />
+            <SidebarContent onNavigate={() => setSidebarOpen(false)} showSearch={false} />
           </SheetContent>
         </Sheet>
         <div className="flex-1">

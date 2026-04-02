@@ -30,7 +30,6 @@ import {
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
-import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -98,55 +97,18 @@ export default function PublicApplyPage() {
     async function load() {
       const supabase = createClient();
 
-      // Fetch campaign with brand info
-      const { data: campaignData } = await supabase
-        .from("campaigns")
-        .select(
-          `id, title, status, brief_description, brief_requirements,
-           brief_dos, brief_donts, platforms, markets, niches,
-           budget_min, budget_max, budget_currency, max_creators,
-           application_deadline,
-           campaign_deliverables (platform, content_type, quantity),
-           profiles!campaigns_brand_id_fkey (
-             full_name,
-             brand_profiles (
-               company_name, website, rating, review_count
-             )
-           )`
-        )
-        .eq("id", id)
-        .single();
+      const campaignResponse = await fetch(`/api/public/campaigns/${id}`, {
+        cache: "no-store",
+      });
 
-      if (!campaignData) {
+      if (!campaignResponse.ok) {
         setNotFound(true);
         setLoading(false);
         return;
       }
 
-      const profile = getSingleRelation(
-        (campaignData as Record<string, unknown>).profiles as
-          | Record<string, unknown>
-          | Record<string, unknown>[]
-          | null
-      );
-      const bp = getSingleRelation(
-        profile?.brand_profiles as
-          | Record<string, unknown>
-          | Record<string, unknown>[]
-          | null
-      );
-
-      setCampaign({
-        ...campaignData,
-        brand: bp
-          ? (bp as unknown as CampaignPublic["brand"])
-          : {
-              company_name: (profile?.full_name as string) || "Brand",
-              website: null,
-              rating: 0,
-              review_count: 0,
-            },
-      });
+      const campaignData = (await campaignResponse.json()) as CampaignPublic;
+      setCampaign(campaignData);
 
       // Check if user is logged in and has already applied
       const {

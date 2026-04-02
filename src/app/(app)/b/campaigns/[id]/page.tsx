@@ -874,10 +874,10 @@ export default function CampaignRoomPage() {
                           onClick={async () => {
                             setActionLoading("deadline");
                             try {
-                              await updateCampaignDeadline(campaignId, newDeadline);
+                              const updatedDeadline = await updateCampaignDeadline(campaignId, newDeadline);
                               toast.success(t("deadline.updated"));
                               setCampaign((prev) =>
-                                prev ? { ...prev, application_deadline: newDeadline } : prev
+                                prev ? { ...prev, application_deadline: updatedDeadline } : prev
                               );
                               setShowDeadlineDialog(false);
                             } catch {

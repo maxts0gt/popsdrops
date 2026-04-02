@@ -146,7 +146,7 @@ export default function TermsPage() {
 
         <h2>10. Privacy</h2>
         <p>
-          Your use of the Service is subject to our <Link href="/privacy" className="text-slate-900 underline">Privacy Policy</Link>,
+          Your use of the Service is subject to our <Link href="/privacy" className="text-foreground underline">Privacy Policy</Link>,
           which describes how we collect, use, and protect your personal information. By using the Service,
           you consent to our data practices as described in the Privacy Policy.
         </p>

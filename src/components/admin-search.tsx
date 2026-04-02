@@ -65,6 +65,16 @@ export function AdminSearch() {
   const normalizedQuery = normalizeSearchQuery(query);
   const showSearchResults = normalizedQuery.length >= 2;
 
+  function handleQueryChange(value: string) {
+    setQuery(value);
+
+    if (normalizeSearchQuery(value).length < 2) {
+      setUserResults([]);
+      setCampaignResults([]);
+      setSearching(false);
+    }
+  }
+
   // Keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
     function down(e: KeyboardEvent) {
@@ -169,7 +179,7 @@ export function AdminSearch() {
         <CommandInput
           placeholder="Search users, campaigns, or navigate..."
           value={query}
-          onValueChange={setQuery}
+          onValueChange={handleQueryChange}
         />
         <CommandList>
           <CommandEmpty>
