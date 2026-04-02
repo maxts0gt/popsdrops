@@ -14,8 +14,31 @@ const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
 const RATE_LIMIT_MAX = 5;
 const RATE_LIMIT_WINDOW = "10 m";
+const FALLBACK_RATE_LIMIT_MAX_KEYS = 5000;
 
 let waitlistRatelimit: Ratelimit | null | undefined;
+
+function cleanupRateLimitMap(now: number) {
+  for (const [key, entry] of rateLimitMap.entries()) {
+    if (now > entry.resetAt) {
+      rateLimitMap.delete(key);
+    }
+  }
+
+  if (rateLimitMap.size <= FALLBACK_RATE_LIMIT_MAX_KEYS) {
+    return;
+  }
+
+  const overflow = rateLimitMap.size - FALLBACK_RATE_LIMIT_MAX_KEYS;
+  let removed = 0;
+  for (const key of rateLimitMap.keys()) {
+    rateLimitMap.delete(key);
+    removed++;
+    if (removed >= overflow) {
+      break;
+    }
+  }
+}
 
 function getWaitlistRatelimit(): Ratelimit | null {
   if (waitlistRatelimit !== undefined) {
@@ -42,6 +65,7 @@ function getWaitlistRatelimit(): Ratelimit | null {
 
 function checkRateLimit(identifier: string): boolean {
   const now = Date.now();
+  cleanupRateLimitMap(now);
   const entry = rateLimitMap.get(identifier);
 
   if (!entry || now > entry.resetAt) {

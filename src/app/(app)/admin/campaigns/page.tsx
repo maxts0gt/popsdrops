@@ -28,6 +28,7 @@ import {
 import {
   CAMPAIGN_STATUS_COLORS,
   CAMPAIGN_STATUS_LABELS,
+  formatBudgetRange,
 } from "@/lib/constants";
 import type { CampaignStatus } from "@/lib/constants";
 import { useI18n } from "@/lib/i18n/context";
@@ -69,23 +70,31 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
 
   if (!data) return [];
 
-  return Promise.all(
-    (data as CampaignQueryRow[]).map(async (campaign) => {
-      const { count } = await supabase
+  const campaigns = data as CampaignQueryRow[];
+  const campaignIds = campaigns.map((campaign) => campaign.id);
+
+  const { data: memberRows } = campaignIds.length > 0
+    ? await supabase
         .from("campaign_members")
-        .select("id", { count: "exact", head: true })
-        .eq("campaign_id", campaign.id);
+        .select("campaign_id")
+        .in("campaign_id", campaignIds)
+    : { data: [] };
 
-      const brand = getSingleRelation(campaign.brand);
+  const memberCounts = new Map<string, number>();
+  for (const row of memberRows ?? []) {
+    memberCounts.set(row.campaign_id, (memberCounts.get(row.campaign_id) ?? 0) + 1);
+  }
 
-      return {
-        ...campaign,
-        status: campaign.status as CampaignStatus,
-        brand_name: brand?.full_name ?? "Unknown",
-        member_count: count ?? 0,
-      };
-    }),
-  );
+  return campaigns.map((campaign) => {
+    const brand = getSingleRelation(campaign.brand);
+
+    return {
+      ...campaign,
+      status: campaign.status as CampaignStatus,
+      brand_name: brand?.full_name ?? "Unknown",
+      member_count: memberCounts.get(campaign.id) ?? 0,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -167,7 +176,7 @@ export default function AdminCampaignsPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from("campaigns")
-      .select("title, status, created_at, budget_total, platforms, markets")
+      .select("title, status, created_at, budget_min, budget_max, budget_currency, platforms, markets")
       .order("created_at", { ascending: false });
 
     if (!data || data.length === 0) {
@@ -180,7 +189,7 @@ export default function AdminCampaignsPage() {
       c.title,
       c.status,
       new Date(c.created_at).toLocaleDateString(),
-      c.budget_total ?? "",
+      formatBudgetRange(c.budget_min, c.budget_max, locale, c.budget_currency),
       Array.isArray(c.platforms) ? c.platforms.join("; ") : "",
       Array.isArray(c.markets) ? c.markets.join("; ") : "",
     ]);

@@ -39,6 +39,16 @@ interface BrandStats {
   avgRating: number;
 }
 
+interface CampaignMemberRow {
+  id: string;
+  campaign_id: string;
+}
+
+interface SubmissionRow {
+  campaign_member_id: string;
+  status: string;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -87,52 +97,66 @@ export default function BrandHomePage() {
         .not("status", "in", '("completed","cancelled","draft")')
         .order("created_at", { ascending: false });
 
+      const campaignIds = (campaignData || []).map((campaign) => campaign.id);
+
       // Fetch pending applications count
-      const { count: pendingApps } = await supabase
-        .from("campaign_applications")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "pending")
-        .in(
-          "campaign_id",
-          (campaignData || []).map((c) => c.id)
-        );
+      const { count: pendingApps } = campaignIds.length > 0
+        ? await supabase
+            .from("campaign_applications")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "pending")
+            .in("campaign_id", campaignIds)
+        : { count: 0 };
 
-      // Fetch content awaiting review count
-      const { count: contentAwaiting } = await supabase
-        .from("content_submissions")
-        .select("id", { count: "exact", head: true })
-        .eq("status", "submitted");
+      const { data: memberRows } = campaignIds.length > 0
+        ? await supabase
+            .from("campaign_members")
+            .select("id, campaign_id")
+            .in("campaign_id", campaignIds)
+        : { data: [] };
 
-      // Fetch member + submission counts per campaign
-      const enriched: ActiveCampaign[] = [];
-      for (const c of campaignData || []) {
-        const { data: memberRows, count: memberCount } = await supabase
-          .from("campaign_members")
-          .select("id", { count: "exact" })
-          .eq("campaign_id", c.id);
+      const members = (memberRows || []) as CampaignMemberRow[];
+      const memberIds = members.map((member) => member.id);
 
-        const memberIds = (memberRows || []).map((m) => m.id);
-        const { count: submissionCount } = memberIds.length > 0
-          ? await supabase
-              .from("content_submissions")
-              .select("id", { count: "exact", head: true })
-              .in("campaign_member_id", memberIds)
-          : { count: 0 };
+      const { data: submissionRows } = memberIds.length > 0
+        ? await supabase
+            .from("content_submissions")
+            .select("campaign_member_id, status")
+            .in("campaign_member_id", memberIds)
+        : { data: [] };
 
-        enriched.push({
-          ...c,
-          status: c.status as CampaignStatus,
-          member_count: memberCount || 0,
-          submission_count: submissionCount || 0,
-        });
+      const memberCounts = new Map<string, number>();
+      const campaignIdByMember = new Map<string, string>();
+      for (const member of members) {
+        memberCounts.set(member.campaign_id, (memberCounts.get(member.campaign_id) ?? 0) + 1);
+        campaignIdByMember.set(member.id, member.campaign_id);
       }
+
+      const submissionCounts = new Map<string, number>();
+      let contentAwaiting = 0;
+      for (const submission of (submissionRows || []) as SubmissionRow[]) {
+        const campaignId = campaignIdByMember.get(submission.campaign_member_id);
+        if (!campaignId) continue;
+
+        submissionCounts.set(campaignId, (submissionCounts.get(campaignId) ?? 0) + 1);
+        if (submission.status === "submitted") {
+          contentAwaiting++;
+        }
+      }
+
+      const enriched: ActiveCampaign[] = (campaignData || []).map((campaign) => ({
+        ...campaign,
+        status: campaign.status as CampaignStatus,
+        member_count: memberCounts.get(campaign.id) ?? 0,
+        submission_count: submissionCounts.get(campaign.id) ?? 0,
+      }));
 
       setCampaigns(enriched);
       setStats({
         companyName: brandProfile?.company_name || "",
         activeCampaigns: enriched.length,
         pendingApplications: pendingApps || 0,
-        contentAwaiting: contentAwaiting || 0,
+        contentAwaiting,
         avgRating: brandProfile?.rating || 0,
       });
       setLoading(false);

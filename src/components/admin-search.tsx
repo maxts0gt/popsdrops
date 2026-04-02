@@ -30,6 +30,14 @@ interface SearchResult {
   icon: React.ComponentType<{ className?: string }>;
 }
 
+interface ProfileSearchRow {
+  id: string;
+  full_name: string | null;
+  email: string;
+  role: string;
+  status: string;
+}
+
 const quickActions: SearchResult[] = [
   { id: "approvals", label: "Review Approvals", href: "/admin/approvals", icon: ShieldCheck },
   { id: "users", label: "Manage Users", href: "/admin/users", icon: Users },
@@ -39,6 +47,14 @@ const quickActions: SearchResult[] = [
   { id: "settings", label: "Settings", href: "/admin/settings", icon: Settings },
 ];
 
+function normalizeSearchQuery(value: string): string {
+  return value
+    .trim()
+    .replace(/[%_(),]/g, " ")
+    .replace(/\s+/g, " ")
+    .slice(0, 80);
+}
+
 export function AdminSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -46,7 +62,8 @@ export function AdminSearch() {
   const [campaignResults, setCampaignResults] = useState<SearchResult[]>([]);
   const [searching, setSearching] = useState(false);
   const router = useRouter();
-  const showSearchResults = query.length >= 2;
+  const normalizedQuery = normalizeSearchQuery(query);
+  const showSearchResults = normalizedQuery.length >= 2;
 
   // Keyboard shortcut: Cmd+K / Ctrl+K
   useEffect(() => {
@@ -62,7 +79,9 @@ export function AdminSearch() {
 
   // Debounced search against Supabase
   useEffect(() => {
-    if (query.length < 2) return;
+    if (normalizedQuery.length < 2) {
+      return;
+    }
 
     let cancelled = false;
 
@@ -70,23 +89,36 @@ export function AdminSearch() {
       setSearching(true);
       const supabase = createClient();
 
-      const [usersRes, campaignsRes] = await Promise.all([
+      const [usersByNameRes, usersByEmailRes, campaignsRes] = await Promise.all([
         supabase
           .from("profiles")
           .select("id, full_name, email, role, status")
-          .or(`full_name.ilike.%${query}%,email.ilike.%${query}%`)
+          .ilike("full_name", `%${normalizedQuery}%`)
+          .limit(5),
+        supabase
+          .from("profiles")
+          .select("id, full_name, email, role, status")
+          .ilike("email", `%${normalizedQuery}%`)
           .limit(5),
         supabase
           .from("campaigns")
           .select("id, title, status")
-          .ilike("title", `%${query}%`)
+          .ilike("title", `%${normalizedQuery}%`)
           .limit(5),
       ]);
 
       if (cancelled) return;
 
+      const users = new Map<string, ProfileSearchRow>();
+      for (const profile of [
+        ...((usersByNameRes.data ?? []) as ProfileSearchRow[]),
+        ...((usersByEmailRes.data ?? []) as ProfileSearchRow[]),
+      ]) {
+        users.set(profile.id, profile);
+      }
+
       setUserResults(
-        (usersRes.data ?? []).map((u) => ({
+        Array.from(users.values()).slice(0, 5).map((u) => ({
           id: u.id,
           label: u.full_name || u.email,
           description: `${u.role} · ${u.status} · ${u.email}`,
@@ -112,7 +144,7 @@ export function AdminSearch() {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [query]);
+  }, [normalizedQuery]);
 
   function handleSelect(href: string) {
     setOpen(false);

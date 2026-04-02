@@ -5,9 +5,9 @@
 -- and in-progress campaigns alike.
 -- ============================================================
 
--- Drop and recreate with broader scope
+-- Drop the recruiting-only policy and replace it with a broader non-draft one.
 DROP POLICY IF EXISTS campaigns_select_public_recruiting ON campaigns;
-CREATE POLICY campaigns_select_public_recruiting ON campaigns
+CREATE POLICY campaigns_select_public_non_draft ON campaigns
   FOR SELECT USING (status != 'draft');
 
 -- Anonymous users can read deliverables for non-draft campaigns

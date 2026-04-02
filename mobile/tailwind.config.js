@@ -1,7 +1,8 @@
-import nativewindPreset from "nativewind/preset";
+/* eslint-disable @typescript-eslint/no-require-imports */
+const nativewindPreset = require("nativewind/preset");
 
 /** @type {import('tailwindcss').Config} */
-const config = {
+module.exports = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
   presets: [nativewindPreset],
   theme: {
@@ -27,5 +28,3 @@ const config = {
   },
   plugins: [],
 };
-
-export default config;

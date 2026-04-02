@@ -29,7 +29,7 @@ type NotificationType =
   | "application_rejected"
   | "revision_requested"
   | "content_approved"
-  | "message"
+  | "new_message"
   | "payment"
   | "review"
   | "deadline"
@@ -75,7 +75,7 @@ const notificationConfig: Record<
     color: "text-emerald-600",
     bg: "bg-emerald-50 dark:bg-emerald-950",
   },
-  message: {
+  new_message: {
     icon: MessageSquare,
     color: "text-muted-foreground",
     bg: "bg-muted/50",
@@ -103,6 +103,7 @@ function hrefForNotification(n: Notification): string {
     case "application_accepted":
     case "revision_requested":
     case "content_approved":
+    case "new_message":
     case "deadline":
       return data?.campaign_id ? `/i/campaigns/${data.campaign_id}` : "/i/campaigns";
     case "application_rejected":

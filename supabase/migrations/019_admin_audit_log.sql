@@ -1,5 +1,5 @@
--- Admin audit log: append-only, immutable record of all admin actions
--- No UPDATE or DELETE policies — the log cannot be tampered with
+-- Admin audit log: append-only for authenticated app users under RLS.
+-- Service-role and table-owner access can still bypass RLS at the database level.
 
 CREATE TABLE admin_audit_log (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -22,7 +22,7 @@ CREATE POLICY admin_audit_log_select ON admin_audit_log
   FOR SELECT TO authenticated
   USING (public.is_admin());
 
--- NO UPDATE or DELETE policies — the log is immutable
+-- No UPDATE or DELETE policies for authenticated app users.
 
 -- Indexes
 CREATE INDEX idx_admin_audit_log_created_at ON admin_audit_log(created_at DESC);
