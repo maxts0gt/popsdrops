@@ -54,44 +54,44 @@ const notificationConfig: Record<
   NotificationType,
   { icon: typeof Bell; color: string; bg: string }
 > = {
-  campaign_match: { icon: Zap, color: "text-slate-600", bg: "bg-slate-50" },
+  campaign_match: { icon: Zap, color: "text-muted-foreground", bg: "bg-muted/50" },
   application_accepted: {
     icon: CheckCircle2,
     color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    bg: "bg-emerald-50 dark:bg-emerald-950",
   },
   application_rejected: {
     icon: XCircle,
-    color: "text-slate-500",
-    bg: "bg-slate-50",
+    color: "text-muted-foreground",
+    bg: "bg-muted/50",
   },
   revision_requested: {
     icon: FileCheck,
     color: "text-amber-600",
-    bg: "bg-amber-50",
+    bg: "bg-amber-50 dark:bg-amber-950",
   },
   content_approved: {
     icon: CheckCircle2,
     color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    bg: "bg-emerald-50 dark:bg-emerald-950",
   },
   message: {
     icon: MessageSquare,
-    color: "text-slate-600",
-    bg: "bg-slate-50",
+    color: "text-muted-foreground",
+    bg: "bg-muted/50",
   },
   payment: {
     icon: DollarSign,
     color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    bg: "bg-emerald-50 dark:bg-emerald-950",
   },
-  review: { icon: Star, color: "text-amber-500", bg: "bg-amber-50" },
-  deadline: { icon: Clock, color: "text-red-600", bg: "bg-red-50" },
-  tier_upgrade: { icon: Zap, color: "text-slate-900", bg: "bg-slate-100" },
+  review: { icon: Star, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950" },
+  deadline: { icon: Clock, color: "text-red-600", bg: "bg-red-50 dark:bg-red-950" },
+  tier_upgrade: { icon: Zap, color: "text-foreground", bg: "bg-muted" },
   account_approved: {
     icon: UserCheck,
     color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    bg: "bg-emerald-50 dark:bg-emerald-950",
   },
 };
 
@@ -190,21 +190,21 @@ export default function NotificationsPage() {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
         <div className="flex items-center justify-between">
-          <div className="h-6 w-32 animate-pulse rounded bg-slate-100" />
-          <div className="h-4 w-20 animate-pulse rounded bg-slate-50" />
+          <div className="h-6 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted/50" />
         </div>
         <div className="space-y-2">
           {[1, 2, 3, 4, 5].map((i) => (
             <div
               key={i}
-              className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white p-4"
+              className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-4"
             >
-              <div className="size-8 animate-pulse rounded-full bg-slate-100" />
+              <div className="size-8 animate-pulse rounded-full bg-muted" />
               <div className="flex-1 space-y-2">
-                <div className="h-3.5 w-48 animate-pulse rounded bg-slate-100" />
-                <div className="h-3 w-32 animate-pulse rounded bg-slate-50" />
+                <div className="h-3.5 w-48 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-32 animate-pulse rounded bg-muted/50" />
               </div>
-              <div className="h-3 w-10 animate-pulse rounded bg-slate-50" />
+              <div className="h-3 w-10 animate-pulse rounded bg-muted/50" />
             </div>
           ))}
         </div>
@@ -216,12 +216,12 @@ export default function NotificationsPage() {
     <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-slate-900">
+          <h1 className="text-xl font-semibold text-foreground">
             {t("title")}
           </h1>
           {unreadCount > 0 && (
-            <p className="mt-0.5 text-sm text-slate-500">
-              {unreadCount} unread
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("unreadCount", { count: String(unreadCount) })}
             </p>
           )}
         </div>
@@ -229,7 +229,7 @@ export default function NotificationsPage() {
           <Button
             variant="ghost"
             size="sm"
-            className="text-slate-600"
+            className="text-muted-foreground"
             onClick={markAllRead}
           >
             {t("markAllRead")}
@@ -251,7 +251,7 @@ export default function NotificationsPage() {
               >
                 <Card
                   className={`transition-shadow hover:shadow-md ${
-                    !n.read ? "border-s-2 border-s-slate-900" : ""
+                    !n.read ? "border-s-2 border-s-foreground" : ""
                   }`}
                 >
                   <CardContent className="flex items-start gap-3">
@@ -265,22 +265,22 @@ export default function NotificationsPage() {
                         <p
                           className={`text-sm ${
                             n.read
-                              ? "text-slate-600"
-                              : "font-medium text-slate-900"
+                              ? "text-muted-foreground"
+                              : "font-medium text-foreground"
                           }`}
                         >
                           {n.title}
                         </p>
                         {!n.read && (
-                          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-slate-900" />
+                          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-foreground" />
                         )}
                       </div>
                       {n.body && (
-                        <p className="mt-0.5 text-xs text-slate-400 line-clamp-2">
+                        <p className="mt-0.5 text-xs text-muted-foreground/70 line-clamp-2">
                           {n.body}
                         </p>
                       )}
-                      <p className="mt-1 text-[11px] text-slate-300">
+                      <p className="mt-1 text-[11px] text-muted-foreground/50">
                         {timeAgo(n.created_at, tc, locale)}
                       </p>
                     </div>
@@ -291,13 +291,13 @@ export default function NotificationsPage() {
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 py-16 text-center">
-          <Bell className="mb-3 size-8 text-slate-300" />
-          <p className="text-sm font-medium text-slate-600">
+        <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border py-16 text-center">
+          <Bell className="mb-3 size-8 text-muted-foreground/50" />
+          <p className="text-sm font-medium text-muted-foreground">
             {t("empty")}
           </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Notifications will appear here as you use the platform.
+          <p className="mt-1 text-xs text-muted-foreground/70">
+            {t("emptyDetail")}
           </p>
         </div>
       )}

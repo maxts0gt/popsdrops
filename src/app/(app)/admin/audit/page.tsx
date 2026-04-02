@@ -1,10 +1,17 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { Download, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  ScrollText,
-  Search,
-  Filter,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -13,213 +20,390 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { createClient } from "@/lib/supabase/client";
+import { getSingleRelation } from "@/lib/supabase/relations";
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+const PAGE_SIZE = 50;
+
+const ACTION_LABELS: Record<string, string> = {
+  approve_profile: "Approved profile",
+  reject_profile: "Rejected profile",
+  suspend_user: "Suspended user",
+  unsuspend_user: "Unsuspended user",
+  pause_campaign: "Paused campaign",
+  cancel_campaign: "Cancelled campaign",
+  resume_campaign: "Resumed campaign",
+  re_review_profile: "Sent to re-review",
+};
+
+const ACTION_FILTER_GROUPS: Record<string, string[]> = {
+  approvals: ["approve_profile", "reject_profile", "re_review_profile"],
+  suspensions: ["suspend_user", "unsuspend_user"],
+  campaigns: ["pause_campaign", "cancel_campaign", "resume_campaign"],
+};
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 interface AuditEntry {
   id: string;
-  timestamp: string;
-  admin: string;
   action: string;
-  target: string;
-  details: string;
-  category: "user" | "campaign" | "system" | "content" | "setting";
+  target_type: string;
+  target_id: string;
+  metadata: Record<string, unknown> | null;
+  created_at: string;
+  admin: { full_name: string; email: string } | null;
 }
 
-const categoryColors: Record<string, string> = {
-  user: "bg-slate-100 text-slate-700",
-  campaign: "bg-slate-100 text-slate-700",
-  system: "bg-slate-100 text-slate-600",
-  content: "bg-slate-100 text-slate-700",
-  setting: "bg-slate-100 text-slate-700",
+interface AuditAdminRecord {
+  full_name: string | null;
+  email: string | null;
+}
+
+type AuditLogRow = Omit<AuditEntry, "admin"> & {
+  admin: AuditAdminRecord | AuditAdminRecord[] | null;
 };
 
-const auditEntries: AuditEntry[] = [
-  {
-    id: "a1",
-    timestamp: "2026-03-28 09:15:32",
-    admin: "admin@popsdrops.com",
-    action: "Approved creator",
-    target: "Mariam Al-Kuwaiti (mariam@example.com)",
-    details: "All verification checks passed. Auto-matched to 2 active campaigns.",
-    category: "user",
-  },
-  {
-    id: "a2",
-    timestamp: "2026-03-28 08:42:11",
-    admin: "admin@popsdrops.com",
-    action: "Rejected creator",
-    target: "Ahmed Badawi (ahmed.b@example.com)",
-    details: "Follower count mismatch. Claimed 50K, verified 8K. Flagged for investigation.",
-    category: "user",
-  },
-  {
-    id: "a3",
-    timestamp: "2026-03-27 17:30:05",
-    admin: "admin@popsdrops.com",
-    action: "Approved brand",
-    target: "Fresh Foods MENA (hello@freshfoods.ae)",
-    details: "Website verified. Industry: Food & Beverage. Market: UAE.",
-    category: "user",
-  },
-  {
-    id: "a4",
-    timestamp: "2026-03-27 15:20:44",
-    admin: "admin@popsdrops.com",
-    action: "Paused campaign",
-    target: "Spring Fashion Lookbook (camp-7)",
-    details: "Paused at brand request. Reason: product supply chain delay.",
-    category: "campaign",
-  },
-  {
-    id: "a5",
-    timestamp: "2026-03-27 14:05:18",
-    admin: "admin@popsdrops.com",
-    action: "Flagged content",
-    target: "Content submission cs-234",
-    details: "Undisclosed sponsorship. Notified creator and brand. Required re-upload with #ad disclosure.",
-    category: "content",
-  },
-  {
-    id: "a6",
-    timestamp: "2026-03-27 11:30:00",
-    admin: "system",
-    action: "Benchmark recalculation",
-    target: "All markets",
-    details: "Weekly benchmark recalculation completed. 1,247 data points across 8 markets.",
-    category: "system",
-  },
-  {
-    id: "a7",
-    timestamp: "2026-03-26 16:45:22",
-    admin: "admin@popsdrops.com",
-    action: "Resolved dispute",
-    target: "Dispute #r5 — Content usage rights",
-    details: "Mediated between creator and brand. Brand agreed to pay additional $100 for paid ads usage.",
-    category: "content",
-  },
-  {
-    id: "a8",
-    timestamp: "2026-03-26 10:12:08",
-    admin: "admin@popsdrops.com",
-    action: "Updated feature flag",
-    target: "campaign_reports",
-    details: "Enabled Campaign Intelligence Reports feature for all brands.",
-    category: "setting",
-  },
-  {
-    id: "a9",
-    timestamp: "2026-03-25 09:00:00",
-    admin: "system",
-    action: "Sent announcement",
-    target: "All users",
-    details: "Sent 'Ramadan Campaign Tips' announcement to 842 users. Open rate: 34%.",
-    category: "system",
-  },
-  {
-    id: "a10",
-    timestamp: "2026-03-24 14:30:55",
-    admin: "admin@popsdrops.com",
-    action: "Suspended user",
-    target: "Ahmed Badawi (ahmed.b@example.com)",
-    details: "Suspended for fake follower count. 30-day ban. Can appeal via support email.",
-    category: "user",
-  },
-  {
-    id: "a11",
-    timestamp: "2026-03-24 11:15:00",
-    admin: "admin@popsdrops.com",
-    action: "Added cultural event",
-    target: "Cultural Calendar",
-    details: "Added Eid Al-Adha 2026 (May 27-30) for all MENA markets.",
-    category: "setting",
-  },
-  {
-    id: "a12",
-    timestamp: "2026-03-23 16:00:33",
-    admin: "admin@popsdrops.com",
-    action: "Approved creator",
-    target: "Omar Habib (omar@example.com)",
-    details: "YouTube channel verified (78K subs). Added to travel niche pool.",
-    category: "user",
-  },
-];
+async function fetchAuditEntries(params: {
+  page: number;
+  actionFilter: string;
+  dateRange: string;
+}): Promise<{ entries: AuditEntry[]; totalCount: number }> {
+  const supabase = createClient();
+  const { page, actionFilter, dateRange } = params;
+
+  let query = supabase
+    .from("admin_audit_log")
+    .select(
+      `
+      id, action, target_type, target_id, metadata, created_at,
+      admin:profiles!admin_audit_log_admin_id_fkey (full_name, email)
+    `,
+      { count: "exact" },
+    )
+    .order("created_at", { ascending: false });
+
+  if (actionFilter !== "all") {
+    const actions = ACTION_FILTER_GROUPS[actionFilter];
+    if (actions) {
+      query = query.in("action", actions);
+    }
+  }
+
+  const dateFrom = getDateRangeFilter(dateRange);
+  if (dateFrom) {
+    query = query.gte("created_at", dateFrom);
+  }
+
+  query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+
+  const { data, count } = await query;
+
+  return {
+    entries: (data ?? []).map((row) => {
+      const entry = row as AuditLogRow;
+      const admin = getSingleRelation(entry.admin);
+
+      return {
+        ...entry,
+        admin: admin
+          ? {
+              full_name: admin.full_name ?? "Unknown",
+              email: admin.email ?? "",
+            }
+          : null,
+      };
+    }),
+    totalCount: count ?? 0,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function relativeTime(dateStr: string): string {
+  const now = Date.now();
+  const then = new Date(dateStr).getTime();
+  const diffMs = now - then;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffSec < 60) return "just now";
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay === 1) return "yesterday";
+  if (diffDay < 30) return `${diffDay}d ago`;
+  return new Date(dateStr).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getDateRangeFilter(range: string): string | null {
+  const now = new Date();
+  switch (range) {
+    case "today": {
+      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      return start.toISOString();
+    }
+    case "7d": {
+      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return start.toISOString();
+    }
+    case "30d": {
+      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return start.toISOString();
+    }
+    default:
+      return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// CSV Export
+// ---------------------------------------------------------------------------
+
+function exportCSV(entries: AuditEntry[]) {
+  const headers = ["Date", "Admin", "Action", "Target", "Details"];
+  const rows = entries.map((e) => [
+    new Date(e.created_at).toISOString(),
+    e.admin?.full_name ?? "Unknown",
+    ACTION_LABELS[e.action] ?? e.action,
+    typeof e.metadata?.target_name === "string" ? e.metadata.target_name : e.target_id,
+    typeof e.metadata?.reason === "string" ? e.metadata.reason : "",
+  ]);
+  const csv = [headers, ...rows]
+    .map((r) =>
+      r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
+    )
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `audit-log-${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 export default function AdminAuditPage() {
+  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [actionFilter, setActionFilter] = useState("all");
+  const [dateRange, setDateRange] = useState("all");
+
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void fetchAuditEntries({ page, actionFilter, dateRange })
+      .then((result) => {
+        if (cancelled) return;
+        setEntries(result.entries);
+        setTotalCount(result.totalCount);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setEntries([]);
+        setTotalCount(0);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, actionFilter, dateRange]);
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Audit Log</h1>
-        <p className="text-sm text-slate-500">Complete history of administrative actions</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Audit Log</h1>
+          <p className="text-sm text-muted-foreground">
+            {totalCount} {totalCount === 1 ? "entry" : "entries"}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => exportCSV(entries)}
+          disabled={entries.length === 0}
+        >
+          <Download className="me-1.5 size-4" />
+          Export CSV
+        </Button>
       </div>
 
-      {/* Search & Filter */}
+      {/* Filters */}
       <Card className="mb-6">
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
-            <Input placeholder="Search actions, targets, or details..." className="pl-9" />
-          </div>
-          <div className="flex gap-2">
-            <select className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-              <option value="">All Categories</option>
-              <option value="user">User</option>
-              <option value="campaign">Campaign</option>
-              <option value="content">Content</option>
-              <option value="setting">Setting</option>
-              <option value="system">System</option>
-            </select>
-            <select className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50">
-              <option value="">All Admins</option>
-              <option value="admin@popsdrops.com">admin@popsdrops.com</option>
-              <option value="system">System</option>
-            </select>
-          </div>
+          <Select
+            value={actionFilter}
+            onValueChange={(value) => {
+              if (!value) return;
+              setLoading(true);
+              setPage(0);
+              setActionFilter(value);
+            }}
+          >
+            <SelectTrigger className="h-9 w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Actions</SelectItem>
+              <SelectItem value="approvals">Approvals</SelectItem>
+              <SelectItem value="suspensions">Suspensions</SelectItem>
+              <SelectItem value="campaigns">Campaign Actions</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select
+            value={dateRange}
+            onValueChange={(value) => {
+              if (!value) return;
+              setLoading(true);
+              setPage(0);
+              setDateRange(value);
+            }}
+          >
+            <SelectTrigger className="h-9 w-40">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Time</SelectItem>
+              <SelectItem value="today">Today</SelectItem>
+              <SelectItem value="7d">Last 7 Days</SelectItem>
+              <SelectItem value="30d">Last 30 Days</SelectItem>
+            </SelectContent>
+          </Select>
         </CardContent>
       </Card>
 
       {/* Audit Table */}
       <Card>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Timestamp</TableHead>
-                <TableHead>Admin</TableHead>
-                <TableHead>Action</TableHead>
-                <TableHead>Target</TableHead>
-                <TableHead>Details</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {auditEntries.map((entry) => (
-                <TableRow key={entry.id}>
-                  <TableCell className="whitespace-nowrap text-xs text-slate-500 font-mono">
-                    {entry.timestamp}
-                  </TableCell>
-                  <TableCell className="text-slate-600">
-                    {entry.admin === "system" ? (
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">System</span>
-                    ) : (
-                      <span className="text-xs">{entry.admin}</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${categoryColors[entry.category]}`}>
-                        {entry.category}
-                      </span>
-                      <span className="text-sm font-medium text-slate-900">{entry.action}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-[200px] truncate text-slate-600" title={entry.target}>
-                    {entry.target}
-                  </TableCell>
-                  <TableCell className="max-w-[300px] truncate text-xs text-slate-500" title={entry.details}>
-                    {entry.details}
-                  </TableCell>
-                </TableRow>
+          {loading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 8 }, (_, i) => (
+                <Skeleton key={i} className="h-10 w-full" />
               ))}
-            </TableBody>
-          </Table>
+            </div>
+          ) : entries.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-border py-12 text-center">
+              <Inbox className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+              <p className="text-sm text-muted-foreground">
+                {actionFilter !== "all" || dateRange !== "all"
+                  ? "No entries match your filters"
+                  : "No audit entries yet"}
+              </p>
+              {actionFilter === "all" && dateRange === "all" && (
+                <p className="mt-1 text-xs text-muted-foreground/70">
+                  Admin actions will appear here automatically
+                </p>
+              )}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>When</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Target</TableHead>
+                  <TableHead>Details</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {entries.map((entry) => {
+                  const reason =
+                    typeof entry.metadata?.reason === "string"
+                      ? entry.metadata.reason
+                      : null;
+                  const targetName =
+                    typeof entry.metadata?.target_name === "string"
+                      ? entry.metadata.target_name
+                      : entry.target_id;
+
+                  return (
+                    <TableRow key={entry.id}>
+                      <TableCell
+                        className="whitespace-nowrap text-xs text-muted-foreground"
+                        title={new Date(entry.created_at).toLocaleString()}
+                      >
+                        {relativeTime(entry.created_at)}
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {entry.admin?.full_name ?? "Unknown"}
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {ACTION_LABELS[entry.action] ?? entry.action}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {targetName}
+                      </TableCell>
+                      <TableCell
+                        className="max-w-[250px] truncate text-xs text-muted-foreground"
+                        title={reason ?? ""}
+                      >
+                        {reason ?? "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+              <p className="text-xs text-muted-foreground">
+                Page {page + 1} of {totalPages}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page === 0}
+                  onClick={() => {
+                    setLoading(true);
+                    setPage((currentPage) => currentPage - 1);
+                  }}
+                >
+                  <ChevronLeft className="me-1 size-4" />
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages - 1}
+                  onClick={() => {
+                    setLoading(true);
+                    setPage((currentPage) => currentPage + 1);
+                  }}
+                >
+                  Next
+                  <ChevronRight className="ms-1 size-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

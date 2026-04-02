@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
@@ -73,16 +74,16 @@ export default function LandingPage() {
             variants={fadeUp}
             className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
           >
-            <a
+            <Link
               href="/request-invite"
               className="group relative inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-4 text-sm font-semibold text-slate-900 shadow-2xl shadow-white/10 transition-all hover:scale-[1.02] hover:shadow-white/20"
             >
               {t("cta")}
               <ArrowRight className={`h-4 w-4 transition-transform group-hover:translate-x-0.5 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : ""}`} />
-            </a>
-            <a href="/login" className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-300">
+            </Link>
+            <Link href="/login" className="text-sm font-medium text-slate-500 transition-colors hover:text-slate-300">
               {t("cta.login")}
-            </a>
+            </Link>
           </motion.div>
 
           {/* Trust markers — more visible */}
@@ -323,18 +324,18 @@ export default function LandingPage() {
               {t("final.title")}
             </h2>
             <div className="mt-8">
-              <a
+              <Link
                 href="/request-invite"
                 className="group inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/25"
               >
                 {t("final.cta")}
                 <ArrowRight className={`h-4 w-4 transition-transform group-hover:translate-x-0.5 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : ""}`} />
-              </a>
+              </Link>
             </div>
             <p className="mt-4">
-              <a href="/login" className="text-sm text-slate-400 transition-colors hover:text-slate-600">
+              <Link href="/login" className="text-sm text-slate-400 transition-colors hover:text-slate-600">
                 {t("final.login")}
-              </a>
+              </Link>
             </p>
           </motion.div>
         </div>

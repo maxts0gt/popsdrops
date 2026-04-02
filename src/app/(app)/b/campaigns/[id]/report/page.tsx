@@ -269,33 +269,33 @@ export default function CampaignReportPage() {
       <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="space-y-2">
-          <div className="h-4 w-20 animate-pulse rounded bg-slate-100" />
-          <div className="h-7 w-56 animate-pulse rounded bg-slate-100" />
-          <div className="h-4 w-32 animate-pulse rounded bg-slate-50" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted" />
+          <div className="h-7 w-56 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-32 animate-pulse rounded bg-muted/50" />
         </div>
         {/* KPI cards */}
         <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
           {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="rounded-xl border border-slate-200/60 bg-white p-5">
+            <div key={i} className="rounded-xl border border-border/60 bg-card p-5">
               <div className="space-y-2">
-                <div className="h-6 w-16 animate-pulse rounded bg-slate-100" />
-                <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
+                <div className="h-6 w-16 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
               </div>
             </div>
           ))}
         </div>
         {/* Table skeleton */}
-        <div className="rounded-xl border border-slate-200/60 bg-white">
-          <div className="flex gap-4 border-b border-slate-100 px-6 py-4">
+        <div className="rounded-xl border border-border/60 bg-card">
+          <div className="flex gap-4 border-b border-border/50 px-6 py-4">
             {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="h-3 flex-1 animate-pulse rounded bg-slate-100" />
+              <div key={i} className="h-3 flex-1 animate-pulse rounded bg-muted" />
             ))}
           </div>
           {[1, 2, 3].map((i) => (
-            <div key={i} className="flex items-center gap-4 border-b border-slate-50 px-6 py-4 last:border-0">
-              <div className="size-7 animate-pulse rounded-full bg-slate-100" />
+            <div key={i} className="flex items-center gap-4 border-b border-border/30 px-6 py-4 last:border-0">
+              <div className="size-7 animate-pulse rounded-full bg-muted" />
               {[1, 2, 3, 4].map((j) => (
-                <div key={j} className="h-3 flex-1 animate-pulse rounded bg-slate-50" />
+                <div key={j} className="h-3 flex-1 animate-pulse rounded bg-muted/50" />
               ))}
             </div>
           ))}
@@ -345,14 +345,14 @@ export default function CampaignReportPage() {
       <div className="mb-6">
         <Link
           href={`/b/campaigns/${campaign.id}`}
-          className="mb-3 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-700"
+          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="size-3.5" /> {t("back")}
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-            <p className="text-sm text-slate-500">
+            <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+            <p className="text-sm text-muted-foreground">
               {campaign.title} &middot; {formatDate(campaign.posting_window_start, locale)} — {formatDate(campaign.posting_window_end, locale)}
             </p>
           </div>
@@ -381,7 +381,7 @@ export default function CampaignReportPage() {
                 })),
               })
             }
-            className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
+            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-white hover:bg-primary/90"
           >
             <Download className="size-4" />
             {t("exportPdf")}
@@ -394,11 +394,11 @@ export default function CampaignReportPage() {
         {kpiCards.map((card) => (
           <Card key={card.label}>
             <CardContent>
-              <div className="mb-2 inline-flex size-8 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+              <div className="mb-2 inline-flex size-8 items-center justify-center rounded-lg bg-muted text-muted-foreground">
                 <card.icon className="size-4" />
               </div>
-              <p className="text-xl font-bold text-slate-900">{card.value}</p>
-              <p className="text-xs text-slate-500">{card.label}</p>
+              <p className="text-xl font-bold text-foreground">{card.value}</p>
+              <p className="text-xs text-muted-foreground">{card.label}</p>
             </CardContent>
           </Card>
         ))}
@@ -467,9 +467,9 @@ export default function CampaignReportPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="mb-8 rounded-lg border border-dashed border-slate-300 py-12 text-center">
-          <BarChart3 className="mx-auto mb-3 size-8 text-slate-300" />
-          <p className="text-sm text-slate-500">{t("empty")}</p>
+        <div className="mb-8 rounded-lg border border-dashed border-border py-12 text-center">
+          <BarChart3 className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
         </div>
       )}
     </div>

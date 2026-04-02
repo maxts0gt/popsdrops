@@ -1,6 +1,6 @@
-const { getDefaultConfig } = require("expo/metro-config");
-const { withNativeWind } = require("nativewind/metro");
-const path = require("path");
+import path from "path";
+import { getDefaultConfig } from "expo/metro-config";
+import { withNativeWind } from "nativewind/metro";
 
 const projectRoot = __dirname;
 const sharedRoot = path.resolve(projectRoot, "../shared");
@@ -16,4 +16,4 @@ config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, "..", "node_modules"),
 ];
 
-module.exports = withNativeWind(config, { input: "./global.css" });
+export default withNativeWind(config, { input: "./global.css" });

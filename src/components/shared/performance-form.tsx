@@ -112,10 +112,10 @@ export function PerformanceForm({
       <Card>
         <CardContent className="py-8 text-center">
           <CheckCircle2 className="mx-auto mb-3 size-8 text-emerald-500" />
-          <p className="text-sm font-medium text-slate-900">
+          <p className="text-sm font-medium text-foreground">
             {MEASUREMENT_LABELS[measurementType]} submitted
           </p>
-          <p className="mt-1 text-xs text-slate-500">
+          <p className="mt-1 text-xs text-muted-foreground">
             Performance data has been recorded for this content.
           </p>
         </CardContent>
@@ -127,39 +127,39 @@ export function PerformanceForm({
     <div className="space-y-4">
       {/* Platform header */}
       <div className="flex items-center gap-3">
-        <div className="flex size-9 items-center justify-center rounded-lg bg-slate-100">
-          <Icon className="size-4 text-slate-600" />
+        <div className="flex size-9 items-center justify-center rounded-lg bg-muted">
+          <Icon className="size-4 text-muted-foreground" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-slate-900">
+          <p className="text-sm font-semibold text-foreground">
             {PLATFORM_LABELS[platform]} — {MEASUREMENT_LABELS[measurementType]}
           </p>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Enter metrics from your {PLATFORM_LABELS[platform]} analytics
           </p>
         </div>
       </div>
 
       {/* Platform-specific note */}
-      <div className="flex items-start gap-2 rounded-lg bg-slate-50 px-3 py-2.5 ring-1 ring-slate-900/[0.04]">
-        <Info className="mt-0.5 size-3.5 shrink-0 text-slate-400" />
-        <p className="text-xs leading-relaxed text-slate-500">{note}</p>
+      <div className="flex items-start gap-2 rounded-lg bg-muted/50 px-3 py-2.5 ring-1 ring-ring/[0.04]">
+        <Info className="mt-0.5 size-3.5 shrink-0 text-muted-foreground/70" />
+        <p className="text-xs leading-relaxed text-muted-foreground">{note}</p>
       </div>
 
       {/* Metric fields */}
       <div className="space-y-3">
         {metrics.map((field) => (
           <div key={field.key}>
-            <label className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-700">
+            <label className="mb-1 flex items-center gap-1 text-sm font-medium text-foreground">
               {field.label}
               {field.required && (
                 <span className="text-xs text-red-400">*</span>
               )}
               {field.type === "percentage" && (
-                <span className="text-xs font-normal text-slate-400">(%)</span>
+                <span className="text-xs font-normal text-muted-foreground/70">(%)</span>
               )}
               {field.key === "avg_watch_time_seconds" && (
-                <span className="text-xs font-normal text-slate-400">(seconds)</span>
+                <span className="text-xs font-normal text-muted-foreground/70">(seconds)</span>
               )}
             </label>
             <input
@@ -170,7 +170,7 @@ export function PerformanceForm({
               placeholder={field.description}
               value={values[field.key] || ""}
               onChange={(e) => updateValue(field.key, e.target.value)}
-              className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+              className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
             />
           </div>
         ))}
@@ -178,11 +178,11 @@ export function PerformanceForm({
 
       {/* Screenshot proof */}
       <div>
-        <label className="mb-1 flex items-center gap-1 text-sm font-medium text-slate-700">
+        <label className="mb-1 flex items-center gap-1 text-sm font-medium text-foreground">
           Analytics Screenshot
           <span className="text-xs text-red-400">*</span>
         </label>
-        <p className="mb-2 text-xs text-slate-500">
+        <p className="mb-2 text-xs text-muted-foreground">
           Paste a link to a screenshot of your {PLATFORM_LABELS[platform]} analytics dashboard
           showing these metrics. This verifies your reported numbers.
         </p>
@@ -191,9 +191,9 @@ export function PerformanceForm({
           placeholder="https://..."
           value={screenshotUrl}
           onChange={(e) => setScreenshotUrl(e.target.value)}
-          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
         />
-        <p className="mt-1 text-[11px] text-slate-400">
+        <p className="mt-1 text-[11px] text-muted-foreground/70">
           Upload your screenshot to any image host and paste the URL. Supabase Storage upload coming soon.
         </p>
       </div>

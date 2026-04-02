@@ -50,14 +50,14 @@ const iconMap: Record<
   string,
   { icon: typeof Bell; color: string }
 > = {
-  new_application: { icon: Users, color: "bg-slate-50 text-slate-600" },
-  content_submitted: { icon: FileCheck, color: "bg-slate-50 text-slate-600" },
-  content_published: { icon: TrendingUp, color: "bg-emerald-50 text-emerald-600" },
-  new_message: { icon: MessageSquare, color: "bg-slate-50 text-slate-600" },
-  new_review: { icon: Star, color: "bg-amber-50 text-amber-600" },
-  campaign_completed: { icon: CheckCircle, color: "bg-emerald-50 text-emerald-600" },
-  performance_submitted: { icon: Zap, color: "bg-slate-50 text-slate-600" },
-  account_approved: { icon: CheckCircle, color: "bg-emerald-50 text-emerald-600" },
+  new_application: { icon: Users, color: "bg-muted/50 text-muted-foreground" },
+  content_submitted: { icon: FileCheck, color: "bg-muted/50 text-muted-foreground" },
+  content_published: { icon: TrendingUp, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
+  new_message: { icon: MessageSquare, color: "bg-muted/50 text-muted-foreground" },
+  new_review: { icon: Star, color: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
+  campaign_completed: { icon: CheckCircle, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
+  performance_submitted: { icon: Zap, color: "bg-muted/50 text-muted-foreground" },
+  account_approved: { icon: CheckCircle, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
 };
 
 // ---------------------------------------------------------------------------
@@ -156,20 +156,20 @@ export default function BrandNotificationsPage() {
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between">
-          <div className="h-7 w-32 animate-pulse rounded bg-slate-100" />
-          <div className="h-4 w-20 animate-pulse rounded bg-slate-50" />
+          <div className="h-7 w-32 animate-pulse rounded bg-muted" />
+          <div className="h-4 w-20 animate-pulse rounded bg-muted/50" />
         </div>
         {[1, 2, 3, 4].map((i) => (
           <div
             key={i}
-            className="flex items-start gap-3 rounded-xl border border-slate-200/60 bg-white p-4"
+            className="flex items-start gap-3 rounded-xl border border-border/60 bg-card p-4"
           >
-            <div className="size-9 animate-pulse rounded-full bg-slate-100" />
+            <div className="size-9 animate-pulse rounded-full bg-muted" />
             <div className="flex-1 space-y-2">
-              <div className="h-4 w-52 animate-pulse rounded bg-slate-100" />
-              <div className="h-3 w-36 animate-pulse rounded bg-slate-50" />
+              <div className="h-4 w-52 animate-pulse rounded bg-muted" />
+              <div className="h-3 w-36 animate-pulse rounded bg-muted/50" />
             </div>
-            <div className="h-3 w-12 animate-pulse rounded bg-slate-50" />
+            <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
           </div>
         ))}
       </div>
@@ -179,7 +179,7 @@ export default function BrandNotificationsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
         {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={markAllRead}>
             {t("markAllRead")}
@@ -188,9 +188,9 @@ export default function BrandNotificationsPage() {
       </div>
 
       {notifications.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 py-16 text-center">
-          <Bell className="mx-auto mb-3 size-8 text-slate-300" />
-          <p className="text-sm font-medium text-slate-700">{t("empty")}</p>
+        <div className="rounded-lg border border-dashed border-border py-16 text-center">
+          <Bell className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+          <p className="text-sm font-medium text-foreground">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -200,8 +200,8 @@ export default function BrandNotificationsPage() {
             return (
               <Link key={n.id} href={hrefForNotification(n)}>
                 <Card
-                  className={`transition-colors hover:bg-slate-50 ${
-                    !n.read ? "border-s-2 border-s-slate-900" : ""
+                  className={`transition-colors hover:bg-muted/50 ${
+                    !n.read ? "border-s-2 border-s-foreground" : ""
                   }`}
                 >
                   <CardContent className="flex gap-3">
@@ -215,24 +215,24 @@ export default function BrandNotificationsPage() {
                         <h3
                           className={`text-sm ${
                             !n.read
-                              ? "font-semibold text-slate-900"
-                              : "font-medium text-slate-700"
+                              ? "font-semibold text-foreground"
+                              : "font-medium text-foreground"
                           }`}
                         >
                           {n.title}
                         </h3>
-                        <span className="shrink-0 text-xs text-slate-400">
+                        <span className="shrink-0 text-xs text-muted-foreground/70">
                           {timeAgo(n.created_at, tc, locale)}
                         </span>
                       </div>
                       {n.body && (
-                        <p className="mt-0.5 text-sm text-slate-500">
+                        <p className="mt-0.5 text-sm text-muted-foreground">
                           {n.body}
                         </p>
                       )}
                     </div>
                     {!n.read && (
-                      <div className="mt-1 size-2 shrink-0 rounded-full bg-slate-900" />
+                      <div className="mt-1 size-2 shrink-0 rounded-full bg-foreground" />
                     )}
                   </CardContent>
                 </Card>

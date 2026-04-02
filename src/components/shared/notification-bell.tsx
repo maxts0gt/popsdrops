@@ -69,11 +69,11 @@ export function NotificationBell({ href }: { href: string }) {
   return (
     <Link
       href={href}
-      className="relative rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+      className="relative rounded-lg p-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
     >
       <Bell className="size-5" />
       {unreadCount > 0 && (
-        <span className="absolute end-1 top-1 flex size-4 items-center justify-center rounded-full bg-slate-900 text-[10px] font-medium text-white">
+        <span className="absolute end-1 top-1 flex size-4 items-center justify-center rounded-full bg-foreground text-[10px] font-medium text-primary-foreground">
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>
       )}

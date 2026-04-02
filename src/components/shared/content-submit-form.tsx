@@ -126,7 +126,7 @@ export function ContentSubmitForm({
       {/* Platform selector (if multiple) */}
       {platforms.length > 1 && (
         <div>
-          <label className="mb-2 block text-sm font-medium text-slate-700">
+          <label className="mb-2 block text-sm font-medium text-foreground">
             Platform
           </label>
           <div className="flex flex-wrap gap-2">
@@ -140,8 +140,8 @@ export function ContentSubmitForm({
                   onClick={() => setSelectedPlatform(p)}
                   className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
                     selected
-                      ? "border-slate-900 bg-slate-900 text-white"
-                      : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+                      ? "border-foreground bg-foreground text-primary-foreground"
+                      : "border-border bg-card text-foreground hover:bg-muted/50"
                   }`}
                 >
                   <Icon className="size-3.5" />
@@ -158,9 +158,9 @@ export function ContentSubmitForm({
         <div className="flex items-center gap-2">
           {(() => {
             const Icon = PlatformIcon[selectedPlatform];
-            return <Icon className="size-4 text-slate-500" />;
+            return <Icon className="size-4 text-muted-foreground" />;
           })()}
-          <span className="text-sm font-medium text-slate-700">
+          <span className="text-sm font-medium text-foreground">
             {PLATFORM_LABELS[selectedPlatform]}
           </span>
         </div>
@@ -168,11 +168,11 @@ export function ContentSubmitForm({
 
       {/* Post URL */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-foreground">
           Post URL <span className="text-xs text-red-400">*</span>
         </label>
         <div className="relative">
-          <Link2 className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+          <Link2 className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
           <input
             type="url"
             placeholder={
@@ -183,11 +183,11 @@ export function ContentSubmitForm({
             value={postUrl}
             onChange={(e) => setPostUrl(e.target.value)}
             disabled={!selectedPlatform}
-            className="w-full rounded-lg border border-slate-200 bg-white py-2.5 pe-3 ps-9 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50"
+            className="w-full rounded-lg border border-border bg-card py-2.5 pe-3 ps-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50"
           />
         </div>
         {selectedPlatform && (
-          <p className="mt-1 text-[11px] text-slate-400">
+          <p className="mt-1 text-[11px] text-muted-foreground/70">
             Paste the public URL of your published {PLATFORM_LABELS[selectedPlatform]} post
           </p>
         )}
@@ -195,7 +195,7 @@ export function ContentSubmitForm({
 
       {/* Caption / Notes */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-slate-700">
+        <label className="mb-1 block text-sm font-medium text-foreground">
           Caption / Notes
         </label>
         <textarea
@@ -203,7 +203,7 @@ export function ContentSubmitForm({
           placeholder="Optional: paste the caption you used, or add any notes for the brand..."
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
-          className="w-full resize-none rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+          className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
         />
       </div>
 

@@ -73,7 +73,7 @@ export function Turnstile({ onTokenChange }: TurnstileProps) {
       <div id={containerId} className="min-h-16" />
 
       {!siteKey && process.env.NODE_ENV !== "production" ? (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground/70">
           Bot check is bypassed in local development.
         </p>
       ) : null}

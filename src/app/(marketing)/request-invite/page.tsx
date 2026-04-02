@@ -125,15 +125,15 @@ export default function RequestInvitePage() {
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-50">
             <Check className="h-8 w-8 text-emerald-600" />
           </div>
-          <h1 className="mt-6 text-2xl font-bold tracking-tight text-slate-900">
+          <h1 className="mt-6 text-2xl font-bold tracking-tight text-foreground">
             {t("success.title")}
           </h1>
-          <p className="mt-3 text-sm text-slate-500">
+          <p className="mt-3 text-sm text-muted-foreground">
             {t("success.message")}
           </p>
           <Link
             href="/"
-            className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-slate-900 hover:text-slate-600 transition-colors"
+            className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-muted-foreground transition-colors"
           >
             {t("success.back")}
           </Link>
@@ -150,10 +150,10 @@ export default function RequestInvitePage() {
         animate={{ opacity: 1, y: 0 }}
         className="text-center"
       >
-        <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
           {t("title")}
         </h1>
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-muted-foreground">
           {t("subtitle")}
         </p>
       </motion.div>
@@ -165,14 +165,14 @@ export default function RequestInvitePage() {
         transition={{ delay: 0.05 }}
         className="mt-8"
       >
-        <div className="flex rounded-xl border border-slate-200 bg-slate-50 p-1">
+        <div className="flex rounded-xl border border-border bg-muted/50 p-1">
           <button
             type="button"
             onClick={() => setType("brand")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
               type === "brand"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Building2 className="h-4 w-4" />
@@ -183,8 +183,8 @@ export default function RequestInvitePage() {
             onClick={() => setType("creator")}
             className={`flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all ${
               type === "creator"
-                ? "bg-white text-slate-900 shadow-sm"
-                : "text-slate-500 hover:text-slate-700"
+                ? "bg-card text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
             }`}
           >
             <Sparkles className="h-4 w-4" />
@@ -257,7 +257,7 @@ export default function RequestInvitePage() {
                     id="industry"
                     value={industry}
                     onChange={(e) => setIndustry(e.target.value)}
-                    className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">{t("brand.industry.placeholder")}</option>
                     {INDUSTRIES.map((i) => (
@@ -273,7 +273,7 @@ export default function RequestInvitePage() {
                     id="budgetRange"
                     value={budgetRange}
                     onChange={(e) => setBudgetRange(e.target.value)}
-                    className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   >
                     <option value="">{t("brand.budgetRange.placeholder")}</option>
                     {BUDGET_RANGES.map((r) => (
@@ -315,8 +315,8 @@ export default function RequestInvitePage() {
                       onClick={() => setSocialPlatform(p)}
                       className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
                         socialPlatform === p
-                          ? "bg-slate-900 text-white"
-                          : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          ? "bg-foreground text-background"
+                          : "bg-muted text-muted-foreground hover:bg-muted"
                       }`}
                     >
                       {PLATFORM_LABELS[p]}
@@ -347,7 +347,7 @@ export default function RequestInvitePage() {
                   id="followerRange"
                   value={followerRange}
                   onChange={(e) => setFollowerRange(e.target.value)}
-                  className="mt-1.5 w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-slate-900"
+                  className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 >
                   <option value="">{t("creator.followerRange.placeholder")}</option>
                   {FOLLOWER_RANGES.map((r) => (
@@ -365,7 +365,7 @@ export default function RequestInvitePage() {
         <div>
           <Label htmlFor="reason">
             {t("field.reason")}
-            <span className="ms-1 text-xs font-normal text-slate-400">{t("field.optional")}</span>
+            <span className="ms-1 text-xs font-normal text-muted-foreground/70">{t("field.optional")}</span>
           </Label>
           <Textarea
             id="reason"
@@ -396,9 +396,9 @@ export default function RequestInvitePage() {
           )}
         </Button>
 
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-muted-foreground/70">
           {t("haveAccess")}{" "}
-          <Link href="/login" className="font-medium text-slate-900 hover:underline">
+          <Link href="/login" className="font-medium text-foreground hover:underline">
             {t("logIn")}
           </Link>
         </p>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import {
   Plus,
@@ -71,11 +72,11 @@ function CampaignCard({
   locale: string;
 }) {
   return (
-    <a href={`/b/campaigns/${campaign.id}`} className="block">
+    <Link href={`/b/campaigns/${campaign.id}`} className="block">
       <Card className="transition-shadow hover:shadow-md">
         <CardContent className="space-y-3">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-medium text-slate-900">{campaign.title}</h3>
+            <h3 className="font-medium text-foreground">{campaign.title}</h3>
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${CAMPAIGN_STATUS_COLORS[campaign.status]}`}
             >
@@ -90,7 +91,7 @@ function CampaignCard({
               return (
                 <span
                   key={p}
-                  className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600"
+                  className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
                 >
                   <Icon className="size-3" />
                   {PLATFORM_LABELS[p]}
@@ -100,19 +101,19 @@ function CampaignCard({
           </div>
 
           {/* Stats row */}
-          <div className="flex items-center gap-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+          <div className="flex items-center gap-4 border-t border-border/50 pt-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="size-3.5" />
               {campaign.max_creators} {t("label.maxCreators")}
             </span>
             <span className="tabular-nums">{formatDate(campaign.created_at, locale)}</span>
-            <span className="ms-auto font-medium tabular-nums text-slate-700">
+            <span className="ms-auto font-medium tabular-nums text-foreground">
               {formatCurrency(campaign.budget_max, locale)}
             </span>
           </div>
         </CardContent>
       </Card>
-    </a>
+    </Link>
   );
 }
 
@@ -127,9 +128,9 @@ function CampaignList({
 }) {
   if (items.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center">
-        <Megaphone className="mx-auto mb-3 size-8 text-slate-300" />
-        <p className="text-sm text-slate-500">{t("empty.noCampaigns")}</p>
+      <div className="rounded-lg border border-dashed border-border py-12 text-center">
+        <Megaphone className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+        <p className="text-sm text-muted-foreground">{t("empty.noCampaigns")}</p>
         <LinkButton
           href="/b/campaigns/new"
           variant="outline"
@@ -176,7 +177,7 @@ export default function BrandCampaignsPage() {
 
       if (data) {
         setCampaigns(
-          data.map((c: any) => ({
+          data.map((c) => ({
             ...c,
             platforms: c.platforms || [],
             markets: c.markets || [],
@@ -193,14 +194,14 @@ export default function BrandCampaignsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-          <p className="text-sm text-slate-500">
+          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">
             {t("count", { count: String(campaigns.length) })}
           </p>
         </div>
-        <LinkButton href="/b/campaigns/new" size="lg">
+        <LinkButton href="/b/campaigns/new" size="lg" className="shrink-0">
           <Plus className="size-4" />
           {t("action.create")}
         </LinkButton>
@@ -211,7 +212,7 @@ export default function BrandCampaignsPage() {
           {/* Tab bar skeleton */}
           <div className="flex gap-1">
             {["w-12", "w-14", "w-16", "w-20", "w-14"].map((w, i) => (
-              <div key={i} className={`h-9 ${w} animate-pulse rounded-lg ${i === 0 ? "bg-slate-100" : "bg-slate-50"}`} />
+              <div key={i} className={`h-9 ${w} animate-pulse rounded-lg ${i === 0 ? "bg-muted" : "bg-muted/50"}`} />
             ))}
           </div>
           {/* Campaign card grid skeleton */}
@@ -219,23 +220,23 @@ export default function BrandCampaignsPage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="rounded-xl border border-slate-200/60 bg-white p-5"
+                className="rounded-xl border border-border/60 bg-card p-5"
               >
                 <div className="flex items-start justify-between">
                   <div className="space-y-2">
-                    <div className="h-4 w-36 animate-pulse rounded bg-slate-100" />
-                    <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
+                    <div className="h-4 w-36 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
                   </div>
-                  <div className="h-5 w-16 animate-pulse rounded-full bg-slate-50" />
+                  <div className="h-5 w-16 animate-pulse rounded-full bg-muted/50" />
                 </div>
                 <div className="mt-4 flex gap-2">
-                  <div className="h-5 w-16 animate-pulse rounded-full bg-slate-50" />
-                  <div className="h-5 w-14 animate-pulse rounded-full bg-slate-50" />
+                  <div className="h-5 w-16 animate-pulse rounded-full bg-muted/50" />
+                  <div className="h-5 w-14 animate-pulse rounded-full bg-muted/50" />
                 </div>
                 <div className="mt-3 flex gap-4">
-                  <div className="h-3 w-12 animate-pulse rounded bg-slate-50" />
-                  <div className="h-3 w-10 animate-pulse rounded bg-slate-50" />
-                  <div className="h-3 w-14 animate-pulse rounded bg-slate-50" />
+                  <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
+                  <div className="h-3 w-10 animate-pulse rounded bg-muted/50" />
+                  <div className="h-3 w-14 animate-pulse rounded bg-muted/50" />
                 </div>
               </div>
             ))}
@@ -243,7 +244,7 @@ export default function BrandCampaignsPage() {
         </div>
       ) : (
         <Tabs defaultValue="all">
-          <TabsList variant="line" className="mb-6">
+          <TabsList variant="line" className="mb-6 overflow-x-auto">
             <TabsTrigger value="all">
               {t("tab.all")} ({campaigns.length})
             </TabsTrigger>

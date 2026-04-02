@@ -77,10 +77,10 @@ export function EditNichesSheet({
                   disabled={atLimit}
                   className={`rounded-full px-3.5 py-2 text-sm font-medium transition-all ${
                     isSelected
-                      ? "bg-slate-900 text-white shadow-sm"
+                      ? "bg-foreground text-white shadow-sm"
                       : atLimit
-                        ? "cursor-not-allowed bg-slate-50 text-slate-300"
-                        : "bg-slate-50 text-slate-600 ring-1 ring-slate-900/[0.06] hover:bg-slate-100"
+                        ? "cursor-not-allowed bg-muted/50 text-muted-foreground/70"
+                        : "bg-muted/50 text-muted-foreground ring-1 ring-foreground/[0.06] hover:bg-muted"
                   }`}
                 >
                   {NICHE_LABELS[niche]}
@@ -88,7 +88,7 @@ export function EditNichesSheet({
               );
             })}
           </div>
-          <p className="mt-3 text-xs text-slate-400">
+          <p className="mt-3 text-xs text-muted-foreground/70">
             {selected.size} of {MAX_NICHES} selected
           </p>
         </div>

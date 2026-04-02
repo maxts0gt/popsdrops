@@ -1,7 +1,9 @@
+import nativewindPreset from "nativewind/preset";
+
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+const config = {
   content: ["./app/**/*.{js,jsx,ts,tsx}", "./components/**/*.{js,jsx,ts,tsx}"],
-  presets: [require("nativewind/preset")],
+  presets: [nativewindPreset],
   theme: {
     extend: {
       colors: {
@@ -25,3 +27,5 @@ module.exports = {
   },
   plugins: [],
 };
+
+export default config;

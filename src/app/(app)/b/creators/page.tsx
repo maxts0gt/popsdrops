@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import {
   Search,
@@ -24,6 +25,7 @@ import { useTranslation } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import type { Platform, Niche } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
+import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,10 +133,16 @@ export default function BrandCreatorsPage() {
 
       if (data) {
         setCreators(
-          data.map((d: any) => ({
-            ...d,
-            profiles: Array.isArray(d.profiles) ? d.profiles[0] : d.profiles,
-          })) as CreatorRow[]
+          data.map((row) => {
+            const creator = row as CreatorRow & {
+              profiles?: CreatorRow["profiles"] | CreatorRow["profiles"][];
+            };
+
+            return {
+              ...creator,
+              profiles: getSingleRelation(creator.profiles),
+            };
+          }) as CreatorRow[]
         );
       }
       setLoading(false);
@@ -155,13 +163,13 @@ export default function BrandCreatorsPage() {
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
-        <p className="text-sm text-slate-500">{t("subtitle")}</p>
+        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+        <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
 
       {/* Search */}
       <div className="relative mb-6">
-        <Search className="absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+        <Search className="absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
         <Input
           placeholder={t("search.placeholder")}
           className="ps-9"
@@ -175,35 +183,35 @@ export default function BrandCreatorsPage() {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-slate-200/60 bg-white p-5"
+              className="rounded-xl border border-border/60 bg-card p-5"
             >
               <div className="flex items-center gap-3">
-                <div className="size-12 animate-pulse rounded-full bg-slate-100" />
+                <div className="size-12 animate-pulse rounded-full bg-muted" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-4 w-24 animate-pulse rounded bg-slate-100" />
-                  <div className="h-3 w-16 animate-pulse rounded bg-slate-50" />
+                  <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-16 animate-pulse rounded bg-muted/50" />
                 </div>
               </div>
               <div className="mt-3 flex gap-1.5">
-                <div className="h-5 w-16 animate-pulse rounded-full bg-slate-50" />
-                <div className="h-5 w-14 animate-pulse rounded-full bg-slate-50" />
+                <div className="h-5 w-16 animate-pulse rounded-full bg-muted/50" />
+                <div className="h-5 w-14 animate-pulse rounded-full bg-muted/50" />
               </div>
               <div className="mt-3 flex gap-4">
-                <div className="h-3 w-14 animate-pulse rounded bg-slate-50" />
-                <div className="h-3 w-12 animate-pulse rounded bg-slate-50" />
+                <div className="h-3 w-14 animate-pulse rounded bg-muted/50" />
+                <div className="h-3 w-12 animate-pulse rounded bg-muted/50" />
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
-                <div className="h-5 w-12 animate-pulse rounded-full bg-slate-50" />
-                <div className="h-5 w-14 animate-pulse rounded-full bg-slate-50" />
-                <div className="h-5 w-10 animate-pulse rounded-full bg-slate-50" />
+                <div className="h-5 w-12 animate-pulse rounded-full bg-muted/50" />
+                <div className="h-5 w-14 animate-pulse rounded-full bg-muted/50" />
+                <div className="h-5 w-10 animate-pulse rounded-full bg-muted/50" />
               </div>
             </div>
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-slate-300 py-12 text-center">
-          <Users className="mx-auto mb-3 size-8 text-slate-300" />
-          <p className="text-sm text-slate-500">{t("empty")}</p>
+        <div className="rounded-lg border border-dashed border-border py-12 text-center">
+          <Users className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+          <p className="text-sm text-muted-foreground">{t("empty")}</p>
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -214,7 +222,7 @@ export default function BrandCreatorsPage() {
             const minRate = getMinRate(creator.rate_card);
 
             return (
-              <a
+              <Link
                 key={creator.id}
                 href={`/c/${creator.slug}`}
                 className="block"
@@ -229,10 +237,10 @@ export default function BrandCreatorsPage() {
                         <AvatarFallback>{getInitials(name)}</AvatarFallback>
                       </Avatar>
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-medium text-slate-900">
+                        <h3 className="truncate font-medium text-foreground">
                           {name}
                         </h3>
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           {creator.primary_market && (
                             <>
                               <MapPin className="size-3" />
@@ -242,7 +250,7 @@ export default function BrandCreatorsPage() {
                           )}
                           {followers > 0 && (
                             <>
-                              <span className="text-slate-300">·</span>
+                              <span className="text-muted-foreground/50">·</span>
                               {formatFollowers(followers)}
                             </>
                           )}
@@ -257,7 +265,7 @@ export default function BrandCreatorsPage() {
                     </div>
 
                     {creator.bio && (
-                      <p className="line-clamp-2 text-xs text-slate-500">
+                      <p className="line-clamp-2 text-xs text-muted-foreground">
                         {creator.bio}
                       </p>
                     )}
@@ -270,7 +278,7 @@ export default function BrandCreatorsPage() {
                           return (
                             <span
                               key={p}
-                              className="inline-flex items-center gap-1 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600"
+                              className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
                             >
                               <Icon className="size-3" />
                               {PLATFORM_LABELS[p]}
@@ -292,9 +300,9 @@ export default function BrandCreatorsPage() {
                     )}
 
                     {/* Stats */}
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/50 pt-3 text-xs text-muted-foreground">
                       {minRate && (
-                        <span className="font-medium tabular-nums text-slate-700">
+                        <span className="font-medium tabular-nums text-foreground">
                           {formatCurrency(minRate, locale)}+
                         </span>
                       )}
@@ -304,20 +312,20 @@ export default function BrandCreatorsPage() {
                       </span>
                       {creator.total_views > 0 && (
                         <span className="inline-flex items-center gap-1 tabular-nums">
-                          <Eye className="size-3 text-slate-400" />
+                          <Eye className="size-3 text-muted-foreground/70" />
                           {formatFollowers(creator.total_views)}
                         </span>
                       )}
                       {creator.avg_engagement_rate > 0 && (
                         <span className="inline-flex items-center gap-1 tabular-nums">
-                          <Zap className="size-3 text-slate-400" />
+                          <Zap className="size-3 text-muted-foreground/70" />
                           {creator.avg_engagement_rate.toFixed(1)}%
                         </span>
                       )}
                     </div>
                   </CardContent>
                 </Card>
-              </a>
+              </Link>
             );
           })}
         </div>

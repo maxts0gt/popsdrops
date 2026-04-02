@@ -41,19 +41,19 @@ export default function DevLoginPage() {
     setLoading(role);
     setError(null);
     // Navigate to the server route which handles session creation + redirect
-    window.location.href = `/auth/dev-login?role=${role}`;
+    window.location.assign(`/auth/dev-login?role=${role}`);
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center">
-          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-xl bg-slate-900 text-white">
+          <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-xl bg-foreground text-background">
             <Shield className="size-6" />
           </div>
-          <h1 className="text-xl font-bold text-slate-900">Dev Login</h1>
-          <p className="mt-1 text-sm text-slate-500">
+          <h1 className="text-xl font-bold text-foreground">Dev Login</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Development only — sign in as any role
           </p>
         </div>
@@ -65,7 +65,7 @@ export default function DevLoginPage() {
               key={user.role}
               onClick={() => handleLogin(user.role)}
               disabled={loading !== null}
-              className="group flex w-full items-start gap-4 rounded-xl bg-white p-4 text-start shadow-sm ring-1 ring-slate-900/[0.03] transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50"
+              className="group flex w-full items-start gap-4 rounded-xl bg-card p-4 text-start shadow-sm ring-1 ring-border/50 transition-all hover:-translate-y-0.5 hover:shadow-md disabled:opacity-50"
             >
               <div
                 className={`flex size-10 shrink-0 items-center justify-center rounded-lg ring-1 ${user.color}`}
@@ -77,9 +77,9 @@ export default function DevLoginPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-slate-900">{user.label}</p>
-                <p className="mt-0.5 text-xs text-slate-500">{user.description}</p>
-                <p className="mt-1 font-mono text-[10px] text-slate-400">
+                <p className="font-semibold text-foreground">{user.label}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{user.description}</p>
+                <p className="mt-1 font-mono text-[10px] text-muted-foreground/70">
                   dev-{user.role}@popsdrops.test
                 </p>
               </div>
@@ -93,7 +93,7 @@ export default function DevLoginPage() {
         )}
 
         {/* Info */}
-        <p className="text-center text-xs text-slate-400">
+        <p className="text-center text-xs text-muted-foreground/70">
           Sessions created via admin API — no password auth needed.
           <br />
           Users are auto-provisioned on first login.

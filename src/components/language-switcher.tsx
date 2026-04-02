@@ -60,24 +60,24 @@ export function LanguageSwitcher({
 
   const buttonClass = {
     default:
-      "flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-slate-900 transition-all",
+      "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all",
     minimal:
-      "flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors",
+      "flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors",
     dark:
       "flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors",
     header:
-      "flex items-center gap-1.5 text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors",
+      "flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
   };
 
   const dropdownClass = {
     default:
-      "absolute end-0 top-full z-50 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl",
+      "absolute end-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-1.5 shadow-xl",
     minimal:
-      "absolute end-0 bottom-full z-50 mb-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl",
+      "absolute end-0 bottom-full z-50 mb-2 w-52 rounded-xl border border-border bg-card p-1.5 shadow-xl",
     dark:
       "absolute end-0 top-full z-50 mt-2 w-52 rounded-xl border border-white/10 bg-[#1a1a1a] p-1.5 shadow-2xl backdrop-blur-xl",
     header:
-      "absolute end-0 top-full z-50 mt-2 w-52 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl",
+      "absolute end-0 top-full z-50 mt-2 w-52 rounded-xl border border-border bg-card p-1.5 shadow-xl",
   };
 
   function renderItem(loc: string) {
@@ -93,15 +93,15 @@ export function LanguageSwitcher({
           isActive
             ? isDark
               ? "bg-white/10 text-white"
-              : "bg-slate-100 font-medium text-slate-900"
+              : "bg-muted font-medium text-foreground"
             : isDark
               ? "text-white/60 hover:bg-white/5 hover:text-white"
-              : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
         }`}
       >
         <span>{getLocaleDisplayName(loc)}</span>
         {isActive && (
-          <Check className={`h-3.5 w-3.5 ${isDark ? "text-white/40" : "text-slate-400"}`} />
+          <Check className={`h-3.5 w-3.5 ${isDark ? "text-white/40" : "text-muted-foreground/70"}`} />
         )}
       </button>
     );
@@ -135,7 +135,7 @@ export function LanguageSwitcher({
             <>
               <div
                 className={`my-1.5 border-t ${
-                  isDark ? "border-white/10" : "border-slate-100"
+                  isDark ? "border-white/10" : "border-border/50"
                 }`}
               />
               <div className="max-h-60 overflow-auto">

@@ -5,45 +5,61 @@ import { Redis } from "@upstash/redis";
 import { createHash } from "crypto";
 import { headers } from "next/headers";
 
-let redisClient: Redis | null | undefined;
+// ---------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000; // 10 minutes
+const RATE_LIMIT_MAX = 5;
+const RATE_LIMIT_WINDOW = "10 m";
+
 let waitlistRatelimit: Ratelimit | null | undefined;
 
-function getRedisClient() {
-  if (redisClient !== undefined) {
-    return redisClient;
+function getWaitlistRatelimit(): Ratelimit | null {
+  if (waitlistRatelimit !== undefined) {
+    return waitlistRatelimit;
   }
 
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
-    redisClient = null;
-    return redisClient;
-  }
-
-  redisClient = new Redis({ url, token });
-  return redisClient;
-}
-
-function getWaitlistRatelimit() {
-  if (waitlistRatelimit !== undefined) {
-    return waitlistRatelimit;
-  }
-
-  const redis = getRedisClient();
-  if (!redis) {
     waitlistRatelimit = null;
     return waitlistRatelimit;
   }
 
+  const redis = new Redis({ url, token });
   waitlistRatelimit = new Ratelimit({
     redis,
-    limiter: Ratelimit.slidingWindow(5, "10 m"),
-    prefix: "ratelimit:waitlist",
+    limiter: Ratelimit.slidingWindow(RATE_LIMIT_MAX, RATE_LIMIT_WINDOW),
+    prefix: "waitlist",
   });
 
   return waitlistRatelimit;
 }
+
+function checkRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(identifier);
+
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(identifier, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+
+  if (entry.count >= RATE_LIMIT_MAX) {
+    return false;
+  }
+
+  entry.count++;
+  return true;
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 async function getRequestIp() {
   const requestHeaders = await headers();
@@ -59,6 +75,10 @@ async function getRequestIp() {
 function hashIdentifier(value: string) {
   return createHash("sha256").update(value).digest("hex").slice(0, 24);
 }
+
+// ---------------------------------------------------------------------------
+// Turnstile verification
+// ---------------------------------------------------------------------------
 
 async function verifyTurnstileToken(token?: string | null) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
@@ -111,28 +131,42 @@ async function verifyTurnstileToken(token?: string | null) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Rate limiting
+// ---------------------------------------------------------------------------
+
 async function enforceWaitlistRateLimit(email: string) {
-  const ratelimit = getWaitlistRatelimit();
-
-  if (!ratelimit) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("Rate limiting is not configured.");
-    }
-    return;
-  }
-
   const identifiers = [
     email.trim().toLowerCase(),
     await getRequestIp(),
   ].filter(Boolean) as string[];
 
+  const ratelimit = getWaitlistRatelimit();
+
+  if (!ratelimit && process.env.NODE_ENV === "production") {
+    throw new Error("Rate limiting is not configured.");
+  }
+
   for (const identifier of identifiers) {
-    const result = await ratelimit.limit(hashIdentifier(identifier));
-    if (!result.success) {
+    const key = hashIdentifier(identifier);
+
+    if (ratelimit) {
+      const result = await ratelimit.limit(key);
+      if (!result.success) {
+        throw new Error("Too many requests. Please try again in a few minutes.");
+      }
+      continue;
+    }
+
+    if (!checkRateLimit(key)) {
       throw new Error("Too many requests. Please try again in a few minutes.");
     }
   }
 }
+
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
 
 export async function protectWaitlistSubmission(
   email: string,

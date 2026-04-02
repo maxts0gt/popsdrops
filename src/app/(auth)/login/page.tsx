@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -63,21 +64,21 @@ export default function LoginPage() {
 
   if (magicLinkSent) {
     return (
-      <div className="rounded-xl border border-slate-200 bg-white p-8 text-center shadow-sm ring-1 ring-slate-900/[0.03]">
-        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-          <Mail className="h-6 w-6 text-slate-600" />
+      <div className="rounded-xl border border-border bg-card p-8 text-center shadow-sm ring-1 ring-ring/[0.03]">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+          <Mail className="h-6 w-6 text-muted-foreground" />
         </div>
-        <h1 className="text-xl font-bold text-slate-900">
+        <h1 className="text-xl font-bold text-foreground">
           {t("magicLink.sent")}
         </h1>
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           {t("magicLink.sentTo")} <strong>{email}</strong>
         </p>
-        <p className="mt-4 text-xs text-slate-400">
+        <p className="mt-4 text-xs text-muted-foreground/70">
           {t("magicLink.noReceive")}{" "}
           <button
             onClick={() => setMagicLinkSent(false)}
-            className="font-medium text-slate-900 hover:underline"
+            className="font-medium text-foreground hover:underline"
           >
             {t("magicLink.tryAgain")}
           </button>
@@ -87,12 +88,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm ring-1 ring-slate-900/[0.03]">
+    <div className="rounded-xl border border-border bg-card p-8 shadow-sm ring-1 ring-ring/[0.03]">
       <div className="text-center">
-        <h1 className="text-xl font-bold text-slate-900">
+        <h1 className="text-xl font-bold text-foreground">
           {t("title")}
         </h1>
-        <p className="mt-1 text-sm text-slate-600">
+        <p className="mt-1 text-sm text-muted-foreground">
           {t("subtitle")}
         </p>
       </div>
@@ -137,13 +138,13 @@ export default function LoginPage() {
 
       <div className="my-6 flex items-center gap-3">
         <Separator className="flex-1" />
-        <span className="text-xs text-slate-400">{t("or")}</span>
+        <span className="text-xs text-muted-foreground/70">{t("or")}</span>
         <Separator className="flex-1" />
       </div>
 
       {/* Magic Link */}
       <form onSubmit={handleMagicLink}>
-        <Label htmlFor="email" className="text-sm text-slate-700">
+        <Label htmlFor="email" className="text-sm text-foreground">
           {t("email.label")}
         </Label>
         <Input
@@ -164,25 +165,25 @@ export default function LoginPage() {
         </Button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-muted-foreground/70">
         {t("noAccount")}{" "}
-        <a
+        <Link
           href="/request-invite"
-          className="font-medium text-slate-900 hover:underline"
+          className="font-medium text-foreground hover:underline"
         >
           {t("requestInvite")}
-        </a>
+        </Link>
       </p>
 
-      <p className="mt-3 text-center text-xs text-slate-400">
+      <p className="mt-3 text-center text-xs text-muted-foreground/70">
         {t("legal.agree")}{" "}
-        <a href="/terms" className="font-medium text-slate-900 hover:underline">
+        <Link href="/terms" className="font-medium text-foreground hover:underline">
           {t("legal.terms")}
-        </a>{" "}
+        </Link>{" "}
         {t("legal.and")}{" "}
-        <a href="/privacy" className="font-medium text-slate-900 hover:underline">
+        <Link href="/privacy" className="font-medium text-foreground hover:underline">
           {t("legal.privacy")}
-        </a>
+        </Link>
       </p>
     </div>
   );

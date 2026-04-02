@@ -25,6 +25,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
+import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,6 +66,34 @@ interface ProfileStats {
   totalEarned: number;
   avgCPE: number;
   campaignPerformances: CampaignPerformance[];
+}
+
+interface MembershipCampaignRecord {
+  title: string | null;
+}
+
+interface MembershipRecord {
+  id: string;
+  accepted_rate: number | null;
+  campaigns: MembershipCampaignRecord | MembershipCampaignRecord[] | null;
+}
+
+interface ContentPerformanceRecord {
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  saves: number | null;
+}
+
+interface SubmissionPerformanceRecord {
+  id: string;
+  platform: Platform | null;
+  campaign_member_id: string;
+  content_performance:
+    | ContentPerformanceRecord
+    | ContentPerformanceRecord[]
+    | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,8 +150,9 @@ export default function AnalyticsPage() {
         .eq("creator_id", user.id);
 
       // Fetch content submissions + performance for this creator
-      const memberIds = memberships?.map((m: any) => m.id) || [];
-      let allPerformance: any[] = [];
+      const membershipRows = (memberships ?? []) as MembershipRecord[];
+      const memberIds = membershipRows.map((membership) => membership.id);
+      let allPerformance: SubmissionPerformanceRecord[] = [];
       if (memberIds.length > 0) {
         const { data: submissions } = await supabase
           .from("content_submissions")
@@ -132,7 +162,7 @@ export default function AnalyticsPage() {
           )
           .in("campaign_member_id", memberIds);
 
-        allPerformance = submissions || [];
+        allPerformance = (submissions ?? []) as SubmissionPerformanceRecord[];
       }
 
       if (creator && profile) {
@@ -165,6 +195,9 @@ export default function AnalyticsPage() {
           string,
           { title: string; platform: Platform | null; views: number; engagements: number; earned: number }
         >();
+        const membershipById = new Map(
+          membershipRows.map((membership) => [membership.id, membership]),
+        );
 
         for (const sub of allPerformance) {
           const perfs = Array.isArray(sub.content_performance)
@@ -193,9 +226,9 @@ export default function AnalyticsPage() {
           }
 
           // Aggregate into campaign performance
-          const membership = memberships?.find((m: any) => m.id === sub.campaign_member_id);
+          const membership = membershipById.get(sub.campaign_member_id);
           if (membership) {
-            const campaign = (membership as any).campaigns;
+            const campaign = getSingleRelation(membership.campaigns);
             const campaignTitle = campaign?.title || "Campaign";
             const key = sub.campaign_member_id;
 
@@ -205,7 +238,7 @@ export default function AnalyticsPage() {
                 platform,
                 views: 0,
                 engagements: 0,
-                earned: (membership as any).accepted_rate || 0,
+                earned: membership.accepted_rate ?? 0,
               });
             }
             const cp = campaignPerfMap.get(key)!;
@@ -215,8 +248,8 @@ export default function AnalyticsPage() {
         }
 
         // Calculate total earned from all memberships
-        for (const m of memberships || []) {
-          totalEarned += (m as any).accepted_rate || 0;
+        for (const membership of membershipRows) {
+          totalEarned += membership.accepted_rate ?? 0;
         }
 
         const avgER = totalViews > 0 ? (totalEngagements / totalViews) * 100 : 0;
@@ -278,18 +311,18 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
-        <div className="h-6 w-24 animate-pulse rounded bg-slate-100" />
+        <div className="h-6 w-24 animate-pulse rounded bg-muted" />
         <div className="grid grid-cols-2 gap-3">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="rounded-xl border border-slate-200/60 bg-white p-4"
+              className="rounded-xl border border-border/60 bg-card p-4"
             >
               <div className="flex items-center gap-2.5">
-                <div className="size-9 animate-pulse rounded-lg bg-slate-50" />
+                <div className="size-9 animate-pulse rounded-lg bg-muted/50" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-5 w-12 animate-pulse rounded bg-slate-100" />
-                  <div className="h-3 w-20 animate-pulse rounded bg-slate-50" />
+                  <div className="h-5 w-12 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted/50" />
                 </div>
               </div>
             </div>
@@ -302,13 +335,13 @@ export default function AnalyticsPage() {
   if (!stats) {
     return (
       <div className="mx-auto max-w-2xl p-4 lg:p-6">
-        <h1 className="text-xl font-semibold text-slate-900">{t("title")}</h1>
+        <h1 className="text-xl font-semibold text-foreground">{t("title")}</h1>
         <Card className="mt-6">
           <CardContent className="py-12 text-center">
-            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-slate-50">
-              <BarChart3 className="size-5 text-slate-400" />
+            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted/50">
+              <BarChart3 className="size-5 text-muted-foreground/70" />
             </div>
-            <p className="text-sm font-medium text-slate-700">
+            <p className="text-sm font-medium text-foreground">
               {t("empty.profile")}
             </p>
             <LinkButton
@@ -359,22 +392,22 @@ export default function AnalyticsPage() {
 
   const performanceMetrics = [
     {
-      label: "Total Views",
+      label: t("metric.totalViews"),
       value: formatNumber(stats.totalViews),
       icon: Eye,
     },
     {
-      label: "Total Engagements",
+      label: t("metric.totalEngagements"),
       value: formatNumber(stats.totalEngagements),
       icon: Heart,
     },
     {
-      label: "Avg Engagement Rate",
+      label: t("metric.avgEngRate"),
       value: stats.avgER > 0 ? `${stats.avgER.toFixed(1)}%` : "—",
       icon: Zap,
     },
     {
-      label: "Total Earned",
+      label: t("metric.totalEarned"),
       value: stats.totalEarned > 0 ? formatCurrency(stats.totalEarned, locale) : "—",
       icon: DollarSign,
     },
@@ -382,11 +415,11 @@ export default function AnalyticsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
-      <h1 className="text-xl font-semibold text-slate-900">{t("title")}</h1>
+      <h1 className="text-xl font-semibold text-foreground">{t("title")}</h1>
 
       <Tabs defaultValue="performance">
         <TabsList>
-          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="performance">{t("section.performance")}</TabsTrigger>
           <TabsTrigger value="profile">{t("section.overview")}</TabsTrigger>
           <TabsTrigger value="platforms">{t("section.platforms")}</TabsTrigger>
         </TabsList>
@@ -398,12 +431,12 @@ export default function AnalyticsPage() {
               <Card key={s.label}>
                 <CardContent className="py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
                       <s.icon className="size-4" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-slate-400">{s.label}</p>
-                      <p className="text-lg font-semibold tabular-nums text-slate-900">
+                      <p className="text-[11px] text-muted-foreground/70">{s.label}</p>
+                      <p className="text-lg font-semibold tabular-nums text-foreground">
                         {s.value}
                       </p>
                     </div>
@@ -417,8 +450,8 @@ export default function AnalyticsPage() {
           {stats.campaignPerformances.length > 0 ? (
             <Card>
               <CardContent>
-                <h3 className="mb-3 text-sm font-medium text-slate-900">
-                  Campaign Breakdown
+                <h3 className="mb-3 text-sm font-medium text-foreground">
+                  {t("section.campaignBreakdown")}
                 </h3>
                 <div className="space-y-1">
                   {stats.campaignPerformances.map((cp, i) => (
@@ -427,10 +460,10 @@ export default function AnalyticsPage() {
                       className="flex items-center gap-3 rounded-lg p-2"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-slate-900">
+                        <p className="truncate text-sm font-medium text-foreground">
                           {cp.campaign_title}
                         </p>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs text-slate-400">
+                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground/70">
                           {cp.platform && (
                             <span className="inline-flex items-center gap-0.5">
                               {(() => {
@@ -440,15 +473,15 @@ export default function AnalyticsPage() {
                               {PLATFORM_LABELS[cp.platform]}
                             </span>
                           )}
-                          <span>{formatNumber(cp.views)} views</span>
-                          <span>{formatNumber(cp.engagements)} eng</span>
+                          <span>{t("label.views", { count: formatNumber(cp.views) })}</span>
+                          <span>{t("label.engagements", { count: formatNumber(cp.engagements) })}</span>
                         </div>
                       </div>
                       <div className="text-end">
-                        <p className="text-sm font-semibold tabular-nums text-slate-900">
+                        <p className="text-sm font-semibold tabular-nums text-foreground">
                           {cp.er > 0 ? `${cp.er.toFixed(1)}%` : "—"}
                         </p>
-                        <p className="text-[11px] text-slate-400">ER</p>
+                        <p className="text-[11px] text-muted-foreground/70">{t("label.er")}</p>
                       </div>
                     </div>
                   ))}
@@ -458,10 +491,10 @@ export default function AnalyticsPage() {
           ) : (
             <Card>
               <CardContent className="py-8 text-center">
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-foreground">
                   {t("empty.campaigns")}
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground/70">
                   {t("empty.campaignsDetail")}
                 </p>
                 <LinkButton
@@ -484,18 +517,18 @@ export default function AnalyticsPage() {
               <Card key={s.label}>
                 <CardContent className="py-3">
                   <div className="flex items-center gap-2.5">
-                    <div className="flex size-9 items-center justify-center rounded-lg bg-slate-50 text-slate-500">
+                    <div className="flex size-9 items-center justify-center rounded-lg bg-muted/50 text-muted-foreground">
                       <s.icon className="size-4" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-slate-400">{s.label}</p>
-                      <p className="text-lg font-semibold tabular-nums text-slate-900">
+                      <p className="text-[11px] text-muted-foreground/70">{s.label}</p>
+                      <p className="text-lg font-semibold tabular-nums text-foreground">
                         {s.value}
                       </p>
                     </div>
                   </div>
                   {"detail" in s && s.detail && (
-                    <p className="mt-1.5 text-[11px] text-slate-400">
+                    <p className="mt-1.5 text-[11px] text-muted-foreground/70">
                       {s.detail}
                     </p>
                   )}
@@ -522,27 +555,29 @@ export default function AnalyticsPage() {
                             {PLATFORM_LABELS[p.platform]}
                           </span>
                         </div>
-                        <p className="text-lg font-bold tabular-nums text-slate-900">
+                        <p className="text-lg font-bold tabular-nums text-foreground">
                           {formatNumber(p.followers)}
-                          <span className="ms-1 text-xs font-normal text-slate-400">
+                          <span className="ms-1 text-xs font-normal text-muted-foreground/70">
                             {t("label.followers")}
                           </span>
                         </p>
                       </div>
                       {/* Platform-specific performance */}
                       {p.contentCount > 0 && (
-                        <div className="mt-3 flex items-center gap-4 border-t border-slate-100 pt-3 text-xs text-slate-500">
+                        <div className="mt-3 flex items-center gap-4 border-t border-border/50 pt-3 text-xs text-muted-foreground">
                           <span className="tabular-nums">
-                            {formatNumber(p.totalViews)} views
+                            {t("label.views", { count: formatNumber(p.totalViews) })}
                           </span>
                           <span className="tabular-nums">
-                            {formatNumber(p.totalEngagements)} eng
+                            {t("label.engagements", { count: formatNumber(p.totalEngagements) })}
                           </span>
                           <span className="tabular-nums">
-                            {p.er.toFixed(1)}% ER
+                            {p.er.toFixed(1)}% {t("label.er")}
                           </span>
                           <span className="tabular-nums">
-                            {p.contentCount} piece{p.contentCount !== 1 ? "s" : ""}
+                            {p.contentCount === 1
+                              ? t("label.pieceSingular")
+                              : t("label.pieces", { count: String(p.contentCount) })}
                           </span>
                         </div>
                       )}
@@ -554,10 +589,10 @@ export default function AnalyticsPage() {
           ) : (
             <Card>
               <CardContent className="py-8 text-center">
-                <p className="text-sm font-medium text-slate-700">
+                <p className="text-sm font-medium text-foreground">
                   {t("empty.platforms")}
                 </p>
-                <p className="mt-1 text-xs text-slate-400">
+                <p className="mt-1 text-xs text-muted-foreground/70">
                   {t("empty.platformsDetail")}
                 </p>
                 <LinkButton

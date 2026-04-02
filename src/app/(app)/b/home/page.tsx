@@ -106,15 +106,18 @@ export default function BrandHomePage() {
       // Fetch member + submission counts per campaign
       const enriched: ActiveCampaign[] = [];
       for (const c of campaignData || []) {
-        const { count: memberCount } = await supabase
+        const { data: memberRows, count: memberCount } = await supabase
           .from("campaign_members")
-          .select("id", { count: "exact", head: true })
+          .select("id", { count: "exact" })
           .eq("campaign_id", c.id);
 
-        const { count: submissionCount } = await supabase
-          .from("content_submissions")
-          .select("id", { count: "exact", head: true })
-          .eq("campaign_member_id", c.id);
+        const memberIds = (memberRows || []).map((m) => m.id);
+        const { count: submissionCount } = memberIds.length > 0
+          ? await supabase
+              .from("content_submissions")
+              .select("id", { count: "exact", head: true })
+              .in("campaign_member_id", memberIds)
+          : { count: 0 };
 
         enriched.push({
           ...c,
@@ -143,25 +146,25 @@ export default function BrandHomePage() {
           labelKey: "kpi.activeCampaigns",
           value: String(stats.activeCampaigns),
           icon: Megaphone,
-          color: "text-slate-600 bg-slate-100",
+          color: "text-muted-foreground bg-muted",
         },
         {
           labelKey: "kpi.pendingApplications",
           value: String(stats.pendingApplications),
           icon: Users,
-          color: "text-slate-600 bg-slate-100",
+          color: "text-muted-foreground bg-muted",
         },
         {
           labelKey: "kpi.contentAwaitingReview",
           value: String(stats.contentAwaiting),
           icon: FileCheck,
-          color: "text-slate-600 bg-slate-100",
+          color: "text-muted-foreground bg-muted",
         },
         {
           labelKey: "kpi.avgRating",
           value: stats.avgRating > 0 ? stats.avgRating.toFixed(1) : "—",
           icon: Star,
-          color: "text-slate-600 bg-slate-100",
+          color: "text-muted-foreground bg-muted",
         },
       ]
     : [];
@@ -171,9 +174,9 @@ export default function BrandHomePage() {
       {/* Header */}
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">{t("title")}</h1>
+          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
           {stats && (
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-muted-foreground">
               {t("greeting", { name: stats.companyName })}
             </p>
           )}
@@ -191,40 +194,40 @@ export default function BrandHomePage() {
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="rounded-xl border border-slate-200/60 bg-white p-5"
+                className="rounded-xl border border-border/60 bg-card p-5"
               >
                 <div className="flex items-center gap-3">
-                  <div className="size-10 animate-pulse rounded-lg bg-slate-100" />
+                  <div className="size-10 animate-pulse rounded-lg bg-muted" />
                   <div className="flex-1 space-y-2">
-                    <div className="h-6 w-10 animate-pulse rounded bg-slate-100" />
-                    <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
+                    <div className="h-6 w-10 animate-pulse rounded bg-muted" />
+                    <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
                   </div>
                 </div>
               </div>
             ))}
           </div>
           {/* Campaign list skeleton */}
-          <div className="rounded-xl border border-slate-200/60 bg-white">
+          <div className="rounded-xl border border-border/60 bg-card">
             <div className="flex items-center justify-between p-5 pb-3">
-              <div className="h-5 w-32 animate-pulse rounded bg-slate-100" />
-              <div className="h-4 w-16 animate-pulse rounded bg-slate-50" />
+              <div className="h-5 w-32 animate-pulse rounded bg-muted" />
+              <div className="h-4 w-16 animate-pulse rounded bg-muted/50" />
             </div>
             <div className="space-y-3 p-5 pt-2">
               {[1, 2].map((i) => (
-                <div key={i} className="rounded-lg border border-slate-100 p-4">
+                <div key={i} className="rounded-lg border border-border/50 p-4">
                   <div className="flex items-start justify-between">
                     <div className="space-y-2">
-                      <div className="h-4 w-40 animate-pulse rounded bg-slate-100" />
-                      <div className="h-3 w-24 animate-pulse rounded bg-slate-50" />
+                      <div className="h-4 w-40 animate-pulse rounded bg-muted" />
+                      <div className="h-3 w-24 animate-pulse rounded bg-muted/50" />
                     </div>
-                    <div className="h-5 w-16 animate-pulse rounded-full bg-slate-50" />
+                    <div className="h-5 w-16 animate-pulse rounded-full bg-muted/50" />
                   </div>
                   <div className="mt-3 space-y-1.5">
                     <div className="flex justify-between">
-                      <div className="h-3 w-16 animate-pulse rounded bg-slate-50" />
-                      <div className="h-3 w-8 animate-pulse rounded bg-slate-50" />
+                      <div className="h-3 w-16 animate-pulse rounded bg-muted/50" />
+                      <div className="h-3 w-8 animate-pulse rounded bg-muted/50" />
                     </div>
-                    <div className="h-1.5 w-full animate-pulse rounded-full bg-slate-50" />
+                    <div className="h-1.5 w-full animate-pulse rounded-full bg-muted/50" />
                   </div>
                 </div>
               ))}
@@ -244,10 +247,10 @@ export default function BrandHomePage() {
                     <kpi.icon className="size-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-slate-900">
+                    <p className="text-2xl font-bold text-foreground">
                       {kpi.value}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground">
                       {t(kpi.labelKey)}
                     </p>
                   </div>
@@ -268,10 +271,10 @@ export default function BrandHomePage() {
             <CardContent>
               {campaigns.length === 0 ? (
                 <div className="py-8 text-center">
-                  <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-slate-50">
-                    <Megaphone className="size-5 text-slate-400" />
+                  <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted/50">
+                    <Megaphone className="size-5 text-muted-foreground/70" />
                   </div>
-                  <p className="text-sm font-medium text-slate-700">
+                  <p className="text-sm font-medium text-foreground">
                     {t("empty.campaigns")}
                   </p>
                   <LinkButton
@@ -289,14 +292,14 @@ export default function BrandHomePage() {
                     <a
                       key={campaign.id}
                       href={`/b/campaigns/${campaign.id}`}
-                      className="block rounded-lg border border-slate-200 p-4 transition-colors hover:bg-slate-50"
+                      className="block rounded-lg border border-border p-4 transition-colors hover:bg-muted/50"
                     >
                       <div className="mb-3 flex items-start justify-between">
                         <div>
-                          <h3 className="font-medium text-slate-900">
+                          <h3 className="font-medium text-foreground">
                             {campaign.title}
                           </h3>
-                          <div className="mt-1 flex items-center gap-3 text-xs text-slate-500">
+                          <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                             <span>
                               {formatCurrency(campaign.budget_max, locale)}{" "}
                               {t("label.budget")}
@@ -311,15 +314,15 @@ export default function BrandHomePage() {
                       </div>
                       {/* Creator progress */}
                       <div className="mb-2">
-                        <div className="mb-1 flex justify-between text-xs text-slate-500">
+                        <div className="mb-1 flex justify-between text-xs text-muted-foreground">
                           <span>{t("label.creators")}</span>
                           <span>
                             {campaign.member_count}/{campaign.max_creators}
                           </span>
                         </div>
-                        <div className="h-1.5 w-full rounded-full bg-slate-100">
+                        <div className="h-1.5 w-full rounded-full bg-muted">
                           <div
-                            className="h-1.5 rounded-full bg-slate-900 transition-all"
+                            className="h-1.5 rounded-full bg-primary transition-all"
                             style={{
                               width: `${Math.min(100, (campaign.member_count / (campaign.max_creators || 1)) * 100)}%`,
                             }}

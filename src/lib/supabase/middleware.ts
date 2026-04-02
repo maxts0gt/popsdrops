@@ -87,7 +87,8 @@ export async function updateSession(request: NextRequest) {
   const isPublic =
     publicPaths.includes(pathname) ||
     pathname.startsWith("/auth/") ||
-    pathname.startsWith("/c/");
+    pathname.startsWith("/c/") ||
+    pathname.startsWith("/apply/");
 
   if (isPublic) {
     return supabaseResponse;

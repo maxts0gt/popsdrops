@@ -152,14 +152,14 @@ export function ConnectPlatformSheet({
                     <p className="text-sm font-medium">
                       {t("connectSheet.oauthConnect", { platform: platformLabel })}
                     </p>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-muted-foreground/70">
                       {t("connectSheet.oauthDescription")}
                     </p>
                   </div>
                 </a>
                 <div className="flex items-center gap-3">
                   <Separator className="flex-1" />
-                  <span className="text-xs text-slate-400">
+                  <span className="text-xs text-muted-foreground/70">
                     {t("connectSheet.orManually")}
                   </span>
                   <Separator className="flex-1" />
@@ -168,7 +168,7 @@ export function ConnectPlatformSheet({
             )}
 
           <div>
-            <Label htmlFor="platform-url" className="mb-1.5 text-xs text-slate-500">
+            <Label htmlFor="platform-url" className="mb-1.5 text-xs text-muted-foreground">
               {t("connectSheet.profileUrl")}
             </Label>
             <Input
@@ -182,7 +182,7 @@ export function ConnectPlatformSheet({
           </div>
 
           <div>
-            <Label htmlFor="platform-handle" className="mb-1.5 text-xs text-slate-500">
+            <Label htmlFor="platform-handle" className="mb-1.5 text-xs text-muted-foreground">
               {t("connectSheet.handle")}
             </Label>
             <Input
@@ -196,7 +196,7 @@ export function ConnectPlatformSheet({
           <div>
             <Label
               htmlFor="platform-followers"
-              className="mb-1.5 text-xs text-slate-500"
+              className="mb-1.5 text-xs text-muted-foreground"
             >
               {t("connectSheet.followers")}
             </Label>
@@ -209,7 +209,7 @@ export function ConnectPlatformSheet({
               placeholder="e.g. 50000"
               className="tabular-nums"
             />
-            <p className="mt-1 text-[11px] text-slate-400">
+            <p className="mt-1 text-[11px] text-muted-foreground/70">
               {t("connectSheet.followersHint")}
             </p>
           </div>

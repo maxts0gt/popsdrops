@@ -267,3 +267,70 @@ export async function completeCampaign(campaignId: string) {
   revalidatePath(`/b/campaigns/${campaignId}`);
   revalidatePath("/b/campaigns");
 }
+
+export async function updateCampaignDeadline(
+  campaignId: string,
+  newDeadline: string
+) {
+  const user = await getUser();
+  const supabase = await createClient();
+
+  // Validate date
+  const date = new Date(newDeadline);
+  if (isNaN(date.getTime()) || date < new Date()) {
+    throw new Error("Deadline must be a valid future date");
+  }
+
+  const { error } = await supabase
+    .from("campaigns")
+    .update({ application_deadline: newDeadline })
+    .eq("id", campaignId)
+    .eq("brand_id", user.id);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/b/campaigns/${campaignId}`);
+}
+
+export async function sendCampaignAnnouncement(
+  campaignId: string,
+  message: string
+) {
+  if (!message.trim()) throw new Error("Message cannot be empty");
+
+  const user = await getUser();
+  const supabase = await createClient();
+
+  // Verify ownership
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("id, title")
+    .eq("id", campaignId)
+    .eq("brand_id", user.id)
+    .single();
+
+  if (!campaign) throw new Error("Campaign not found");
+
+  // Get all campaign members
+  const { data: members } = await supabase
+    .from("campaign_members")
+    .select("creator_id")
+    .eq("campaign_id", campaignId);
+
+  if (!members || members.length === 0) {
+    throw new Error("No members to notify");
+  }
+
+  // Create notifications for all members
+  const notifications = members.map((m) => ({
+    user_id: m.creator_id,
+    type: "new_message" as const,
+    title: `Announcement: ${campaign.title}`,
+    body: message.trim(),
+    data: { campaign_id: campaignId },
+  }));
+
+  await createPrivilegedNotifications(notifications);
+
+  revalidatePath(`/b/campaigns/${campaignId}`);
+}

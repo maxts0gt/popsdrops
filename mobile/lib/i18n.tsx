@@ -141,11 +141,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   // Load translations when locale changes — block rendering until done
   useEffect(() => {
-    if (locale === "en") {
-      setRemoteStrings({});
-      setReady(true);
-      return;
-    }
+    if (locale === "en") return;
 
     if (fetchedLocaleRef.current === locale) return;
     fetchedLocaleRef.current = locale;
@@ -166,6 +162,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const setLocale = useCallback((newLocale: string) => {
     fetchedLocaleRef.current = null;
+    setRemoteStrings({});
     setReady(newLocale === "en");
     setLocaleState(newLocale);
   }, []);

@@ -7,6 +7,7 @@
  * Scopes: user.info.basic, user.info.profile, user.info.stats, video.list
  */
 
+import { createHash } from "crypto";
 import { getOAuthConfig, getRedirectUri, isMockMode } from "../config";
 import type {
   PlatformOAuthAdapter,
@@ -91,9 +92,7 @@ export const tiktokAdapter: PlatformOAuthAdapter = {
     let codeChallenge = "";
     if (codeVerifier) {
       // S256 challenge: base64url(sha256(code_verifier))
-      const crypto = require("crypto");
-      codeChallenge = crypto
-        .createHash("sha256")
+      codeChallenge = createHash("sha256")
         .update(codeVerifier)
         .digest("base64url");
     }

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -21,6 +22,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { NotificationBell } from "@/components/shared/notification-bell";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { PageTransition } from "@/components/page-transition";
 
 const navItems = [
@@ -31,7 +33,7 @@ const navItems = [
   { href: "/b/settings", labelKey: "nav.settings", icon: Settings },
 ] as const;
 
-function SidebarNav({ pathname, t }: { pathname: string; t: (key: string) => string }) {
+function SidebarNav({ pathname, t, onNavigate }: { pathname: string; t: (key: string) => string; onNavigate?: () => void }) {
   return (
     <nav className="flex flex-col gap-1">
       {navItems.map((item) => {
@@ -41,10 +43,11 @@ function SidebarNav({ pathname, t }: { pathname: string; t: (key: string) => str
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
               isActive
-                ? "bg-primary/5 font-medium text-primary"
-                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                ? "bg-muted font-medium text-foreground"
+                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
             }`}
           >
             <item.icon className="size-5" />
@@ -63,29 +66,31 @@ export default function BrandAppLayout({
 }) {
   const pathname = usePathname();
   const { t } = useTranslation("ui.common");
+  const [sheetOpen, setSheetOpen] = useState(false);
 
   return (
-    <div className="flex min-h-svh bg-slate-50">
+    <div className="flex min-h-svh bg-muted/50">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-e lg:border-slate-200 lg:bg-white">
-        <div className="flex h-14 items-center border-b border-slate-200 px-6">
+      <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:border-e lg:border-border lg:bg-card">
+        <div className="flex h-14 items-center border-b border-border px-6">
           <Link href="/">
-            <span className="text-lg font-bold text-primary">PopsDrops</span>
+            <span className="text-lg font-bold text-foreground">PopsDrops</span>
           </Link>
         </div>
         <div className="flex-1 overflow-y-auto px-3 py-4">
           <SidebarNav pathname={pathname} t={t} />
         </div>
-        <div className="border-t border-slate-200 p-3">
+        <div className="flex items-center justify-between border-t border-border p-3">
           <LanguageSwitcher variant="minimal" />
+          <ThemeToggle />
         </div>
       </aside>
 
       {/* Main area */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobile top bar */}
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-slate-200 bg-white px-4 lg:hidden">
-          <Sheet>
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 lg:hidden">
+          <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
             <SheetTrigger
               render={
                 <Button variant="ghost" size="icon-sm" />
@@ -99,24 +104,25 @@ export default function BrandAppLayout({
               <SheetDescription className="sr-only">
                 {t("nav.home")}
               </SheetDescription>
-              <div className="flex h-14 items-center border-b border-slate-200 px-6">
+              <div className="flex h-14 items-center border-b border-border px-6">
                 <Link href="/">
-                  <span className="text-lg font-bold text-primary">PopsDrops</span>
+                  <span className="text-lg font-bold text-foreground">PopsDrops</span>
                 </Link>
               </div>
               <div className="px-3 py-4">
-                <SidebarNav pathname={pathname} t={t} />
+                <SidebarNav pathname={pathname} t={t} onNavigate={() => setSheetOpen(false)} />
               </div>
             </SheetContent>
           </Sheet>
           <Link href="/" className="flex-1">
-            <span className="text-lg font-bold text-primary">PopsDrops</span>
+            <span className="text-lg font-bold text-foreground">PopsDrops</span>
           </Link>
+          <ThemeToggle />
           <NotificationBell href="/b/notifications" />
         </header>
 
         {/* Page content */}
-        <main className="flex-1">
+        <main className="min-w-0 flex-1 overflow-x-hidden">
           <PageTransition>{children}</PageTransition>
         </main>
       </div>

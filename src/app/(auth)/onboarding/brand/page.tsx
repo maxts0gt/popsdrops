@@ -23,6 +23,10 @@ import {
   INDUSTRIES,
   INDUSTRY_LABELS,
 } from "@/lib/constants";
+import {
+  brandOnboardingStep1Schema,
+  brandOnboardingStep2Schema,
+} from "@/lib/validations";
 
 export default function BrandOnboardingPage() {
   const router = useRouter();
@@ -40,11 +44,26 @@ export default function BrandOnboardingPage() {
   const [description, setDescription] = useState("");
   const [website, setWebsite] = useState("");
 
+  // Validation errors
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   async function handleSubmit() {
-    if (!companyName || !industry || !targetMarket) {
-      toast.error(t("error.fillAll"));
+    const step2Result = brandOnboardingStep2Schema.safeParse({
+      description: description || undefined,
+      website: website || undefined,
+    });
+    if (!step2Result.success) {
+      const errs: Record<string, string> = {};
+      for (const issue of step2Result.error.issues) {
+        const key = issue.path[0] as string;
+        if (!errs[key]) errs[key] = issue.message;
+      }
+      setFieldErrors(errs);
+      const firstMsg = step2Result.error.issues[0]?.message;
+      toast.error(firstMsg || t("error.fillAll"));
       return;
     }
+    setFieldErrors({});
 
     setLoading(true);
 
@@ -95,23 +114,23 @@ export default function BrandOnboardingPage() {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-8 shadow-sm ring-1 ring-slate-900/[0.03]">
+    <div className="rounded-xl border border-border bg-card p-8 shadow-sm ring-1 ring-ring/[0.03]">
       {/* Progress */}
       <div className="mb-6 flex gap-2">
         <div
-          className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-slate-900" : "bg-slate-200"}`}
+          className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-foreground" : "bg-border"}`}
         />
         <div
-          className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-slate-900" : "bg-slate-200"}`}
+          className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-foreground" : "bg-border"}`}
         />
       </div>
 
       {step === 1 && (
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-foreground">
             {t("step1.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("step1.desc")}
           </p>
 
@@ -125,6 +144,9 @@ export default function BrandOnboardingPage() {
                 onChange={(e) => setCompanyName(e.target.value)}
                 className="mt-1.5"
               />
+              {fieldErrors.company_name && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.company_name}</p>
+              )}
             </div>
 
             <div>
@@ -163,10 +185,23 @@ export default function BrandOnboardingPage() {
           <Button
             className="mt-6 w-full"
             onClick={() => {
-              if (!companyName || !industry || !targetMarket) {
-                toast.error(t("error.fillFields"));
+              const result = brandOnboardingStep1Schema.safeParse({
+                company_name: companyName,
+                industry,
+                primary_market: targetMarket,
+              });
+              if (!result.success) {
+                const errs: Record<string, string> = {};
+                for (const issue of result.error.issues) {
+                  const key = issue.path[0] as string;
+                  if (!errs[key]) errs[key] = issue.message;
+                }
+                setFieldErrors(errs);
+                const firstMsg = result.error.issues[0]?.message;
+                toast.error(firstMsg || t("error.fillFields"));
                 return;
               }
+              setFieldErrors({});
               setStep(2);
             }}
           >
@@ -178,10 +213,10 @@ export default function BrandOnboardingPage() {
 
       {step === 2 && (
         <div>
-          <h1 className="text-xl font-bold text-slate-900">
+          <h1 className="text-xl font-bold text-foreground">
             {t("step2.title")}
           </h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <p className="mt-1 text-sm text-muted-foreground">
             {t("step2.desc")}
           </p>
 
@@ -196,7 +231,7 @@ export default function BrandOnboardingPage() {
                 className="mt-1.5"
                 rows={3}
               />
-              <p className="mt-1 text-xs text-slate-400">
+              <p className="mt-1 text-xs text-muted-foreground/70">
                 {t("field.description.count", { count: String(description.length) })}
               </p>
             </div>
@@ -211,6 +246,9 @@ export default function BrandOnboardingPage() {
                 onChange={(e) => setWebsite(e.target.value)}
                 className="mt-1.5"
               />
+              {fieldErrors.website && (
+                <p className="mt-1 text-xs text-red-500">{fieldErrors.website}</p>
+              )}
             </div>
           </div>
 
