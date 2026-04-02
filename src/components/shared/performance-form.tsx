@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Info, Upload, CheckCircle2, AlertCircle } from "lucide-react";
+import { Info, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlatformIcon } from "@/components/platform-icons";

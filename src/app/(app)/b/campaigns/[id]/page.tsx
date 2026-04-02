@@ -9,7 +9,6 @@ import {
   Copy,
   DollarSign,
   Eye,
-  Heart,
   LinkIcon,
   FileText,
   Users,
@@ -315,7 +314,6 @@ export default function CampaignRoomPage() {
   const [members, setMembers] = useState<MemberRow[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [messageInput, setMessageInput] = useState("");
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [counterDialog, setCounterDialog] = useState<string | null>(null);
   const [counterRate, setCounterRate] = useState("");

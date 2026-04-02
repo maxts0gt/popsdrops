@@ -543,7 +543,6 @@ export default function AnalyticsPage() {
           {stats.platforms.length > 0 ? (
             <div className="space-y-3">
               {stats.platforms.map((p) => {
-                const Icon = PlatformIcon[p.platform];
                 return (
                   <Card key={p.platform}>
                     <CardContent className="py-4">

@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import {
-  CheckCircle,
-  AlertTriangle,
   Download,
   Pause,
   Play,
@@ -158,8 +156,8 @@ export default function AdminCampaignsPage() {
       }
       closeDialog();
       loadCampaigns();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Action failed");
+    } catch {
+      toast.error("Action failed");
     } finally {
       setActionLoading(false);
     }

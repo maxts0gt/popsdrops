@@ -6,7 +6,6 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -33,7 +32,7 @@ import {
 export default function CreatorOnboardingPage() {
   const router = useRouter();
   const supabase = createClient();
-  const { t, isRTL } = useTranslation("onboarding.creator");
+  const { t } = useTranslation("onboarding.creator");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 

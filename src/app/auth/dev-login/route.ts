@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   );
 
   // --- Step 1: Ensure user exists (create if needed, ignore "already exists") ---
-  const { data: createData } = await admin.auth.admin.createUser({
+  await admin.auth.admin.createUser({
     email: targetEmail,
     email_confirm: true,
     user_metadata: { full_name: displayName },

@@ -9,7 +9,6 @@ import {
   TrendingUp,
   Clock,
   ArrowRight,
-  BarChart3,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";

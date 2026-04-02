@@ -1,14 +1,12 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
   Bookmark,
-  Calendar,
   Check,
-  CheckCircle2,
   ChevronRight,
   Clock,
   DollarSign,
@@ -33,7 +31,6 @@ import {
   getMarketLabel,
   formatBudgetRange,
   type Platform,
-  type Market,
   type ContentFormat,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
@@ -153,7 +150,6 @@ export default function CampaignDetailPage() {
   const { t: tc } = useTranslation("ui.common");
   const { locale, t: tGlobal } = useI18n();
   const params = useParams();
-  const router = useRouter();
   const campaignId = params.id as string;
 
   const [campaign, setCampaign] = useState<CampaignDetail | null>(null);

@@ -264,8 +264,9 @@ export const tiktokAdapter: PlatformOAuthAdapter = {
   },
 
   async getAudienceDemographics(
-    _accessToken: string
+    accessToken: string
   ): Promise<AudienceDemographics> {
+    void accessToken;
     if (isMockMode()) return mockDemographics();
 
     // TikTok Display API v2 does NOT provide audience demographics through

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Building2,
@@ -17,7 +17,6 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { MARKET_LABELS, INDUSTRY_LABELS } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
-import type { Market, Industry } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { updateBrandProfile } from "@/app/actions/profile";
 import { toast } from "sonner";
@@ -47,7 +46,6 @@ export default function BrandSettingsPage() {
   const [data, setData] = useState<BrandData | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
     async function load() {

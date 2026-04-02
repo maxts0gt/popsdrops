@@ -17,8 +17,6 @@ import {
   MARKET_LABELS,
   LANGUAGES,
   LANGUAGE_LABELS,
-  type Market,
-  type Language,
 } from "@/lib/constants";
 import { updateCreatorProfile } from "@/app/actions/profile";
 

@@ -10,7 +10,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlatformIcon } from "@/components/platform-icons";
 import { LinkButton } from "@/components/ui/link-button";
-import { PLATFORM_LABELS, formatCurrency, type Platform } from "@/lib/constants";
+import { formatCurrency, type Platform } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { getSingleRelation } from "@/lib/supabase/relations";

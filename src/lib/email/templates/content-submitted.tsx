@@ -10,7 +10,6 @@ interface ContentSubmittedProps {
 }
 
 export function ContentSubmittedEmail({
-  brandName = "Brand",
   creatorName = "Creator",
   campaignTitle = "Campaign",
   platform = "TikTok",

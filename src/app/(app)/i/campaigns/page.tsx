@@ -6,7 +6,6 @@ import {
   ArrowRight,
   CheckCircle2,
   Clock,
-  FileCheck,
   FolderOpen,
   Send,
   Star,

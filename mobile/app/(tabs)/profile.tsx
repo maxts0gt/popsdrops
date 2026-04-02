@@ -5,7 +5,6 @@ import {
   Clock,
   Briefcase,
   User,
-  LogOut,
   ChevronRight,
   Plus,
 } from "lucide-react-native";

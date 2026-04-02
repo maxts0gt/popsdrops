@@ -9,7 +9,6 @@ import {
   MessageSquare,
   Star,
   CheckCircle,
-  AlertCircle,
   TrendingUp,
   Zap,
 } from "lucide-react";

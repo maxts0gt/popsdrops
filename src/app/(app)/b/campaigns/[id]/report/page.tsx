@@ -10,10 +10,8 @@ import {
   DollarSign,
   TrendingUp,
   Zap,
-  ArrowUpRight,
   BarChart3,
   Star,
-  FileText,
   Download,
 } from "lucide-react";
 import { exportReportPDF } from "@/lib/export-report-pdf";

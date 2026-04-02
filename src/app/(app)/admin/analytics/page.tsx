@@ -4,12 +4,9 @@ import { useState, useEffect } from "react";
 import {
   BarChart3,
   TrendingUp,
-  Users,
   Heart,
   Globe,
   Activity,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";

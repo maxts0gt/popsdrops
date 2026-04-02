@@ -5,8 +5,6 @@ import { useState, useEffect } from "react";
 import {
   Plus,
   Users,
-  Eye,
-  FileText,
   Megaphone,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";

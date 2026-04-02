@@ -270,7 +270,7 @@ export default function CreatorHomePage() {
       setLoading(false);
     }
     load();
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {

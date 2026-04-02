@@ -10,7 +10,7 @@ import {
   SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { NICHES, NICHE_LABELS, type Niche } from "@/lib/constants";
+import { NICHES, NICHE_LABELS } from "@/lib/constants";
 import { updateCreatorProfile } from "@/app/actions/profile";
 
 const MAX_NICHES = 5;

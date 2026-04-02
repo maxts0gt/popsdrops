@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
@@ -49,7 +50,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { updateAvatar } from "@/app/actions/profile";
 import { getSocialConnections, disconnectSocialAccount } from "@/app/actions/metrics";
-import type { Platform, Niche, Market, Language, ContentFormat } from "@/lib/constants";
+import type { Platform, Niche, Language, ContentFormat } from "@/lib/constants";
 import type { SocialAccount, RateCard, CreatorTier, PlatformType } from "@/types/database";
 
 // ---------------------------------------------------------------------------
@@ -174,7 +175,6 @@ function getCompleteness(profile: ProfileData, creator: CreatorData, labels: Rec
 
 export default function ProfilePage() {
   const { t } = useTranslation("creator.profile");
-  const { t: tc } = useTranslation("ui.common");
   const { locale, t: tGlobal } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -227,7 +227,7 @@ export default function ProfilePage() {
       url.searchParams.delete("social_error");
       router.replace(url.pathname, { scroll: false });
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, t]);
 
   useEffect(() => {
     async function load() {
@@ -442,12 +442,15 @@ export default function ProfilePage() {
           <div className="flex items-end gap-4">
             {/* Avatar */}
             <div className="relative">
-              <div className="flex size-20 items-center justify-center rounded-full bg-slate-900 text-xl font-semibold text-white ring-4 ring-card shadow-lg">
+              <div className="relative flex size-20 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-xl font-semibold text-white ring-4 ring-card shadow-lg">
                 {profile.avatar_url ? (
-                  <img
+                  <Image
                     src={profile.avatar_url}
                     alt={profile.full_name}
-                    className="size-full rounded-full object-cover"
+                    fill
+                    unoptimized
+                    sizes="80px"
+                    className="object-cover"
                   />
                 ) : (
                   getInitials(profile.full_name)

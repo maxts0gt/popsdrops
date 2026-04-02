@@ -22,7 +22,7 @@ export default function CreatorAppLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const { t, isRTL } = useTranslation("ui.common");
+  const { t } = useTranslation("ui.common");
 
   return (
     <div className="flex min-h-svh flex-col bg-muted/50 lg:flex-row">

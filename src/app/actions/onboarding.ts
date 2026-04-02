@@ -120,6 +120,7 @@ export async function selectRole(role: "creator" | "brand") {
 }
 
 function extractHandle(url: string, platform: string): string {
+  void platform;
   try {
     const parsed = new URL(url);
     const path = parsed.pathname.replace(/\/$/, "");

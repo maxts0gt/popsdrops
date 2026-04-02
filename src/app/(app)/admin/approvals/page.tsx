@@ -10,7 +10,6 @@ import {
   MapPin,
   CheckCircle,
   XCircle,
-  MessageSquare,
   AlertTriangle,
   Globe,
   Building2,
@@ -248,7 +247,7 @@ function ApplicantCard({
       await approveProfile(profile.id);
       toast.success(`${profile.full_name} approved`);
       onAction();
-    } catch (err) {
+    } catch {
       toast.error("Failed to approve");
     } finally {
       setActionLoading(false);
@@ -263,7 +262,7 @@ function ApplicantCard({
       toast.success(`${profile.full_name} rejected`);
       setRejectDialogOpen(false);
       onAction();
-    } catch (err) {
+    } catch {
       toast.error("Failed to reject");
     } finally {
       setActionLoading(false);

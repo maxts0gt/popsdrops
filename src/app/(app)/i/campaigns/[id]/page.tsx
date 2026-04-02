@@ -5,31 +5,23 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Calendar,
-  Check,
   CheckCircle2,
   Circle,
   Clock,
-  DollarSign,
   FileUp,
-  Globe,
   ExternalLink,
   Shield,
   ThumbsDown,
   ThumbsUp,
-  Users,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { PlatformIcon } from "@/components/platform-icons";
 import {
   PLATFORM_LABELS,
   FORMAT_KEYS,
-  getMarketLabel,
   type Platform,
-  type Market,
   type ContentFormat,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";

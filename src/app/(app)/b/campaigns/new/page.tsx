@@ -419,7 +419,14 @@ export default function CreateCampaignPage() {
                 id="title"
                 placeholder={t("field.name.placeholder")}
                 value={title}
-                onChange={(e) => { setTitle(e.target.value); setErrors((prev) => { const { title: _, ...rest } = prev; return rest; }); }}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.title;
+                    return next;
+                  });
+                }}
                 className={`mt-1.5 ${errors.title ? "border-red-500" : ""}`}
               />
               {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
@@ -430,7 +437,14 @@ export default function CreateCampaignPage() {
                 <MultiSelect
                   options={PLATFORM_LABELS}
                   selected={platforms}
-                  onChange={(v) => { setPlatforms(v); setErrors((prev) => { const { platforms: _, ...rest } = prev; return rest; }); }}
+                  onChange={(v) => {
+                    setPlatforms(v);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.platforms;
+                      return next;
+                    });
+                  }}
                 />
               </div>
               {errors.platforms && <p className="mt-1 text-xs text-red-500">{errors.platforms}</p>}
@@ -441,7 +455,14 @@ export default function CreateCampaignPage() {
                 <MultiSelect
                   options={marketLabels}
                   selected={markets}
-                  onChange={(v) => { setMarkets(v); setErrors((prev) => { const { markets: _, ...rest } = prev; return rest; }); }}
+                  onChange={(v) => {
+                    setMarkets(v);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.markets;
+                      return next;
+                    });
+                  }}
                 />
               </div>
               {errors.markets && <p className="mt-1 text-xs text-red-500">{errors.markets}</p>}
@@ -474,7 +495,14 @@ export default function CreateCampaignPage() {
                 rows={4}
                 placeholder={t("field.briefDescription.placeholder")}
                 value={description}
-                onChange={(e) => { setDescription(e.target.value); setErrors((prev) => { const { description: _, ...rest } = prev; return rest; }); }}
+                onChange={(e) => {
+                  setDescription(e.target.value);
+                  setErrors((prev) => {
+                    const next = { ...prev };
+                    delete next.description;
+                    return next;
+                  });
+                }}
                 className={`mt-1.5 ${errors.description ? "border-red-500" : ""}`}
               />
               {errors.description && <p className="mt-1 text-xs text-red-500">{errors.description}</p>}
@@ -612,7 +640,14 @@ export default function CreateCampaignPage() {
                   id="startDate"
                   type="date"
                   value={startDate}
-                  onChange={(e) => { setStartDate(e.target.value); setErrors((prev) => { const { dates: _, ...rest } = prev; return rest; }); }}
+                  onChange={(e) => {
+                    setStartDate(e.target.value);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.dates;
+                      return next;
+                    });
+                  }}
                   className="mt-1.5"
                 />
               </div>
@@ -642,7 +677,14 @@ export default function CreateCampaignPage() {
                   id="endDate"
                   type="date"
                   value={endDate}
-                  onChange={(e) => { setEndDate(e.target.value); setErrors((prev) => { const { dates: _, ...rest } = prev; return rest; }); }}
+                  onChange={(e) => {
+                    setEndDate(e.target.value);
+                    setErrors((prev) => {
+                      const next = { ...prev };
+                      delete next.dates;
+                      return next;
+                    });
+                  }}
                   className="mt-1.5"
                 />
               </div>

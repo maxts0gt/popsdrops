@@ -150,9 +150,11 @@ export const snapchatAdapter: PlatformOAuthAdapter = {
   },
 
   async getPostMetrics(
-    _accessToken: string,
-    _postId: string
+    accessToken: string,
+    postId: string
   ): Promise<PlatformMetrics> {
+    void accessToken;
+    void postId;
     // Snapchat does NOT provide post-level metrics through their public API.
     // This will remain self-reported until we have an API partnership with Snap.
     throw new Error(

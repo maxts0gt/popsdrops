@@ -31,7 +31,6 @@ import {
   formatBudgetRange,
   type Platform,
   type Niche,
-  type Market,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";

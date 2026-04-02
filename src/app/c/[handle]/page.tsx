@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -263,12 +264,15 @@ export default async function CreatorMediaKitPage({
       <div className="mx-auto max-w-xl px-4 sm:px-6">
         {/* ---- Avatar (overlapping hero) ---- */}
         <div className="-mt-16 mb-4 flex justify-center">
-          <div className="flex size-32 items-center justify-center rounded-full bg-slate-900 text-3xl font-semibold tracking-tight text-white ring-4 ring-card shadow-xl">
+          <div className="relative flex size-32 items-center justify-center overflow-hidden rounded-full bg-slate-900 text-3xl font-semibold tracking-tight text-white ring-4 ring-card shadow-xl">
             {avatarUrl ? (
-              <img
+              <Image
                 src={avatarUrl}
                 alt={name}
-                className="size-full rounded-full object-cover"
+                fill
+                unoptimized
+                sizes="128px"
+                className="object-cover"
               />
             ) : (
               initials
@@ -381,7 +385,6 @@ export default async function CreatorMediaKitPage({
             <SectionTitle>Platforms</SectionTitle>
             <div className="space-y-2">
               {platforms.map((p) => {
-                const Icon = PlatformIcon[p.platform];
                 return (
                   <div
                     key={p.platform}
