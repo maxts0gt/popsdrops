@@ -3,14 +3,14 @@
  *
  * Accepts { to, subject, html } and sends via AWS SES SMTP (port 465, implicit TLS).
  * Uses SMTP_USERNAME / SMTP_PASSWORD from Supabase secrets.
- * Authenticated with the exact service role key.
+ * Auth: verify_jwt enabled — Supabase validates the JWT before the function runs.
+ * Only service_role tokens can call this (anon tokens are rejected via role check).
  */
 
 const SMTP_HOST = Deno.env.get("SES_SMTP_HOST") || "email-smtp.us-east-1.amazonaws.com";
 const SMTP_USER = Deno.env.get("SMTP_USERNAME")!;
 const SMTP_PASS = Deno.env.get("SMTP_PASSWORD")!;
 const FROM_ADDRESS = Deno.env.get("EMAIL_FROM") || "PopsDrops <notifications@popsdrops.com>";
-const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const CONNECT_TIMEOUT_MS = 5_000;
 const IO_TIMEOUT_MS = 5_000;
 const TRANSACTION_TIMEOUT_MS = 15_000;
@@ -184,19 +184,26 @@ Deno.serve(async (req) => {
     );
   }
 
+  // IMPORTANT: This function MUST be deployed with verify_jwt: true.
+  // Supabase verifies the JWT signature before the function runs.
+  // We additionally check the role claim to reject anon callers.
   const token =
     req.headers.get("Authorization")?.replace("Bearer ", "") || "";
-
-  if (!SERVICE_ROLE_KEY) {
+  try {
+    // Base64url → base64 (handle - _ and missing padding)
+    const seg = token.split(".")[1] || "";
+    const b64 = seg.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const payload = JSON.parse(atob(padded));
+    if (payload.role !== "service_role") {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized — service_role required" }),
+        { status: 401, headers: jsonHeaders },
+      );
+    }
+  } catch {
     return new Response(
-      JSON.stringify({ error: "SMTP auth not configured" }),
-      { status: 500, headers: jsonHeaders },
-    );
-  }
-
-  if (!token || token !== SERVICE_ROLE_KEY) {
-    return new Response(
-      JSON.stringify({ error: "Unauthorized — invalid token" }),
+      JSON.stringify({ error: "Unauthorized" }),
       { status: 401, headers: jsonHeaders },
     );
   }
