@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Turnstile } from "@/components/security/turnstile";
-import { Building2, ArrowRight, Check, Loader2 } from "lucide-react";
+import { ArrowRight, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -179,7 +179,6 @@ export default function RequestInvitePage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Building2 className="h-4 w-4" />
             {t("tab.brand")}
           </button>
           <button
