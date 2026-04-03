@@ -16,25 +16,18 @@ export function ApplicationReceivedEmail({
   campaignUrl = "https://popsdrops.com",
 }: ApplicationReceivedProps) {
   return (
-    <EmailLayout preview={`New application for "${campaignTitle}"`}>
-      <Text style={styles.heading}>New creator application</Text>
+    <EmailLayout preview={`New application: ${campaignTitle}`}>
+      <Text style={styles.heading}>New application.</Text>
       <Text style={styles.paragraph}>
-        {creatorName} has applied to your campaign.
+        {creatorName} has applied to your campaign at ${proposedRate}.
       </Text>
       <Section style={styles.card}>
         <Text style={styles.label}>Campaign</Text>
         <Text style={styles.value}>{campaignTitle}</Text>
       </Section>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Proposed Rate</Text>
-        <Text style={styles.value}>${proposedRate}</Text>
-      </Section>
-      <Text style={styles.paragraph}>
-        Review their profile and application to accept, counter-offer, or decline.
-      </Text>
-      <Section style={{ textAlign: "center" as const, margin: "24px 0" }}>
+      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
         <Link href={campaignUrl} style={styles.button}>
-          Review Application
+          Review application
         </Link>
       </Section>
     </EmailLayout>

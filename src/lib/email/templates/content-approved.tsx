@@ -13,21 +13,18 @@ export function ContentApprovedEmail({
   campaignUrl = "https://popsdrops.com",
 }: ContentApprovedProps) {
   return (
-    <EmailLayout preview={`Your content for "${campaignTitle}" has been approved`}>
-      <Text style={styles.heading}>Content approved</Text>
+    <EmailLayout preview={`Approved: ${campaignTitle}`}>
+      <Text style={styles.heading}>Your content has been approved.</Text>
       <Text style={styles.paragraph}>
-        Great news, {creatorName}. Your content for this campaign has been approved by the brand.
+        {creatorName}, the brand has approved your submission. You can now publish and submit performance data once live.
       </Text>
       <Section style={styles.card}>
         <Text style={styles.label}>Campaign</Text>
         <Text style={styles.value}>{campaignTitle}</Text>
       </Section>
-      <Text style={styles.paragraph}>
-        You can now publish it on the platform and submit your performance data once live.
-      </Text>
-      <Section style={{ textAlign: "center" as const, margin: "24px 0" }}>
+      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
         <Link href={campaignUrl} style={styles.button}>
-          View Campaign
+          View campaign
         </Link>
       </Section>
     </EmailLayout>

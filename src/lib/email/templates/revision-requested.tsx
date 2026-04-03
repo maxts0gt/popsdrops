@@ -14,10 +14,10 @@ export function RevisionRequestedEmail({
   campaignUrl = "https://popsdrops.com",
 }: RevisionRequestedProps) {
   return (
-    <EmailLayout preview={`Changes requested for "${campaignTitle}"`}>
-      <Text style={styles.heading}>Revision requested</Text>
+    <EmailLayout preview={`Changes requested: ${campaignTitle}`}>
+      <Text style={styles.heading}>Changes requested.</Text>
       <Text style={styles.paragraph}>
-        The brand has reviewed your content and requested some changes.
+        The brand has reviewed your submission and provided feedback.
       </Text>
       <Section style={styles.card}>
         <Text style={styles.label}>Campaign</Text>
@@ -29,12 +29,9 @@ export function RevisionRequestedEmail({
           {feedback}
         </Text>
       </Section>
-      <Text style={styles.paragraph}>
-        Please review the feedback and submit an updated version.
-      </Text>
-      <Section style={{ textAlign: "center" as const, margin: "24px 0" }}>
+      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
         <Link href={campaignUrl} style={styles.button}>
-          View Feedback
+          View feedback
         </Link>
       </Section>
     </EmailLayout>
