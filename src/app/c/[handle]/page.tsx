@@ -13,10 +13,11 @@ import {
   Heart,
   Award,
   BadgeCheck,
-  Zap,
+  Activity,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { PLATFORM_LABELS, NICHE_LABELS } from "@/lib/constants";
+import { PLATFORM_LABELS, NICHE_LABELS, getMarketLabel } from "@/lib/constants";
+import { getLocale } from "@/lib/i18n/server";
 import { PlatformBadge, PlatformIcon } from "@/components/platform-icons";
 import type { Platform, Niche } from "@/lib/constants";
 import type { SocialAccount, RateCard, CreatorTier } from "@/types/database";
@@ -167,24 +168,6 @@ function platformUrl(platform: Platform, handle: string): string {
   return bases[platform] + handle.replace("@", "");
 }
 
-const MARKET_OVERRIDES: Record<string, string> = {
-  us: "United States",
-  uk: "United Kingdom",
-  uae: "UAE",
-  united_states: "United States",
-  united_kingdom: "United Kingdom",
-  south_korea: "South Korea",
-  saudi_arabia: "Saudi Arabia",
-  new_zealand: "New Zealand",
-  ksa: "Saudi Arabia",
-};
-
-function formatMarket(market: string): string {
-  if (MARKET_OVERRIDES[market]) return MARKET_OVERRIDES[market];
-  return market
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
 
 // ---------------------------------------------------------------------------
 // Metadata
@@ -243,6 +226,7 @@ export default async function CreatorMediaKitPage({
     notFound();
   }
 
+  const locale = await getLocale();
   const profile = creator.profile as { full_name: string; avatar_url: string | null } | null;
   const name = profile?.full_name || handle;
   const avatarUrl = profile?.avatar_url || null;
@@ -302,7 +286,7 @@ export default async function CreatorMediaKitPage({
             {creator.primary_market && (
               <span className="inline-flex items-center gap-1.5">
                 <MapPin className="size-3.5" />
-                {formatMarket(creator.primary_market)}
+                {getMarketLabel(creator.primary_market, locale)}
               </span>
             )}
             {languages.length > 0 && (
@@ -363,7 +347,7 @@ export default async function CreatorMediaKitPage({
               label="Total Views"
             />
             <StatCard
-              icon={<Zap className="size-4" />}
+              icon={<Activity className="size-4" />}
               value={
                 creator.avg_engagement_rate > 0
                   ? `${Number(creator.avg_engagement_rate).toFixed(1)}%`

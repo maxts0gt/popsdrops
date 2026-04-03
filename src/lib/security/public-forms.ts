@@ -108,9 +108,7 @@ async function verifyTurnstileToken(token?: string | null) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
 
   if (!secret) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("Bot protection is not configured.");
-    }
+    // Turnstile is optional — skip verification if not configured
     return;
   }
 
@@ -167,9 +165,7 @@ async function enforceWaitlistRateLimit(email: string) {
 
   const ratelimit = getWaitlistRatelimit();
 
-  if (!ratelimit && process.env.NODE_ENV === "production") {
-    throw new Error("Rate limiting is not configured.");
-  }
+  // Falls back to in-memory rate limiting if Upstash isn't configured
 
   for (const identifier of identifiers) {
     const key = hashIdentifier(identifier);

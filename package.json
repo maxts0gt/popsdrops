@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:mobile": "vitest run mobile/**/*.test.ts mobile/**/*.test.tsx"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.53",

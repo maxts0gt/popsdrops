@@ -53,6 +53,7 @@ export async function submitWaitlistRequest(
     row.social_url = data.social_url;
     row.social_platform = data.social_platform;
     row.follower_range = data.follower_range || null;
+    row.markets = data.market ? [data.market] : [];
   }
 
   const { error } = await supabase.from("waitlist").insert(row);
@@ -72,5 +73,45 @@ export async function submitWaitlistRequest(
     };
   }
 
+  // Notify Slack (fire-and-forget — don't block the user)
+  notifySlack(data).catch((err) =>
+    console.error("Slack notification failed:", err),
+  );
+
   return { success: true };
+}
+
+// ---------------------------------------------------------------------------
+// Slack notification
+// ---------------------------------------------------------------------------
+
+async function notifySlack(data: WaitlistInput) {
+  const webhookUrl = process.env.SLACK_WAITLIST_WEBHOOK_URL;
+  if (!webhookUrl) return;
+
+  const lines = [
+    `*New ${data.type} request* :wave:`,
+    `*Name:* ${data.full_name}`,
+    `*Email:* ${data.email}`,
+  ];
+
+  if (data.type === "brand") {
+    lines.push(`*Company:* ${data.company_name}`);
+    if (data.industry) lines.push(`*Industry:* ${data.industry}`);
+    if (data.budget_range) lines.push(`*Budget:* ${data.budget_range}`);
+    if (data.website) lines.push(`*Website:* ${data.website}`);
+  } else {
+    lines.push(`*Platform:* ${data.social_platform}`);
+    lines.push(`*Profile:* ${data.social_url}`);
+    if (data.follower_range) lines.push(`*Followers:* ${data.follower_range}`);
+    if (data.market) lines.push(`*Location:* ${data.market}`);
+  }
+
+  if (data.reason) lines.push(`*Why PopsDrops:* ${data.reason}`);
+
+  await fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text: lines.join("\n") }),
+  });
 }

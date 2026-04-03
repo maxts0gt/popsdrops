@@ -310,14 +310,27 @@ export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
 };
 
 export const CAMPAIGN_STATUS_COLORS: Record<CampaignStatus, string> = {
-  draft: "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-  recruiting: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  in_progress: "bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-  publishing: "bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
-  monitoring: "bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300",
-  completed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  paused: "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
-  cancelled: "bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300",
+  draft: "text-muted-foreground",
+  recruiting: "text-blue-600 dark:text-blue-400",
+  in_progress: "text-blue-600 dark:text-blue-400",
+  publishing: "text-amber-600 dark:text-amber-400",
+  monitoring: "text-purple-600 dark:text-purple-400",
+  completed: "text-emerald-600 dark:text-emerald-400",
+  paused: "text-orange-600 dark:text-orange-400",
+  cancelled: "text-red-600 dark:text-red-400",
+};
+
+export const PROFILE_STATUS_COLORS: Record<string, string> = {
+  approved: "text-emerald-600 dark:text-emerald-400",
+  pending: "text-amber-600 dark:text-amber-400",
+  suspended: "text-red-600 dark:text-red-400",
+  rejected: "text-muted-foreground",
+};
+
+export const ROLE_COLORS: Record<string, string> = {
+  creator: "text-foreground",
+  brand: "text-foreground",
+  admin: "text-foreground font-semibold",
 };
 
 export const CREATOR_TIERS = ["new", "rising", "established", "top"] as const;

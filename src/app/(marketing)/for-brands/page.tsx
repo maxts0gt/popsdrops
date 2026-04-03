@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
+import { getMarketLabel } from "@/lib/constants";
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -12,7 +13,7 @@ const fade = {
 };
 
 export default function ForBrandsPage() {
-  const { t, isRTL } = useTranslation("marketing.forBrands");
+  const { t, isRTL, locale } = useTranslation("marketing.forBrands");
 
   return (
     <div className="bg-white">
@@ -149,11 +150,11 @@ export default function ForBrandsPage() {
                   <div className="col-span-2 text-end">{t("mock.col.status")}</div>
                 </div>
                 {[
-                  { name: "Yuna Park", market: "South Korea", platform: "Instagram", er: "9.3%", content: "4/4", statusKey: "mock.status.published", color: "text-emerald-500" },
-                  { name: "Sakura Tanaka", market: "Japan", platform: "TikTok", er: "11.2%", content: "3/3", statusKey: "mock.status.published", color: "text-emerald-500" },
-                  { name: "Léa Moreau", market: "France", platform: "Instagram", er: "8.1%", content: "2/3", statusKey: "mock.status.inReview", color: "text-blue-500" },
-                  { name: "Nora Al-Rashidi", market: "Saudi Arabia", platform: "Snapchat", er: "12.4%", content: "3/3", statusKey: "mock.status.approved", color: "text-slate-600" },
-                  { name: "Sofia Reyes", market: "Mexico", platform: "TikTok", er: "10.7%", content: "1/2", statusKey: "mock.status.drafting", color: "text-slate-400" },
+                  { name: "Yuna Park", marketKey: "south_korea", platform: "Instagram", er: "9.3%", content: "4/4", statusKey: "mock.status.published", color: "text-emerald-500" },
+                  { name: "Sakura Tanaka", marketKey: "japan", platform: "TikTok", er: "11.2%", content: "3/3", statusKey: "mock.status.published", color: "text-emerald-500" },
+                  { name: "Léa Moreau", marketKey: "france", platform: "Instagram", er: "8.1%", content: "2/3", statusKey: "mock.status.inReview", color: "text-blue-500" },
+                  { name: "Nora Al-Rashidi", marketKey: "saudi_arabia", platform: "Snapchat", er: "12.4%", content: "3/3", statusKey: "mock.status.approved", color: "text-slate-600" },
+                  { name: "Sofia Reyes", marketKey: "mexico", platform: "TikTok", er: "10.7%", content: "1/2", statusKey: "mock.status.drafting", color: "text-slate-400" },
                 ].map((c) => (
                   <div key={c.name} className="grid grid-cols-12 items-center gap-2 border-b border-slate-50 py-2.5 last:border-0">
                     <div className="col-span-4 flex items-center gap-2.5">
@@ -162,7 +163,7 @@ export default function ForBrandsPage() {
                       </div>
                       <div>
                         <p className="text-xs font-medium text-slate-700">{c.name}</p>
-                        <p className="text-[10px] text-slate-400">{c.market}</p>
+                        <p className="text-[10px] text-slate-400">{getMarketLabel(c.marketKey, locale)}</p>
                       </div>
                     </div>
                     <div className="col-span-2 text-xs text-slate-500">{c.platform}</div>

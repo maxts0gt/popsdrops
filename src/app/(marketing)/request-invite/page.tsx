@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Turnstile } from "@/components/security/turnstile";
-import { Building2, Sparkles, ArrowRight, Check, Loader2 } from "lucide-react";
+import { Building2, ArrowRight, Check, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,6 +18,8 @@ import {
   PLATFORM_LABELS,
   INDUSTRIES,
   INDUSTRY_LABELS,
+  MARKETS,
+  MARKET_LABELS,
 } from "@/lib/constants";
 import type { WaitlistInput } from "@/lib/validations";
 import type { PlatformType } from "@/types/database";
@@ -67,6 +69,7 @@ export default function RequestInvitePage() {
   const [socialPlatform, setSocialPlatform] = useState("");
   const [socialUrl, setSocialUrl] = useState("");
   const [followerRange, setFollowerRange] = useState("");
+  const [market, setMarket] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -95,6 +98,7 @@ export default function RequestInvitePage() {
         social_url: socialUrl,
         social_platform: socialPlatform as PlatformType,
         follower_range: (followerRange as "under_10k" | "10k_50k" | "50k_100k" | "100k_500k" | "500k_plus") || undefined,
+        market: market || undefined,
       };
     }
 
@@ -187,7 +191,6 @@ export default function RequestInvitePage() {
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
-            <Sparkles className="h-4 w-4" />
             {t("tab.creator")}
           </button>
         </div>
@@ -341,21 +344,39 @@ export default function RequestInvitePage() {
                   />
                 </motion.div>
               )}
-              <div>
-                <Label htmlFor="followerRange">{t("creator.followerRange")}</Label>
-                <select
-                  id="followerRange"
-                  value={followerRange}
-                  onChange={(e) => setFollowerRange(e.target.value)}
-                  className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">{t("creator.followerRange.placeholder")}</option>
-                  {FOLLOWER_RANGES.map((r) => (
-                    <option key={r.value} value={r.value}>
-                      {t(r.labelKey)}
-                    </option>
-                  ))}
-                </select>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="followerRange">{t("creator.followerRange")}</Label>
+                  <select
+                    id="followerRange"
+                    value={followerRange}
+                    onChange={(e) => setFollowerRange(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">{t("creator.followerRange.placeholder")}</option>
+                    {FOLLOWER_RANGES.map((r) => (
+                      <option key={r.value} value={r.value}>
+                        {t(r.labelKey)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="market">{t("creator.market")}</Label>
+                  <select
+                    id="market"
+                    value={market}
+                    onChange={(e) => setMarket(e.target.value)}
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">{t("creator.market.placeholder")}</option>
+                    {MARKETS.map((m) => (
+                      <option key={m} value={m}>
+                        {MARKET_LABELS[m]}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </motion.div>
           )}

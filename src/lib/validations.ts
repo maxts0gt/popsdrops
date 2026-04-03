@@ -391,6 +391,7 @@ export const waitlistCreatorSchema = waitlistBaseSchema.extend({
   follower_range: z
     .enum(["under_10k", "10k_50k", "50k_100k", "100k_500k", "500k_plus"])
     .optional(),
+  market: z.string().min(1, "Select your location").optional(),
 });
 
 export const waitlistSchema = z.discriminatedUnion("type", [

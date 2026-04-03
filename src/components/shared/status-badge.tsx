@@ -14,7 +14,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center text-xs font-medium",
         CAMPAIGN_STATUS_COLORS[status],
         className
       )}

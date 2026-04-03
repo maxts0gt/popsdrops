@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Search, Download } from "lucide-react";
+import { Search, Download, ArrowUpDown, ArrowUp, ArrowDown, MoreHorizontal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,7 +29,14 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { getMarketLabel } from "@/lib/constants";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { getMarketLabel, PROFILE_STATUS_COLORS, ROLE_COLORS } from "@/lib/constants";
 import type { Market } from "@/lib/constants";
 import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
@@ -42,6 +49,9 @@ import { toast } from "sonner";
 // ---------------------------------------------------------------------------
 
 const PAGE_SIZE = 50;
+
+type SortKey = "full_name" | "email" | "role" | "status" | "created_at";
+type SortDir = "asc" | "desc";
 
 interface UserRow {
   id: string;
@@ -109,18 +119,36 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-const statusColors: Record<string, string> = {
-  approved: "bg-emerald-100 text-emerald-700",
-  pending: "bg-amber-100 text-amber-700",
-  suspended: "bg-red-100 text-red-700",
-  rejected: "bg-muted text-muted-foreground",
-};
-
-const roleColors: Record<string, string> = {
-  creator: "bg-muted text-foreground",
-  brand: "bg-muted text-foreground",
-  admin: "bg-primary text-primary-foreground",
-};
+function SortableHead({
+  label,
+  sortKey: key,
+  currentKey,
+  currentDir,
+  onSort,
+}: {
+  label: string;
+  sortKey: SortKey;
+  currentKey: SortKey;
+  currentDir: SortDir;
+  onSort: (key: SortKey) => void;
+}) {
+  const isActive = currentKey === key;
+  return (
+    <TableHead>
+      <button
+        onClick={() => onSort(key)}
+        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+      >
+        {label}
+        {isActive ? (
+          currentDir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+        ) : (
+          <ArrowUpDown className="size-3 opacity-30" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -135,6 +163,8 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(0);
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   // Re-review dialog state
   const [reReviewTarget, setReReviewTarget] = useState<{
@@ -143,6 +173,15 @@ export default function AdminUsersPage() {
   } | null>(null);
   const [reReviewReason, setReReviewReason] = useState("");
   const [reReviewSubmitting, setReReviewSubmitting] = useState(false);
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   async function loadUsers() {
     setLoading(true);
@@ -180,6 +219,16 @@ export default function AdminUsersPage() {
         return false;
     }
     return true;
+  });
+
+  const sorted = [...filtered].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const aVal = a[sortKey] ?? "";
+    const bVal = b[sortKey] ?? "";
+    if (typeof aVal === "string" && typeof bVal === "string") {
+      return aVal.localeCompare(bVal) * dir;
+    }
+    return 0;
   });
 
   async function handleSuspend(userId: string, name: string) {
@@ -328,17 +377,17 @@ export default function AdminUsersPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Status</TableHead>
+                <SortableHead label="User" sortKey="full_name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <SortableHead label="Email" sortKey="email" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <SortableHead label="Role" sortKey="role" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <SortableHead label="Status" sortKey="status" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <TableHead>Market</TableHead>
-                <TableHead>Joined</TableHead>
+                <SortableHead label="Joined" sortKey="created_at" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <TableHead className="text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((user) => (
+              {sorted.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -355,14 +404,14 @@ export default function AdminUsersPage() {
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${roleColors[user.role]}`}
+                      className={`text-xs font-medium capitalize ${ROLE_COLORS[user.role] ?? ""}`}
                     >
                       {user.role}
                     </span>
                   </TableCell>
                   <TableCell>
                     <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-medium capitalize ${statusColors[user.status] ?? statusColors.pending}`}
+                      className={`text-xs font-medium capitalize ${PROFILE_STATUS_COLORS[user.status] ?? PROFILE_STATUS_COLORS.pending}`}
                     >
                       {user.status}
                     </span>
@@ -383,51 +432,50 @@ export default function AdminUsersPage() {
                     })}
                   </TableCell>
                   <TableCell className="text-end">
-                    <div className="flex items-center justify-end gap-1">
-                      {(user.status === "approved" ||
-                        user.status === "rejected") &&
-                        user.role !== "admin" && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() =>
-                              setReReviewTarget({
-                                id: user.id,
-                                name: user.full_name,
-                              })
-                            }
-                          >
-                            Re-review
-                          </Button>
-                        )}
-                      {user.status === "approved" && user.role !== "admin" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() =>
-                            handleSuspend(user.id, user.full_name)
-                          }
+                    {user.role !== "admin" ? (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger
+                          render={<Button variant="ghost" size="icon" className="size-8" />}
                         >
-                          Suspend
-                        </Button>
-                      )}
-                      {user.status === "suspended" && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            handleUnsuspend(user.id, user.full_name)
-                          }
-                        >
-                          Unsuspend
-                        </Button>
-                      )}
-                    </div>
+                          <MoreHorizontal className="size-4" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {(user.status === "approved" || user.status === "rejected") && (
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setReReviewTarget({ id: user.id, name: user.full_name })
+                              }
+                            >
+                              Re-review
+                            </DropdownMenuItem>
+                          )}
+                          {user.status === "approved" && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600 dark:text-red-400"
+                                onClick={() => handleSuspend(user.id, user.full_name)}
+                              >
+                                Suspend
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                          {user.status === "suspended" && (
+                            <DropdownMenuItem
+                              onClick={() => handleUnsuspend(user.id, user.full_name)}
+                            >
+                              Unsuspend
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">—</span>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
-              {filtered.length === 0 && (
+              {sorted.length === 0 && (
                 <TableRow>
                   <TableCell
                     colSpan={7}

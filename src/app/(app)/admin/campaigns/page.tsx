@@ -6,6 +6,9 @@ import {
   Pause,
   Play,
   XCircle,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,6 +43,9 @@ import { toast } from "sonner";
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
+
+type CampaignSortKey = "title" | "brand_name" | "status" | "created_at";
+type SortDir = "asc" | "desc";
 
 interface CampaignRow {
   id: string;
@@ -98,6 +104,41 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
 }
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function CampaignSortableHead({
+  label,
+  sortKey: key,
+  currentKey,
+  currentDir,
+  onSort,
+}: {
+  label: string;
+  sortKey: CampaignSortKey;
+  currentKey: CampaignSortKey;
+  currentDir: SortDir;
+  onSort: (key: CampaignSortKey) => void;
+}) {
+  const isActive = currentKey === key;
+  return (
+    <TableHead>
+      <button
+        onClick={() => onSort(key)}
+        className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
+      >
+        {label}
+        {isActive ? (
+          currentDir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+        ) : (
+          <ArrowUpDown className="size-3 opacity-30" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
@@ -105,6 +146,8 @@ export default function AdminCampaignsPage() {
   const { locale } = useI18n();
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sortKey, setSortKey] = useState<CampaignSortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const [dialogState, setDialogState] = useState<{
     type: "pause" | "cancel" | "resume" | null;
@@ -112,6 +155,15 @@ export default function AdminCampaignsPage() {
   }>({ type: null, campaign: null });
   const [reason, setReason] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
+
+  function handleSort(key: CampaignSortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   async function loadCampaigns() {
     setLoading(true);
@@ -224,6 +276,17 @@ export default function AdminCampaignsPage() {
 
   const maxCount = Math.max(1, ...funnelStages.map((s) => statusCounts[s.status] ?? 0));
 
+  // Sort campaigns
+  const sorted = [...campaigns].sort((a, b) => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const aVal = a[sortKey] ?? "";
+    const bVal = b[sortKey] ?? "";
+    if (typeof aVal === "string" && typeof bVal === "string") {
+      return aVal.localeCompare(bVal) * dir;
+    }
+    return 0;
+  });
+
   if (loading) {
     return (
       <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 sm:px-6 lg:px-8">
@@ -285,16 +348,16 @@ export default function AdminCampaignsPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Campaign</TableHead>
-                <TableHead>Brand</TableHead>
-                <TableHead>Status</TableHead>
+                <CampaignSortableHead label="Campaign" sortKey="title" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <CampaignSortableHead label="Brand" sortKey="brand_name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                <CampaignSortableHead label="Status" sortKey="status" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <TableHead>Creators</TableHead>
-                <TableHead>Created</TableHead>
+                <CampaignSortableHead label="Created" sortKey="created_at" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 <TableHead className="text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {campaigns.map((c) => {
+              {sorted.map((c) => {
                 const showPauseCancel = ["recruiting", "in_progress", "publishing", "monitoring"].includes(c.status);
                 const showResume = c.status === "paused";
                 return (
@@ -302,7 +365,7 @@ export default function AdminCampaignsPage() {
                     <TableCell className="font-medium">{c.title}</TableCell>
                     <TableCell className="text-muted-foreground">{c.brand_name}</TableCell>
                     <TableCell>
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CAMPAIGN_STATUS_COLORS[c.status]}`}>
+                      <span className={`text-xs font-medium ${CAMPAIGN_STATUS_COLORS[c.status]}`}>
                         {CAMPAIGN_STATUS_LABELS[c.status]}
                       </span>
                     </TableCell>
@@ -348,7 +411,7 @@ export default function AdminCampaignsPage() {
                   </TableRow>
                 );
               })}
-              {campaigns.length === 0 && (
+              {sorted.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground/70">
                     No campaigns yet

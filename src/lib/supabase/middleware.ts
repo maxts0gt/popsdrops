@@ -74,6 +74,7 @@ export async function updateSession(request: NextRequest) {
   // Public routes — no auth required
   const publicPaths = [
     "/",
+    "/about",
     "/for-brands",
     "/for-creators",
     "/partners",
