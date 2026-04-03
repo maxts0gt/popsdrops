@@ -14,18 +14,16 @@ export function WaitlistApprovedEmail({
 }: WaitlistApprovedProps) {
   return (
     <EmailLayout preview="Your PopsDrops account has been approved">
-      <Text style={styles.heading}>Welcome to PopsDrops</Text>
+      <Text style={styles.heading}>Your account is ready.</Text>
       <Text style={styles.paragraph}>
-        {name}, your {role === "brand" ? "brand" : "creator"} account has been approved. You&apos;re ready to get started.
-      </Text>
-      <Text style={styles.paragraph}>
+        {name}, you have been approved.{" "}
         {role === "brand"
-          ? "Create your first campaign and start connecting with vetted creators across global markets."
-          : "Browse available campaigns, set up your profile, and start applying to opportunities."}
+          ? "You can now create campaigns and connect with vetted creators across global markets."
+          : "Browse campaigns, complete your profile, and start applying to opportunities that match your audience."}
       </Text>
-      <Section style={{ textAlign: "center" as const, margin: "24px 0" }}>
+      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
         <Link href={loginUrl} style={styles.button}>
-          Sign In
+          Sign in to PopsDrops
         </Link>
       </Section>
     </EmailLayout>

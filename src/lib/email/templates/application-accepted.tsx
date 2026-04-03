@@ -15,25 +15,22 @@ export function ApplicationAcceptedEmail({
   campaignUrl = "https://popsdrops.com",
 }: ApplicationAcceptedProps) {
   return (
-    <EmailLayout preview={`You have been accepted to "${campaignTitle}"`}>
-      <Text style={styles.heading}>You&apos;re in</Text>
+    <EmailLayout preview={`Accepted: ${campaignTitle}`}>
+      <Text style={styles.heading}>You have been selected.</Text>
       <Text style={styles.paragraph}>
-        Congratulations, {creatorName}. You&apos;ve been accepted to this campaign.
+        {creatorName}, your application has been accepted. Review the brief and begin creating.
       </Text>
       <Section style={styles.card}>
         <Text style={styles.label}>Campaign</Text>
         <Text style={styles.value}>{campaignTitle}</Text>
       </Section>
       <Section style={styles.card}>
-        <Text style={styles.label}>Agreed Rate</Text>
+        <Text style={styles.label}>Agreed rate</Text>
         <Text style={styles.value}>${acceptedRate}</Text>
       </Section>
-      <Text style={styles.paragraph}>
-        Head to your campaign room to review the brief and start creating.
-      </Text>
-      <Section style={{ textAlign: "center" as const, margin: "24px 0" }}>
+      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
         <Link href={campaignUrl} style={styles.button}>
-          Go to Campaign
+          Open campaign
         </Link>
       </Section>
     </EmailLayout>

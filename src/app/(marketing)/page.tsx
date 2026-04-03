@@ -4,6 +4,8 @@ import Link from "next/link";
 import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
+import { getMarketLabel } from "@/lib/constants";
+import { SocialGrid } from "@/components/social-grid";
 
 const stagger = {
   hidden: {},
@@ -23,32 +25,25 @@ const sectionFade = {
 };
 
 export default function LandingPage() {
-  const { t, isRTL } = useTranslation("marketing.landing");
+  const { t, isRTL, locale } = useTranslation("marketing.landing");
 
   return (
     <div className="bg-white">
       {/* ============================================================
         * HERO — Tight, commanding, no wasted space
         * ============================================================ */}
-      <section className="relative flex min-h-[80vh] items-center justify-center overflow-hidden bg-slate-950">
-        {/* Atmospheric gradient orbs */}
+      <section className="relative flex min-h-[100vh] items-center justify-center overflow-hidden bg-black pb-32">
+        {/* Atmospheric gradient orbs — subtle neutral warmth */}
         <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-[40%] start-[10%] h-[80vh] w-[80vh] rounded-full bg-teal-500/[0.07] blur-[120px]" />
-          <div className="absolute -bottom-[20%] end-[5%] h-[60vh] w-[60vh] rounded-full bg-amber-500/[0.05] blur-[100px]" />
-          <div className="absolute top-[20%] end-[20%] h-[40vh] w-[40vh] rounded-full bg-slate-500/[0.08] blur-[80px]" />
+          <div className="absolute -top-[40%] start-[10%] h-[80vh] w-[80vh] rounded-full bg-neutral-500/[0.04] blur-[120px]" />
+          <div className="absolute -bottom-[20%] end-[5%] h-[60vh] w-[60vh] rounded-full bg-neutral-400/[0.03] blur-[100px]" />
+          <div className="absolute top-[20%] end-[20%] h-[40vh] w-[40vh] rounded-full bg-neutral-500/[0.05] blur-[80px]" />
         </div>
 
-        {/* Subtle grid pattern */}
-        <div
-          className="pointer-events-none absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-            backgroundSize: "64px 64px",
-          }}
-        />
-
-        {/* Bottom fade */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950 to-transparent" />
+        {/* Interactive social character grid */}
+        <div className="pointer-events-none absolute inset-0">
+          <SocialGrid />
+        </div>
 
         <motion.div
           variants={stagger}
@@ -86,34 +81,22 @@ export default function LandingPage() {
             </Link>
           </motion.div>
 
-          {/* Trust markers — more visible */}
-          <motion.div
-            variants={fadeUp}
-            className="mt-16 flex flex-wrap items-center justify-center gap-x-6 gap-y-2"
-          >
-            {["trust.platforms", "trust.languages", "trust.market", "trust.ai"].map((key, i) => (
-              <span key={key} className="flex items-center gap-2 text-xs font-medium tracking-wide text-slate-500">
-                {i > 0 && <span className="hidden text-slate-700/40 sm:inline">·</span>}
-                {t(key)}
-              </span>
-            ))}
-          </motion.div>
         </motion.div>
       </section>
 
       {/* ============================================================
         * HOW IT WORKS — 4 steps, clean, confidence-building
         * ============================================================ */}
-      <section className="relative py-24 sm:py-32">
+      <section className="relative bg-black pt-24 pb-24 sm:pt-32 sm:pb-32">
         <div className="mx-auto max-w-7xl px-6">
           <motion.div {...sectionFade} className="mb-16 text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("section.how.label")}</span>
-            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-neutral-500">{t("section.how.label")}</span>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
               {t("section.how.title")}
             </h2>
           </motion.div>
 
-          <div className="mx-auto grid max-w-4xl gap-px overflow-hidden rounded-2xl border border-slate-200 bg-slate-200 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mx-auto grid max-w-4xl gap-px overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-800 sm:grid-cols-2 lg:grid-cols-4">
             {[
               { step: "01", titleKey: "how.step1.title", descKey: "how.step1.desc" },
               { step: "02", titleKey: "how.step2.title", descKey: "how.step2.desc" },
@@ -126,21 +109,27 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.08 }}
-                className="bg-white p-6 sm:p-7"
+                className="bg-neutral-900 p-6 sm:p-7"
               >
-                <span className="text-xs font-bold text-slate-300">{item.step}</span>
-                <h3 className="mt-3 text-base font-bold text-slate-900">{t(item.titleKey)}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-slate-500">{t(item.descKey)}</p>
+                <span className="text-xs font-bold text-neutral-600">{item.step}</span>
+                <h3 className="mt-3 text-base font-bold text-white">{t(item.titleKey)}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-400">{t(item.descKey)}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* Dark-to-light transition — short, intentional */}
+      <div
+        className="h-px"
+        style={{ background: "#171717" }}
+      />
+
       {/* ============================================================
         * REPORT PREVIEW — Proof section
         * ============================================================ */}
-      <section className="relative bg-slate-50/50 py-24 sm:py-32">
+      <section className="relative bg-neutral-50 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6">
           <motion.div {...sectionFade} className="mb-12 text-center">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">{t("section.report.label")}</span>
@@ -217,11 +206,11 @@ export default function LandingPage() {
                     <div className="col-span-2 text-end">{t("report.col.cost")}</div>
                   </div>
                   {[
-                    { name: "Yuna Park", market: "South Korea", platform: "Instagram", reach: "520K", er: "9.3%", cpe: "$0.08", cost: "$800" },
-                    { name: "Sakura Tanaka", market: "Japan", platform: "TikTok", reach: "680K", er: "11.2%", cpe: "$0.06", cost: "$750" },
-                    { name: "Léa Moreau", market: "France", platform: "Instagram", reach: "310K", er: "8.1%", cpe: "$0.14", cost: "$900" },
-                    { name: "Nora Al-Rashidi", market: "Saudi Arabia", platform: "Snapchat", reach: "420K", er: "12.4%", cpe: "$0.10", cost: "$850" },
-                    { name: "Sofia Reyes", market: "Mexico", platform: "TikTok", reach: "390K", er: "10.7%", cpe: "$0.11", cost: "$700" },
+                    { name: "Yuna Park", marketKey: "south_korea", platform: "Instagram", reach: "520K", er: "9.3%", cpe: "$0.08", cost: "$800" },
+                    { name: "Sakura Tanaka", marketKey: "japan", platform: "TikTok", reach: "680K", er: "11.2%", cpe: "$0.06", cost: "$750" },
+                    { name: "Léa Moreau", marketKey: "france", platform: "Instagram", reach: "310K", er: "8.1%", cpe: "$0.14", cost: "$900" },
+                    { name: "Nora Al-Rashidi", marketKey: "saudi_arabia", platform: "Snapchat", reach: "420K", er: "12.4%", cpe: "$0.10", cost: "$850" },
+                    { name: "Sofia Reyes", marketKey: "mexico", platform: "TikTok", reach: "390K", er: "10.7%", cpe: "$0.11", cost: "$700" },
                   ].map((c) => (
                     <div key={c.name} className="grid grid-cols-12 items-center gap-2 border-b border-slate-50 py-3 last:border-0">
                       <div className="col-span-3 flex items-center gap-2.5">
@@ -230,7 +219,7 @@ export default function LandingPage() {
                         </div>
                         <div>
                           <p className="text-xs font-medium text-slate-700">{c.name}</p>
-                          <p className="text-[9px] text-slate-400">{c.market}</p>
+                          <p className="text-[9px] text-slate-400">{getMarketLabel(c.marketKey, locale)}</p>
                         </div>
                       </div>
                       <div className="col-span-2 text-xs text-slate-500">{c.platform}</div>

@@ -1,21 +1,29 @@
 import { Redirect } from "expo-router";
 import { useAuth } from "../lib/auth";
-import { View, ActivityIndicator } from "react-native";
+import { decideMobileAccess } from "../lib/access-policy";
+import { AccessStateScreen } from "../components/access-state-screen";
+import { WaitlistScreen } from "../components/waitlist-screen";
 
 export default function Index() {
-  const { session, loading } = useAuth();
+  const { session, profile, loading, profileReady } = useAuth();
+  const access = decideMobileAccess({
+    loading,
+    hasSession: !!session,
+    profileReady,
+    role: profile?.role ?? null,
+    status: profile?.status ?? null,
+  });
 
-  if (loading) {
-    return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#0F172A" />
-      </View>
-    );
+  if (access.kind === "loading") {
+    return <AccessStateScreen mode="loading" />;
   }
 
-  if (session) {
-    return <Redirect href="/(tabs)/home" />;
+  if (access.kind === "blocked") {
+    if (access.reason === "invitation_required") {
+      return <WaitlistScreen />;
+    }
+    return <AccessStateScreen mode={access.reason} />;
   }
 
-  return <Redirect href="/(auth)/login" />;
+  return <Redirect href={access.href} />;
 }

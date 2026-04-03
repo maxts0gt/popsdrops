@@ -9,15 +9,21 @@ import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "./supabase";
+import type { MobileRole, MobileStatus } from "./access-policy";
+import {
+  completeMobileAuthSession,
+  getMobileAuthRedirectUrl,
+} from "./mobile-auth";
 
 WebBrowser.maybeCompleteAuthSession();
 
 type Profile = {
   id: string;
-  role: "creator" | "brand" | "admin";
+  role: MobileRole;
   full_name: string | null;
   avatar_url: string | null;
-  status: string | null;
+  status: MobileStatus;
+  preferred_locale: string | null;
 };
 
 type AuthContextValue = {
@@ -25,7 +31,9 @@ type AuthContextValue = {
   user: User | null;
   profile: Profile | null;
   loading: boolean;
+  profileReady: boolean;
   signInWithGoogle: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -35,13 +43,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileReady, setProfileReady] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, role, full_name, avatar_url, status")
+      .select("id, role, full_name, avatar_url, status, preferred_locale")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Failed to fetch profile:", error.message);
@@ -52,30 +61,64 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        fetchProfile(session.user.id);
+    let cancelled = false;
+
+    void (async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (cancelled) {
+        return;
       }
-      setLoading(false);
-    });
+
+      setSession(session);
+
+      if (session?.user) {
+        setProfileReady(false);
+        await fetchProfile(session.user.id);
+      } else {
+        setProfile(null);
+      }
+
+      if (!cancelled) {
+        setProfileReady(true);
+        setLoading(false);
+      }
+    })();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session?.user) {
-        fetchProfile(session.user.id);
-      } else {
-        setProfile(null);
-      }
+      void (async () => {
+        if (cancelled) {
+          return;
+        }
+
+        setSession(session);
+
+        if (session?.user) {
+          setProfileReady(false);
+          await fetchProfile(session.user.id);
+        } else {
+          setProfile(null);
+        }
+
+        if (!cancelled) {
+          setProfileReady(true);
+          setLoading(false);
+        }
+      })();
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [fetchProfile]);
 
   const signInWithGoogle = useCallback(async () => {
-    const redirectUrl = Linking.createURL("auth/callback");
+    const redirectUrl = getMobileAuthRedirectUrl(Linking.createURL);
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
@@ -97,22 +140,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       );
 
       if (result.type === "success" && result.url) {
-        // Extract tokens from the URL fragment (#access_token=...&refresh_token=...)
-        const hashIndex = result.url.indexOf("#");
-        const fragment = hashIndex >= 0 ? result.url.slice(hashIndex + 1) : "";
-        const params = new URLSearchParams(fragment);
-        const accessToken = params.get("access_token");
-        const refreshToken = params.get("refresh_token");
+        const completion = await completeMobileAuthSession(
+          result.url,
+          (session) => supabase.auth.setSession(session),
+        );
 
-        if (accessToken && refreshToken) {
-          await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
+        if (completion.kind === "error") {
+          console.error("Google sign-in callback error:", completion.message);
         }
       }
     }
   }, []);
+
+  async function refreshProfile() {
+    if (!session?.user?.id) {
+      setProfile(null);
+      setProfileReady(true);
+      return;
+    }
+
+    setProfileReady(false);
+    await fetchProfile(session.user.id);
+    setProfileReady(true);
+  }
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
@@ -126,7 +176,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user: session?.user ?? null,
         profile,
         loading,
+        profileReady,
         signInWithGoogle,
+        refreshProfile,
         signOut,
       }}
     >

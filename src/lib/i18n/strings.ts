@@ -40,6 +40,10 @@ export const strings = {
     "footer.privacy": "Privacy Policy",
     "footer.about": "About",
     "footer.contact": "Contact",
+    "footer.section.mobile": "Mobile App",
+    "footer.mobile.appStore": "App Store",
+    "footer.mobile.playStore": "Google Play",
+    "footer.mobile.comingSoon": "Coming Soon",
     // Actions
     "action.save": "Save",
     "action.cancel": "Cancel",
@@ -300,6 +304,31 @@ export const strings = {
     "mock.label.rateCard": "Rate Card",
   },
 
+  "marketing.partners": {
+    "headline": "We connect brands with local partners.",
+    "subheadline": "Our creator network spans 20+ markets. We use that knowledge to broker partnerships between brands and local distributors.",
+    "chip.research": "Market research",
+    "chip.vetting": "Partner vetting",
+    "chip.intro": "Introduction",
+    "chip.deal": "Deal support",
+    "brands.label": "For Brands",
+    "brands.title": "Enter a new market.",
+    "brands.desc": "You have the product. We find you the right local distributor, retailer, or agency — vetted, with existing market presence.",
+    "brands.step1": "We research the market and identify potential partners",
+    "brands.step2": "We vet and introduce the right fit",
+    "brands.step3": "We support the deal through closing",
+    "brands.cta": "Get in touch",
+    "distributors.label": "For Distributors",
+    "distributors.title": "Access global brands.",
+    "distributors.desc": "You have the local presence. We connect you with international brands looking to enter your market.",
+    "distributors.step1": "Brands across beauty, fashion, F&B, tech, and more",
+    "distributors.step2": "Vetted brands with real market-entry intent",
+    "distributors.step3": "No upfront fees — commission-based",
+    "distributors.cta": "Join as a partner",
+    "commission.label": "How we work",
+    "commission.desc": "No retainers. No upfront fees. We earn a commission on successful partnerships — 10% of first-year sales. That's it. If the deal doesn't close, you pay nothing.",
+  },
+
   "marketing.requestInvite": {
     "title": "Request Early Access",
     "subtitle": "Tell us about yourself and we'll get back to you within 24 hours.",
@@ -321,6 +350,8 @@ export const strings = {
     "creator.socialUrl.placeholder": "https://tiktok.com/@yourhandle",
     "creator.followerRange": "Follower count",
     "creator.followerRange.placeholder": "Select range",
+    "creator.market": "Where are you based?",
+    "creator.market.placeholder": "Select country",
     // Shared fields
     "field.fullName": "Full name",
     "field.fullName.placeholder": "Your name",
@@ -350,6 +381,44 @@ export const strings = {
     "haveAccess": "Already have access?",
     "logIn": "Log in",
     "field.optional": "optional",
+  },
+
+  "marketing.about": {
+    "label": "About PopsDrops",
+    "headline": "The hard part was never building the product.",
+    "intro": "We built products, ran factories, managed inventory. We thought creation was the challenge. It wasn't. The real challenge was getting what we made into the hands of the people who needed it.",
+
+    "pullquote": "The economics of every business come down to one thing: connecting the right product with the right person, at the right time.",
+
+    "thesis.label": "Our Thesis",
+    "thesis.headline": "Cash flow is everything. Distribution is how you get there.",
+    "thesis.p1": "A warehouse full of product is not an asset. It's frozen capital. Marketing is not optional \u2014 even word of mouth needs someone to speak first. We spent years running campaigns, managing platforms, placing ads. We learned that the infrastructure connecting brands to audiences is broken across borders, across languages, across cultures. So we built the infrastructure we wished existed.",
+
+    "platform.label": "The Platform",
+    "platform.headline": "Two sides. One standard.",
+    "platform.brands.title": "For Brands",
+    "platform.brands.desc": "Brief, manage, and measure creator campaigns in markets you can't reach alone. Translated briefs, vetted creators, real performance data. No guesswork.",
+    "platform.creators.title": "For Creators",
+    "platform.creators.desc": "If you have influence, you should be compensated for it. Your work visible, your rates fair, your campaigns professional. Your talent deserves a platform that takes it seriously.",
+
+    "standards.label": "Our Standards",
+    "standards.headline": "Not everyone gets in. That's the point.",
+    "standards.p1": "PopsDrops is not an open marketplace. Brands are invited. Creators are vetted. We review every profile, every company, every campaign. This is how we maintain the quality of results on both sides.",
+    "standards.p2": "Language is never a barrier \u2014 our platform translates everything natively in any language. But quality is non-negotiable. As a brand, you can invite your own creators. As a creator, you can ask brands to bring you in. The bar stays high so every collaboration delivers.",
+
+    "beyond.label": "Beyond Campaigns",
+    "beyond.headline": "When there is good business, we make the introduction.",
+    "beyond.p1": "Influence opens doors. We've seen a creator with 10,000 followers build a successful franchising business. It started with intent, then action. Beyond creator campaigns, we broker partnerships between international brands and local distributors \u2014 market entry, franchising, distribution. Our network exists because of the relationships this platform creates.",
+
+    "origin.label": "Who We Are",
+    "origin.headline": "We've built, shipped, and operated.",
+    "origin.p1": "We are not observers. We've run marketing platforms, built CRM systems, created brands, architected secure banking infrastructure, operated news organizations, managed franchises, and brokered international market entry. We know what it takes because we've done it \u2014 across industries, across borders, across languages.",
+    "origin.entity": "Tengri Vertex, LLC \u2014 incorporated in Delaware, based in San Francisco.",
+
+    "closing": "Will is everything.",
+    "closing.sub": "An idea in the back of your mind is still just an idea. We built PopsDrops because we believe in action.",
+    "cta.primary": "Request Invite",
+    "cta.contact": "Contact Us",
   },
 
   // ============================================================

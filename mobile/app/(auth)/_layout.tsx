@@ -1,5 +1,18 @@
-import { Stack } from "expo-router";
+import { Redirect, Stack } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import { useAuth } from "../../lib/auth";
 
 export default function AuthLayout() {
-  return <Stack screenOptions={{ headerShown: false }} />;
+  const { session } = useAuth();
+
+  if (session) {
+    return <Redirect href="/" />;
+  }
+
+  return (
+    <>
+      <Stack screenOptions={{ headerShown: false }} />
+      <StatusBar style="light" />
+    </>
+  );
 }

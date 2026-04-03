@@ -25,7 +25,7 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
           fontFamily="Inter"
           fallbackFontFamily="Helvetica"
           webFont={{
-            url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap",
+            url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",
             format: "woff2",
           }}
         />
@@ -33,27 +33,27 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
       <Preview>{preview}</Preview>
       <Body style={body}>
         <Container style={container}>
-          {/* Header */}
-          <Section style={header}>
+          {/* Logo */}
+          <Section style={logoSection}>
             <Text style={logoText}>PopsDrops</Text>
           </Section>
 
-          {/* Content */}
-          <Section style={content}>{children}</Section>
+          {/* Content card */}
+          <Section style={card}>{children}</Section>
 
           {/* Footer */}
-          <Hr style={divider} />
           <Section style={footer}>
-            <Text style={footerText}>
-              This email was sent by{" "}
-              <Link href="https://popsdrops.com" style={footerLink}>
-                PopsDrops
-              </Link>
-              . You are receiving this because you have an account on our
-              platform.
+            <Hr style={divider} />
+            <Text style={footerCompany}>
+              Tengri Vertex, LLC
             </Text>
-            <Text style={footerText}>
-              Tengri Vertex, LLC &middot; San Francisco, California
+            <Text style={footerAddress}>
+              San Francisco, California
+            </Text>
+            <Text style={footerMeta}>
+              <Link href="https://popsdrops.com" style={footerLink}>
+                popsdrops.com
+              </Link>
             </Text>
           </Section>
         </Container>
@@ -68,23 +68,24 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
 
 export const styles = {
   heading: {
-    fontSize: "22px",
-    fontWeight: "700",
+    fontSize: "20px",
+    fontWeight: "600",
     color: "#0F172A",
-    lineHeight: "1.3",
-    margin: "0 0 16px 0",
+    lineHeight: "1.35",
+    margin: "0 0 20px 0",
+    letterSpacing: "-0.01em",
   } as const,
 
   paragraph: {
     fontSize: "15px",
-    color: "#334155",
-    lineHeight: "1.6",
-    margin: "0 0 16px 0",
+    color: "#475569",
+    lineHeight: "1.65",
+    margin: "0 0 20px 0",
   } as const,
 
   muted: {
-    fontSize: "14px",
-    color: "#64748B",
+    fontSize: "13px",
+    color: "#94A3B8",
     lineHeight: "1.5",
     margin: "0 0 12px 0",
   } as const,
@@ -93,32 +94,34 @@ export const styles = {
     display: "inline-block",
     backgroundColor: "#0F172A",
     color: "#FFFFFF",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     textDecoration: "none",
-    padding: "12px 28px",
-    borderRadius: "8px",
+    padding: "12px 32px",
+    borderRadius: "6px",
     textAlign: "center" as const,
+    letterSpacing: "0.02em",
   } as const,
 
   card: {
     backgroundColor: "#F8FAFC",
     borderRadius: "8px",
+    border: "1px solid #F1F5F9",
     padding: "16px 20px",
-    margin: "16px 0",
+    margin: "20px 0",
   } as const,
 
   label: {
-    fontSize: "12px",
-    fontWeight: "600",
-    color: "#64748B",
+    fontSize: "11px",
+    fontWeight: "500",
+    color: "#94A3B8",
     textTransform: "uppercase" as const,
-    letterSpacing: "0.05em",
-    margin: "0 0 4px 0",
+    letterSpacing: "0.08em",
+    margin: "0 0 6px 0",
   } as const,
 
   value: {
-    fontSize: "16px",
+    fontSize: "15px",
     fontWeight: "600",
     color: "#0F172A",
     margin: "0",
@@ -130,7 +133,7 @@ export const styles = {
 // ---------------------------------------------------------------------------
 
 const body = {
-  backgroundColor: "#F1F5F9",
+  backgroundColor: "#FFFFFF",
   fontFamily:
     "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
   margin: "0",
@@ -138,48 +141,65 @@ const body = {
 };
 
 const container = {
-  maxWidth: "560px",
+  maxWidth: "520px",
   margin: "0 auto",
-  padding: "40px 0 40px 0",
+  padding: "48px 24px",
 };
 
-const header = {
-  padding: "24px 32px 16px 32px",
+const logoSection = {
+  padding: "0 0 32px 0",
+  textAlign: "center" as const,
 };
 
 const logoText = {
-  fontSize: "20px",
-  fontWeight: "700",
+  fontSize: "16px",
+  fontWeight: "600",
   color: "#0F172A",
   margin: "0",
   letterSpacing: "-0.02em",
 };
 
-const content = {
-  backgroundColor: "#FFFFFF",
-  borderRadius: "12px",
-  padding: "32px",
-  border: "1px solid #E2E8F0",
-};
-
-const divider = {
-  borderColor: "#E2E8F0",
-  margin: "24px 0",
+const card = {
+  padding: "0",
 };
 
 const footer = {
-  padding: "0 32px",
+  padding: "32px 0 0 0",
 };
 
-const footerText = {
-  fontSize: "12px",
+const divider = {
+  borderColor: "#F1F5F9",
+  borderWidth: "1px",
+  margin: "0 0 24px 0",
+};
+
+const footerCompany = {
+  fontSize: "11px",
+  fontWeight: "500",
   color: "#94A3B8",
-  lineHeight: "1.5",
-  margin: "0 0 8px 0",
+  lineHeight: "1.4",
+  margin: "0",
+  textAlign: "center" as const,
+  letterSpacing: "0.04em",
+};
+
+const footerAddress = {
+  fontSize: "11px",
+  color: "#CBD5E1",
+  lineHeight: "1.4",
+  margin: "2px 0 0 0",
+  textAlign: "center" as const,
+};
+
+const footerMeta = {
+  fontSize: "11px",
+  color: "#CBD5E1",
+  lineHeight: "1.4",
+  margin: "8px 0 0 0",
   textAlign: "center" as const,
 };
 
 const footerLink = {
-  color: "#64748B",
-  textDecoration: "underline",
+  color: "#94A3B8",
+  textDecoration: "none",
 };

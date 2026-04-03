@@ -16,21 +16,21 @@ export function ContentSubmittedEmail({
   campaignUrl = "https://popsdrops.com",
 }: ContentSubmittedProps) {
   return (
-    <EmailLayout preview={`${creatorName} submitted content for "${campaignTitle}"`}>
-      <Text style={styles.heading}>New content ready for review</Text>
+    <EmailLayout preview={`Content submitted: ${campaignTitle}`}>
+      <Text style={styles.heading}>Content ready for review.</Text>
       <Text style={styles.paragraph}>
-        {creatorName} has submitted {platform} content for your campaign.
+        {creatorName} has submitted {platform} content for review.
       </Text>
       <Section style={styles.card}>
         <Text style={styles.label}>Campaign</Text>
         <Text style={styles.value}>{campaignTitle}</Text>
       </Section>
       <Text style={styles.paragraph}>
-        Review their submission and approve it or request changes.
+        Review the submission and approve or request changes.
       </Text>
-      <Section style={{ textAlign: "center" as const, margin: "24px 0" }}>
+      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
         <Link href={campaignUrl} style={styles.button}>
-          Review Content
+          Review content
         </Link>
       </Section>
     </EmailLayout>
