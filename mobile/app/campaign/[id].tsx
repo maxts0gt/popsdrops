@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { View, Text, Pressable, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -49,11 +50,12 @@ export default function CampaignDetailScreen() {
 
   const budgetLabel = formatBudget(budgetMin, budgetMax, params.budgetCurrency ?? "USD", locale);
 
+  const [now] = useState(() => Date.now());
   const daysLeft = params.applicationDeadline
     ? Math.max(
         0,
         Math.ceil(
-          (new Date(params.applicationDeadline).getTime() - Date.now()) /
+          (new Date(params.applicationDeadline).getTime() - now) /
             (1000 * 60 * 60 * 24),
         ),
       )

@@ -150,8 +150,6 @@ function CompletenessCard({
 }) {
   const steps = buildCompletenessSteps(creator, t);
   const isComplete = viewModel.completenessPercent >= 100;
-  const incompleteSteps = steps.filter((s) => !s.done);
-
   return (
     <View
       className="mx-6 rounded-2xl border px-5 py-5"

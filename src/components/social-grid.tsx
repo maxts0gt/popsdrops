@@ -34,75 +34,70 @@ export function SocialGrid() {
     gridRef.current = grid;
   }, []);
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const dpr = dprRef.current;
-    const w = canvas.width / dpr;
-    const h = canvas.height / dpr;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    ctx.save();
-    ctx.scale(dpr, dpr);
-    ctx.font = `${FONT_SIZE}px "Inter", system-ui, sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    const mx = mouseRef.current.x;
-    const my = mouseRef.current.y;
-    const r2 = HOVER_RADIUS * HOVER_RADIUS;
-
-    // Edge fade zones (fraction of canvas)
-    const fadeTop = h * 0.05;
-    const fadeBottom = h * 0.35; // generous bottom fade for gradient transition
-    const fadeSide = w * 0.08;
-
-    for (let i = 0; i < gridRef.current.length; i++) {
-      const { char, x, y } = gridRef.current[i];
-      if (x < -CELL || x > w + CELL || y < -CELL || y > h + CELL) continue;
-
-      // Edge fade multiplier (0..1)
-      let edge = 1;
-      if (y < fadeTop) edge *= y / fadeTop;
-      if (y > h - fadeBottom) edge *= (h - y) / fadeBottom;
-      if (x < fadeSide) edge *= x / fadeSide;
-      if (x > w - fadeSide) edge *= (w - x) / fadeSide;
-      edge = Math.max(0, Math.min(1, edge));
-
-      const dx = x - mx;
-      const dy = y - my;
-      const dist2 = dx * dx + dy * dy;
-
-      if (dist2 < r2) {
-        const t = 1 - Math.sqrt(dist2) / HOVER_RADIUS;
-        const eased = t * t;
-        const alpha = (BASE_ALPHA + (HOVER_ALPHA - BASE_ALPHA) * eased) * edge;
-
-        // Shift from white toward teal near cursor
-        const rC = Math.round(255 - (255 - 94) * eased * 0.5);
-        const gC = Math.round(255 - (255 - 234) * eased * 0.3);
-        const bC = Math.round(255 - (255 - 212) * eased * 0.2);
-        ctx.fillStyle = `rgba(${rC},${gC},${bC},${alpha})`;
-      } else {
-        ctx.fillStyle = `rgba(255,255,255,${BASE_ALPHA * edge})`;
-      }
-
-      if (edge > 0.01) ctx.fillText(char, x, y);
-    }
-
-    ctx.restore();
-    rafRef.current = requestAnimationFrame(draw);
-  }, []);
-
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    // Listen on the hero section (grandparent) so clicks pass through to CTAs
     const section = canvas.closest("section");
+
+    function draw() {
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const dpr = dprRef.current;
+      const w = canvas.width / dpr;
+      const h = canvas.height / dpr;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.save();
+      ctx.scale(dpr, dpr);
+      ctx.font = `${FONT_SIZE}px "Inter", system-ui, sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+      const r2 = HOVER_RADIUS * HOVER_RADIUS;
+
+      const fadeTop = h * 0.05;
+      const fadeBottom = h * 0.35;
+      const fadeSide = w * 0.08;
+
+      for (let i = 0; i < gridRef.current.length; i++) {
+        const { char, x, y } = gridRef.current[i];
+        if (x < -CELL || x > w + CELL || y < -CELL || y > h + CELL) continue;
+
+        let edge = 1;
+        if (y < fadeTop) edge *= y / fadeTop;
+        if (y > h - fadeBottom) edge *= (h - y) / fadeBottom;
+        if (x < fadeSide) edge *= x / fadeSide;
+        if (x > w - fadeSide) edge *= (w - x) / fadeSide;
+        edge = Math.max(0, Math.min(1, edge));
+
+        const dx = x - mx;
+        const dy = y - my;
+        const dist2 = dx * dx + dy * dy;
+
+        if (dist2 < r2) {
+          const t = 1 - Math.sqrt(dist2) / HOVER_RADIUS;
+          const eased = t * t;
+          const alpha = (BASE_ALPHA + (HOVER_ALPHA - BASE_ALPHA) * eased) * edge;
+
+          const rC = Math.round(255 - (255 - 94) * eased * 0.5);
+          const gC = Math.round(255 - (255 - 234) * eased * 0.3);
+          const bC = Math.round(255 - (255 - 212) * eased * 0.2);
+          ctx.fillStyle = `rgba(${rC},${gC},${bC},${alpha})`;
+        } else {
+          ctx.fillStyle = `rgba(255,255,255,${BASE_ALPHA * edge})`;
+        }
+
+        if (edge > 0.01) ctx.fillText(char, x, y);
+      }
+
+      ctx.restore();
+      rafRef.current = requestAnimationFrame(draw);
+    }
 
     const resize = () => {
       const parent = canvas.parentElement;
@@ -130,7 +125,6 @@ export function SocialGrid() {
     rafRef.current = requestAnimationFrame(draw);
 
     window.addEventListener("resize", resize);
-    // Attach mouse listeners to the section, not the canvas
     const target = section || canvas;
     target.addEventListener("mousemove", handleMove as EventListener);
     target.addEventListener("mouseleave", handleLeave);
@@ -141,7 +135,7 @@ export function SocialGrid() {
       target.removeEventListener("mousemove", handleMove as EventListener);
       target.removeEventListener("mouseleave", handleLeave);
     };
-  }, [buildGrid, draw]);
+  }, [buildGrid]);
 
   return (
     <canvas

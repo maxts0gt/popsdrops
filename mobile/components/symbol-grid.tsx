@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import { View, Text, useWindowDimensions } from "react-native";
 import Animated, {
   useSharedValue,
@@ -7,7 +7,6 @@ import Animated, {
   withDelay,
   withSequence,
   Easing,
-  runOnJS,
 } from "react-native-reanimated";
 
 const CHARS = ["·", "♡", "✦", "○", "♥", "+", "△", "◇", "★", "◦"];
@@ -33,6 +32,17 @@ type StaticCell = {
 };
 
 /**
+ * Deterministic pseudo-random using a seed, so useMemo stays pure.
+ */
+function seededRandom(seed: number) {
+  let s = seed;
+  return () => {
+    s = (s * 16807 + 0) % 2147483647;
+    return (s - 1) / 2147483646;
+  };
+}
+
+/**
  * A single animated character that twinkles — fades from base to bright and back.
  * Uses Reanimated so animation runs on the UI thread.
  */
@@ -50,6 +60,8 @@ function TwinkleChar({
   const opacity = useSharedValue(0);
 
   useEffect(() => {
+    // Reanimated shared values are designed to be set this way
+    // eslint-disable-next-line react-hooks/immutability
     opacity.value = withDelay(
       delay,
       withSequence(
@@ -107,9 +119,10 @@ function TwinkleWave({
   height: number;
 }) {
   const selected = useMemo(() => {
-    // Random origin point for the ripple
-    const originX = Math.random() * width;
-    const originY = Math.random() * height * 0.7 + height * 0.1;
+    // Use seeded random for purity — waveKey changes each wave
+    const rand = seededRandom(waveKey * 7919 + 1);
+    const originX = rand() * width;
+    const originY = rand() * height * 0.7 + height * 0.1;
 
     // Only consider cells with visible opacity (not edge-faded to zero)
     const visible = cells.filter((c) => c.opacity > 0.02);

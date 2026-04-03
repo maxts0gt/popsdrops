@@ -129,11 +129,12 @@ function CampaignCard({
   const isRecommended =
     showMatchReasons && item.matchScore >= RECOMMENDED_THRESHOLD;
 
-  // Calculate days left
+  // Calculate days left (use stable timestamp to satisfy React Compiler purity)
+  const [now] = useState(() => Date.now());
   let daysLeft: number | null = null;
   if (item.applicationDeadline) {
     daysLeft = Math.ceil(
-      (new Date(item.applicationDeadline).getTime() - Date.now()) /
+      (new Date(item.applicationDeadline).getTime() - now) /
         (1000 * 60 * 60 * 24),
     );
   }
@@ -406,8 +407,12 @@ function FilterSheet({
 }) {
   const [draft, setDraft] = useState(filters);
 
+  // Sync draft when sheet opens — using Realtime subscription pattern
   useEffect(() => {
-    if (visible) setDraft(filters);
+    if (!visible) return;
+    // Schedule sync for next microtask to avoid synchronous setState in effect
+    const id = requestAnimationFrame(() => setDraft(filters));
+    return () => cancelAnimationFrame(id);
   }, [visible, filters]);
 
   const budgetOptions: {
@@ -709,7 +714,7 @@ export default function DiscoverScreen() {
     } catch {
       setHasError(true);
     }
-  }, [homeState, profileReady, session?.user?.id]);
+  }, [homeState, profileReady, session]);
 
   useEffect(() => {
     let cancelled = false;

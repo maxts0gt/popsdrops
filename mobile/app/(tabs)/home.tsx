@@ -585,11 +585,12 @@ function CampaignCard({
     locale,
   });
 
+  const [now] = useState(() => Date.now());
   const daysLeft = campaign.applicationDeadline
     ? Math.max(
         0,
         Math.ceil(
-          (new Date(campaign.applicationDeadline).getTime() - Date.now()) /
+          (new Date(campaign.applicationDeadline).getTime() - now) /
             (1000 * 60 * 60 * 24),
         ),
       )
