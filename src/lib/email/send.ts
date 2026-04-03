@@ -1,35 +1,21 @@
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import "server-only";
+
 import { render } from "@react-email/components";
 import type { ReactElement } from "react";
 
 // ---------------------------------------------------------------------------
-// SES Client (lazy init)
+// Supabase Edge Function endpoint
 // ---------------------------------------------------------------------------
 
-let sesClient: SESClient | null = null;
-
-function getSESClient(): SESClient | null {
-  if (sesClient) return sesClient;
-
-  const region = process.env.AWS_SES_REGION;
-  const accessKeyId = process.env.AWS_SES_ACCESS_KEY_ID;
-  const secretAccessKey = process.env.AWS_SES_SECRET_ACCESS_KEY;
-
-  if (!region || !accessKeyId || !secretAccessKey) return null;
-
-  sesClient = new SESClient({
-    region,
-    credentials: { accessKeyId, secretAccessKey },
-  });
-
-  return sesClient;
-}
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // ---------------------------------------------------------------------------
-// Send Email
+// Send Email — renders React Email template then delegates to Supabase
 // ---------------------------------------------------------------------------
 
-const FROM_ADDRESS = process.env.EMAIL_FROM ?? "PopsDrops <notifications@popsdrops.com>";
+const FROM_ADDRESS =
+  process.env.EMAIL_FROM ?? "PopsDrops <notifications@popsdrops.com>";
 
 interface SendEmailOptions {
   to: string;
@@ -40,12 +26,11 @@ interface SendEmailOptions {
 export async function sendEmail({ to, subject, template }: SendEmailOptions) {
   const html = await render(template);
 
-  const client = getSESClient();
-
-  if (!client) {
+  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     // Dev fallback — log to console
-    console.log("\n📧 EMAIL (dev mode — no SES credentials)");
+    console.log("\n📧 EMAIL (dev mode — no Supabase service role key)");
     console.log(`   To: ${to}`);
+    console.log(`   From: ${FROM_ADDRESS}`);
     console.log(`   Subject: ${subject}`);
     console.log(`   Preview: ${html.slice(0, 200)}...`);
     console.log("");
@@ -53,18 +38,22 @@ export async function sendEmail({ to, subject, template }: SendEmailOptions) {
   }
 
   try {
-    await client.send(
-      new SendEmailCommand({
-        Source: FROM_ADDRESS,
-        Destination: { ToAddresses: [to] },
-        Message: {
-          Subject: { Data: subject, Charset: "UTF-8" },
-          Body: {
-            Html: { Data: html, Charset: "UTF-8" },
-          },
+    const response = await fetch(
+      `${SUPABASE_URL}/functions/v1/send-email`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
         },
-      }),
+        body: JSON.stringify({ to, subject, html }),
+      },
     );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`send-email function error: ${response.status} — ${body}`);
+    }
   } catch (error) {
     // Log but don't throw — email should never break the main action
     console.error("Failed to send email:", error);
