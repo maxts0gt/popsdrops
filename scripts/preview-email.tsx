@@ -1,8 +1,10 @@
 /**
- * Quick email template preview — renders all templates to HTML and opens in browser.
+ * Quick email template preview — renders all templates to HTML and writes a preview file.
  * Run: npx tsx scripts/preview-email.tsx
  */
 import { render } from "@react-email/components";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { writeFileSync } from "fs";
 import { WaitlistApprovedEmail } from "../src/lib/email/templates/waitlist-approved";
 import { ApplicationAcceptedEmail } from "../src/lib/email/templates/application-accepted";
@@ -35,13 +37,13 @@ async function main() {
 
   for (const t of templates) {
     const rendered = await render(t.el);
-    const encoded = encodeURIComponent(rendered);
     html += `<div class="template"><h2>${t.name}</h2><div class="frame"><iframe srcdoc="${rendered.replace(/"/g, '&quot;')}"></iframe></div></div>`;
   }
 
   html += `</body></html>`;
-  writeFileSync("/tmp/popsdrops-email-preview.html", html);
-  console.log("Preview written to /tmp/popsdrops-email-preview.html");
+  const previewPath = path.join(tmpdir(), "popsdrops-email-preview.html");
+  writeFileSync(previewPath, html);
+  console.log(`Preview written to ${previewPath}`);
 }
 
 main();
