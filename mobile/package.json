@@ -6,7 +6,16 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "lint": "npm --prefix .. run lint -- 'mobile/**/*.{ts,tsx}'",
+    "typecheck": "tsc --noEmit -p ./tsconfig.json",
+    "test": "npm --prefix .. run test:mobile",
+    "doctor": "npx expo-doctor",
+    "release:check": "node ./scripts/release-check.mjs",
+    "quality": "npm run lint && npm run typecheck && npm run test && npm run doctor && npm run release:check",
+    "build:preview": "npx eas-cli build --platform all --profile preview",
+    "build:production:ios": "npx eas-cli build --platform ios --profile production",
+    "build:production:android": "npx eas-cli build --platform android --profile production"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

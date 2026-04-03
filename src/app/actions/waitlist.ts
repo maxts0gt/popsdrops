@@ -73,10 +73,11 @@ export async function submitWaitlistRequest(
     };
   }
 
-  // Notify Slack (fire-and-forget — don't block the user)
-  notifySlack(data).catch((err) =>
-    console.error("Slack notification failed:", err),
-  );
+  try {
+    await notifySlack(data);
+  } catch (err) {
+    console.error("Slack notification failed:", err);
+  }
 
   return { success: true };
 }
@@ -85,33 +86,57 @@ export async function submitWaitlistRequest(
 // Slack notification
 // ---------------------------------------------------------------------------
 
+function sanitizeSlackText(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("@", "@\u200B");
+}
+
 async function notifySlack(data: WaitlistInput) {
   const webhookUrl = process.env.SLACK_WAITLIST_WEBHOOK_URL;
   if (!webhookUrl) return;
 
   const lines = [
     `*New ${data.type} request* :wave:`,
-    `*Name:* ${data.full_name}`,
-    `*Email:* ${data.email}`,
+    `*Name:* ${sanitizeSlackText(data.full_name)}`,
+    `*Email:* ${sanitizeSlackText(data.email)}`,
   ];
 
   if (data.type === "brand") {
-    lines.push(`*Company:* ${data.company_name}`);
-    if (data.industry) lines.push(`*Industry:* ${data.industry}`);
-    if (data.budget_range) lines.push(`*Budget:* ${data.budget_range}`);
-    if (data.website) lines.push(`*Website:* ${data.website}`);
+    lines.push(`*Company:* ${sanitizeSlackText(data.company_name)}`);
+    if (data.industry) lines.push(`*Industry:* ${sanitizeSlackText(data.industry)}`);
+    if (data.budget_range) {
+      lines.push(`*Budget:* ${sanitizeSlackText(data.budget_range)}`);
+    }
+    if (data.website) lines.push(`*Website:* ${sanitizeSlackText(data.website)}`);
   } else {
-    lines.push(`*Platform:* ${data.social_platform}`);
-    lines.push(`*Profile:* ${data.social_url}`);
-    if (data.follower_range) lines.push(`*Followers:* ${data.follower_range}`);
-    if (data.market) lines.push(`*Location:* ${data.market}`);
+    lines.push(`*Platform:* ${sanitizeSlackText(data.social_platform)}`);
+    lines.push(`*Profile:* ${sanitizeSlackText(data.social_url)}`);
+    if (data.follower_range) {
+      lines.push(`*Followers:* ${sanitizeSlackText(data.follower_range)}`);
+    }
+    if (data.market) lines.push(`*Location:* ${sanitizeSlackText(data.market)}`);
   }
 
-  if (data.reason) lines.push(`*Why PopsDrops:* ${data.reason}`);
+  if (data.reason) lines.push(`*Why PopsDrops:* ${sanitizeSlackText(data.reason)}`);
 
-  await fetch(webhookUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text: lines.join("\n") }),
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 1500);
+
+  try {
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: lines.join("\n") }),
+      signal: controller.signal,
+    });
+
+    if (!response.ok) {
+      throw new Error(`Slack webhook failed with status ${response.status}`);
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
 }

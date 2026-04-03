@@ -15,6 +15,7 @@ import { useI18n } from "../lib/i18n";
 import { useAuth } from "../lib/auth";
 import { useTheme } from "../lib/theme-context";
 import {
+  FOLLOWER_RANGE_LABELS,
   FOLLOWER_RANGES,
   PLATFORM_LABELS,
   submitCreatorWaitlist,
@@ -329,7 +330,7 @@ export function WaitlistScreen() {
                         fontFamily: "Inter_500Medium",
                       }}
                     >
-                      {range}
+                      {FOLLOWER_RANGE_LABELS[range]}
                     </Text>
                   </Pressable>
                 );

@@ -17,6 +17,19 @@ const RATE_LIMIT_WINDOW = "10 m";
 const FALLBACK_RATE_LIMIT_MAX_KEYS = 5000;
 
 let waitlistRatelimit: Ratelimit | null | undefined;
+let warnedMissingTurnstileSecret = false;
+let warnedMissingUpstash = false;
+
+function warnProductionMisconfiguration(
+  hasWarned: boolean,
+  message: string,
+): true {
+  if (!hasWarned && process.env.NODE_ENV === "production") {
+    console.warn(message);
+  }
+
+  return true;
+}
 
 function cleanupRateLimitMap(now: number) {
   for (const [key, entry] of rateLimitMap.entries()) {
@@ -49,6 +62,10 @@ function getWaitlistRatelimit(): Ratelimit | null {
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
+    warnedMissingUpstash = warnProductionMisconfiguration(
+      warnedMissingUpstash,
+      "Upstash Redis is not configured for public-form rate limiting; falling back to per-instance in-memory throttling.",
+    );
     waitlistRatelimit = null;
     return waitlistRatelimit;
   }
@@ -108,7 +125,10 @@ async function verifyTurnstileToken(token?: string | null) {
   const secret = process.env.TURNSTILE_SECRET_KEY;
 
   if (!secret) {
-    // Turnstile is optional — skip verification if not configured
+    warnedMissingTurnstileSecret = warnProductionMisconfiguration(
+      warnedMissingTurnstileSecret,
+      "TURNSTILE_SECRET_KEY is not configured; public-form bot protection is disabled.",
+    );
     return;
   }
 

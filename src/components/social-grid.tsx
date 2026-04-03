@@ -17,6 +17,7 @@ export function SocialGrid() {
   const gridRef = useRef<{ char: string; x: number; y: number }[]>([]);
   const rafRef = useRef<number>(0);
   const dprRef = useRef(1);
+  const runningRef = useRef(false);
 
   const buildGrid = useCallback((w: number, h: number) => {
     const cols = Math.ceil(w / CELL) + 1;
@@ -41,7 +42,7 @@ export function SocialGrid() {
     const section = canvas.closest("section");
 
     function draw() {
-      if (!canvas) return;
+      if (!canvas || !runningRef.current) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
 
@@ -96,7 +97,9 @@ export function SocialGrid() {
       }
 
       ctx.restore();
-      rafRef.current = requestAnimationFrame(draw);
+      if (runningRef.current) {
+        rafRef.current = requestAnimationFrame(draw);
+      }
     }
 
     const resize = () => {
@@ -122,6 +125,7 @@ export function SocialGrid() {
     };
 
     resize();
+    runningRef.current = true;
     rafRef.current = requestAnimationFrame(draw);
 
     window.addEventListener("resize", resize);
@@ -130,6 +134,7 @@ export function SocialGrid() {
     target.addEventListener("mouseleave", handleLeave);
 
     return () => {
+      runningRef.current = false;
       cancelAnimationFrame(rafRef.current);
       window.removeEventListener("resize", resize);
       target.removeEventListener("mousemove", handleMove as EventListener);

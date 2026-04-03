@@ -310,14 +310,25 @@ export const CAMPAIGN_STATUS_LABELS: Record<CampaignStatus, string> = {
 };
 
 export const CAMPAIGN_STATUS_COLORS: Record<CampaignStatus, string> = {
+  draft: "bg-slate-100 text-slate-700",
+  recruiting: "bg-blue-100 text-blue-700",
+  in_progress: "bg-blue-100 text-blue-700",
+  publishing: "bg-amber-100 text-amber-700",
+  monitoring: "bg-purple-100 text-purple-700",
+  completed: "bg-emerald-100 text-emerald-700",
+  paused: "bg-orange-100 text-orange-700",
+  cancelled: "bg-red-100 text-red-700",
+};
+
+export const CAMPAIGN_STATUS_TEXT_COLORS: Record<CampaignStatus, string> = {
   draft: "text-muted-foreground",
-  recruiting: "text-blue-600 dark:text-blue-400",
-  in_progress: "text-blue-600 dark:text-blue-400",
-  publishing: "text-amber-600 dark:text-amber-400",
-  monitoring: "text-purple-600 dark:text-purple-400",
-  completed: "text-emerald-600 dark:text-emerald-400",
-  paused: "text-orange-600 dark:text-orange-400",
-  cancelled: "text-red-600 dark:text-red-400",
+  recruiting: "text-blue-600",
+  in_progress: "text-blue-600",
+  publishing: "text-amber-600",
+  monitoring: "text-purple-600",
+  completed: "text-emerald-600",
+  paused: "text-orange-600",
+  cancelled: "text-red-600",
 };
 
 export const PROFILE_STATUS_COLORS: Record<string, string> = {

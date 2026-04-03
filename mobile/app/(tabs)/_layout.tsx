@@ -124,9 +124,13 @@ function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
           return (
             <Pressable
               key={route.key}
-              accessibilityRole="button"
+              accessibilityRole="tab"
               accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
+              accessibilityLabel={
+                options.tabBarAccessibilityLabel
+                ?? (typeof options.title === "string" ? options.title : undefined)
+                ?? route.name
+              }
               onPress={onPress}
               onLongPress={onLongPress}
               hitSlop={8}

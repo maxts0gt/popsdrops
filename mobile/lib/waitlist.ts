@@ -15,16 +15,24 @@ export const PLATFORM_LABELS: Record<WaitlistPlatform, string> = {
   facebook: "Facebook",
 };
 
-export const FOLLOWER_RANGES = [
-  "1k-10k",
-  "10k-50k",
-  "50k-100k",
-  "100k-500k",
-  "500k-1M",
-  "1M+",
+export const FOLLOWER_RANGE_OPTIONS = [
+  { value: "under_10k", label: "Under 10k" },
+  { value: "10k_50k", label: "10k-50k" },
+  { value: "50k_100k", label: "50k-100k" },
+  { value: "100k_500k", label: "100k-500k" },
+  { value: "500k_plus", label: "500k+" },
 ] as const;
 
-export type FollowerRange = (typeof FOLLOWER_RANGES)[number];
+export const FOLLOWER_RANGES = FOLLOWER_RANGE_OPTIONS.map(
+  (option) => option.value,
+) as [FollowerRange, ...FollowerRange[]];
+
+export const FOLLOWER_RANGE_LABELS: Record<FollowerRange, string> =
+  Object.fromEntries(
+    FOLLOWER_RANGE_OPTIONS.map((option) => [option.value, option.label]),
+  ) as Record<FollowerRange, string>;
+
+export type FollowerRange = (typeof FOLLOWER_RANGE_OPTIONS)[number]["value"];
 
 export type WaitlistInput = {
   fullName: string;

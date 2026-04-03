@@ -51,6 +51,7 @@ vi.mock("react-native", () => ({
 
 vi.mock("lucide-react-native", () => ({
   Check: () => <svg />,
+  ChevronLeft: () => <svg />,
   ChevronRight: () => <svg />,
   Search: () => <svg />,
 }));

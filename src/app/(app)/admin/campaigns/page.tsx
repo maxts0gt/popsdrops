@@ -29,7 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  CAMPAIGN_STATUS_COLORS,
+  CAMPAIGN_STATUS_TEXT_COLORS,
   CAMPAIGN_STATUS_LABELS,
   formatBudgetRange,
 } from "@/lib/constants";
@@ -365,7 +365,7 @@ export default function AdminCampaignsPage() {
                     <TableCell className="font-medium">{c.title}</TableCell>
                     <TableCell className="text-muted-foreground">{c.brand_name}</TableCell>
                     <TableCell>
-                      <span className={`text-xs font-medium ${CAMPAIGN_STATUS_COLORS[c.status]}`}>
+                      <span className={`text-xs font-medium ${CAMPAIGN_STATUS_TEXT_COLORS[c.status]}`}>
                         {CAMPAIGN_STATUS_LABELS[c.status]}
                       </span>
                     </TableCell>

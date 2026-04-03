@@ -18,9 +18,6 @@
       "bundleIdentifier": "com.tengrivertex.popsdrops",
       "buildNumber": "1",
       "infoPlist": {
-        "NSCameraUsageDescription": "PopsDrops needs camera access to let you capture content for campaigns.",
-        "NSPhotoLibraryUsageDescription": "PopsDrops needs photo library access to upload content for campaigns.",
-        "NSLocationWhenInUseUsageDescription": "PopsDrops uses your location to show relevant campaigns in your market.",
         "CFBundleDevelopmentRegion": "en",
         "CFBundleAllowMixedLocalizations": true,
         "ITSAppUsesNonExemptEncryption": false
@@ -61,10 +58,6 @@
       "package": "com.tengrivertex.popsdrops",
       "versionCode": 1,
       "permissions": [
-        "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "ACCESS_FINE_LOCATION",
         "INTERNET",
         "ACCESS_NETWORK_STATE"
       ]

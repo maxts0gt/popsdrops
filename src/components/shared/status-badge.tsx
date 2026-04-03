@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import {
   CAMPAIGN_STATUS_LABELS,
-  CAMPAIGN_STATUS_COLORS,
+  CAMPAIGN_STATUS_TEXT_COLORS,
   type CampaignStatus,
 } from "@/lib/constants";
 
@@ -15,7 +15,7 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
     <span
       className={cn(
         "inline-flex items-center text-xs font-medium",
-        CAMPAIGN_STATUS_COLORS[status],
+        CAMPAIGN_STATUS_TEXT_COLORS[status],
         className
       )}
     >
