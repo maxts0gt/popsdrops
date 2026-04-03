@@ -184,12 +184,17 @@ Deno.serve(async (req) => {
     );
   }
 
-  // Supabase verifies the JWT signature (verify_jwt: true).
+  // IMPORTANT: This function MUST be deployed with verify_jwt: true.
+  // Supabase verifies the JWT signature before the function runs.
   // We additionally check the role claim to reject anon callers.
   const token =
     req.headers.get("Authorization")?.replace("Bearer ", "") || "";
   try {
-    const payload = JSON.parse(atob(token.split(".")[1] || ""));
+    // Base64url → base64 (handle - _ and missing padding)
+    const seg = token.split(".")[1] || "";
+    const b64 = seg.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+    const payload = JSON.parse(atob(padded));
     if (payload.role !== "service_role") {
       return new Response(
         JSON.stringify({ error: "Unauthorized — service_role required" }),
