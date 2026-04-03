@@ -131,7 +131,7 @@ export interface Database {
           avatar_url: string | null;
           email: string;
           status: UserStatus;
-          preferred_locale: string;
+          preferred_locale: string | null;
           onboarding_completed: boolean;
           approved_at: string | null;
           approved_by: string | null;
