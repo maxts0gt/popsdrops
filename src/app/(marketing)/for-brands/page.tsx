@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
 import { getMarketLabel } from "@/lib/constants";
+import { MARKETING_MOCK_IDENTITIES } from "@/lib/marketing/mock-preview";
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -150,28 +151,52 @@ export default function ForBrandsPage() {
                   <div className="col-span-2 text-end">{t("mock.col.status")}</div>
                 </div>
                 {[
-                  { name: "Yuna Park", marketKey: "south_korea", platform: "Instagram", er: "9.3%", content: "4/4", statusKey: "mock.status.published", color: "text-emerald-500" },
-                  { name: "Sakura Tanaka", marketKey: "japan", platform: "TikTok", er: "11.2%", content: "3/3", statusKey: "mock.status.published", color: "text-emerald-500" },
-                  { name: "Léa Moreau", marketKey: "france", platform: "Instagram", er: "8.1%", content: "2/3", statusKey: "mock.status.inReview", color: "text-blue-500" },
-                  { name: "Nora Al-Rashidi", marketKey: "saudi_arabia", platform: "Snapchat", er: "12.4%", content: "3/3", statusKey: "mock.status.approved", color: "text-slate-600" },
-                  { name: "Sofia Reyes", marketKey: "mexico", platform: "TikTok", er: "10.7%", content: "1/2", statusKey: "mock.status.drafting", color: "text-slate-400" },
-                ].map((c) => (
-                  <div key={c.name} className="grid grid-cols-12 items-center gap-2 border-b border-slate-50 py-2.5 last:border-0">
-                    <div className="col-span-4 flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
-                        {c.name.split(" ").map(n => n[0]).join("")}
+                  { id: "yp", platform: "Instagram", er: "9.3%", content: "4/4", statusKey: "mock.status.published", color: "text-emerald-500" },
+                  { id: "st", platform: "TikTok", er: "11.2%", content: "3/3", statusKey: "mock.status.published", color: "text-emerald-500" },
+                  { id: "lm", platform: "Instagram", er: "8.1%", content: "2/3", statusKey: "mock.status.inReview", color: "text-blue-500" },
+                  { id: "na", platform: "Snapchat", er: "12.4%", content: "3/3", statusKey: "mock.status.approved", color: "text-slate-600" },
+                  { id: "sr", platform: "TikTok", er: "10.7%", content: "1/2", statusKey: "mock.status.drafting", color: "text-slate-400" },
+                ].map((c) => {
+                  const identity =
+                    MARKETING_MOCK_IDENTITIES[
+                      c.id as keyof typeof MARKETING_MOCK_IDENTITIES
+                    ];
+
+                  return (
+                    <div
+                      key={c.id}
+                      className="grid grid-cols-12 items-center gap-2 border-b border-slate-50 py-2.5 last:border-0"
+                    >
+                      <div className="col-span-4 flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-500">
+                          {identity.badge}
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-slate-700">
+                            {identity.label}
+                          </p>
+                          <p className="text-[10px] text-slate-400">
+                            {getMarketLabel(identity.marketKey, locale)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-slate-700">{c.name}</p>
-                        <p className="text-[10px] text-slate-400">{getMarketLabel(c.marketKey, locale)}</p>
+                      <div className="col-span-2 text-xs text-slate-500">
+                        {c.platform}
+                      </div>
+                      <div className="col-span-2 text-end text-xs font-medium text-slate-700">
+                        {c.er}
+                      </div>
+                      <div className="col-span-2 text-end text-xs text-slate-500">
+                        {c.content}
+                      </div>
+                      <div
+                        className={`col-span-2 text-end text-[11px] font-medium ${c.color}`}
+                      >
+                        {t(c.statusKey)}
                       </div>
                     </div>
-                    <div className="col-span-2 text-xs text-slate-500">{c.platform}</div>
-                    <div className="col-span-2 text-end text-xs font-medium text-slate-700">{c.er}</div>
-                    <div className="col-span-2 text-end text-xs text-slate-500">{c.content}</div>
-                    <div className={`col-span-2 text-end text-[11px] font-medium ${c.color}`}>{t(c.statusKey)}</div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </motion.div>

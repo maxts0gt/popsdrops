@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     template: "%s | PopsDrops",
   },
   description:
-    "Global cross-border influencer marketing. Run creator campaigns in any market. Briefs auto-translate. Smart matching. Per-platform analytics.",
+    "Global cross-border influencer marketing. Run creator campaigns in any market. Translated briefs. Curated matching. Per-platform analytics.",
   metadataBase: new URL("https://popsdrops.com"),
   openGraph: {
     title: "PopsDrops — Creator Campaigns Without Borders",

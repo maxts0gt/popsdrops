@@ -86,7 +86,7 @@ export function MarketingFooter() {
                   </svg>
                   <div className="min-w-0">
                     <p className="text-[10px] leading-none text-slate-500">{t("footer.mobile.appStore")}</p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-400">{t("footer.mobile.comingSoon")}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700">{t("footer.mobile.creatorApp")}</p>
                   </div>
                 </div>
                 {/* Google Play */}
@@ -96,7 +96,7 @@ export function MarketingFooter() {
                   </svg>
                   <div className="min-w-0">
                     <p className="text-[10px] leading-none text-slate-500">{t("footer.mobile.playStore")}</p>
-                    <p className="mt-0.5 text-xs font-semibold text-slate-400">{t("footer.mobile.comingSoon")}</p>
+                    <p className="mt-0.5 text-xs font-semibold text-slate-700">{t("footer.mobile.creatorApp")}</p>
                   </div>
                 </div>
               </div>
@@ -107,7 +107,7 @@ export function MarketingFooter() {
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-slate-100 pt-8 sm:flex-row">
           <p className="text-xs text-slate-400">
-            © {new Date().getFullYear()} Tengri Vertex, LLC. All rights reserved.
+            © {new Date().getFullYear()} PopsDrops. All rights reserved.
           </p>
         </div>
       </div>

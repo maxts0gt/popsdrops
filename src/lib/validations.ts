@@ -402,3 +402,43 @@ export const waitlistSchema = z.discriminatedUnion("type", [
 export type WaitlistInput = z.infer<typeof waitlistSchema>;
 export type WaitlistBrandInput = z.infer<typeof waitlistBrandSchema>;
 export type WaitlistCreatorInput = z.infer<typeof waitlistCreatorSchema>;
+
+// ---------------------------------------------------------------------------
+// 17. Partner Inquiry (public form)
+// ---------------------------------------------------------------------------
+
+const partnerInquiryBaseSchema = z.object({
+  full_name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must be 100 characters or less"),
+  email: z.string().email("Enter a valid email address"),
+  company_name: z
+    .string()
+    .min(2, "Company name must be at least 2 characters")
+    .max(100, "Company name must be 100 characters or less"),
+  website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
+  market: z
+    .string()
+    .min(2, "Market must be at least 2 characters")
+    .max(100, "Market must be 100 characters or less"),
+  reason: z
+    .string()
+    .min(10, "Tell us a bit more so we can route this properly")
+    .max(1000, "Keep it under 1,000 characters"),
+});
+
+export const partnerBrandInquirySchema = partnerInquiryBaseSchema.extend({
+  type: z.literal("brand"),
+});
+
+export const partnerDistributorInquirySchema = partnerInquiryBaseSchema.extend({
+  type: z.literal("distributor"),
+});
+
+export const partnerInquirySchema = z.discriminatedUnion("type", [
+  partnerBrandInquirySchema,
+  partnerDistributorInquirySchema,
+]);
+
+export type PartnerInquiryInput = z.infer<typeof partnerInquirySchema>;

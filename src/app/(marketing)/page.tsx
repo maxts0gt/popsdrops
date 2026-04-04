@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
 import { getMarketLabel } from "@/lib/constants";
+import { MARKETING_MOCK_IDENTITIES } from "@/lib/marketing/mock-preview";
 import { SocialGrid } from "@/components/social-grid";
 
 const stagger = {
@@ -206,29 +207,53 @@ export default function LandingPage() {
                     <div className="col-span-2 text-end">{t("report.col.cost")}</div>
                   </div>
                   {[
-                    { name: "Yuna Park", marketKey: "south_korea", platform: "Instagram", reach: "520K", er: "9.3%", cpe: "$0.08", cost: "$800" },
-                    { name: "Sakura Tanaka", marketKey: "japan", platform: "TikTok", reach: "680K", er: "11.2%", cpe: "$0.06", cost: "$750" },
-                    { name: "Léa Moreau", marketKey: "france", platform: "Instagram", reach: "310K", er: "8.1%", cpe: "$0.14", cost: "$900" },
-                    { name: "Nora Al-Rashidi", marketKey: "saudi_arabia", platform: "Snapchat", reach: "420K", er: "12.4%", cpe: "$0.10", cost: "$850" },
-                    { name: "Sofia Reyes", marketKey: "mexico", platform: "TikTok", reach: "390K", er: "10.7%", cpe: "$0.11", cost: "$700" },
-                  ].map((c) => (
-                    <div key={c.name} className="grid grid-cols-12 items-center gap-2 border-b border-slate-50 py-3 last:border-0">
-                      <div className="col-span-3 flex items-center gap-2.5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">
-                          {c.name.split(" ").map(n => n[0]).join("")}
+                    { id: "yp", platform: "Instagram", reach: "520K", er: "9.3%", cpe: "$0.08", cost: "$800" },
+                    { id: "st", platform: "TikTok", reach: "680K", er: "11.2%", cpe: "$0.06", cost: "$750" },
+                    { id: "lm", platform: "Instagram", reach: "310K", er: "8.1%", cpe: "$0.14", cost: "$900" },
+                    { id: "na", platform: "Snapchat", reach: "420K", er: "12.4%", cpe: "$0.10", cost: "$850" },
+                    { id: "sr", platform: "TikTok", reach: "390K", er: "10.7%", cpe: "$0.11", cost: "$700" },
+                  ].map((c) => {
+                    const identity =
+                      MARKETING_MOCK_IDENTITIES[
+                        c.id as keyof typeof MARKETING_MOCK_IDENTITIES
+                      ];
+
+                    return (
+                      <div
+                        key={c.id}
+                        className="grid grid-cols-12 items-center gap-2 border-b border-slate-50 py-3 last:border-0"
+                      >
+                        <div className="col-span-3 flex items-center gap-2.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-[9px] font-bold text-slate-500">
+                            {identity.badge}
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium text-slate-700">
+                              {identity.label}
+                            </p>
+                            <p className="text-[9px] text-slate-400">
+                              {getMarketLabel(identity.marketKey, locale)}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-medium text-slate-700">{c.name}</p>
-                          <p className="text-[9px] text-slate-400">{getMarketLabel(c.marketKey, locale)}</p>
+                        <div className="col-span-2 text-xs text-slate-500">
+                          {c.platform}
+                        </div>
+                        <div className="col-span-2 text-end text-xs text-slate-700">
+                          {c.reach}
+                        </div>
+                        <div className="col-span-2 text-end text-xs font-semibold text-slate-900">
+                          {c.er}
+                        </div>
+                        <div className="col-span-1 text-end text-xs text-slate-500">
+                          {c.cpe}
+                        </div>
+                        <div className="col-span-2 text-end text-xs font-medium text-slate-700">
+                          {c.cost}
                         </div>
                       </div>
-                      <div className="col-span-2 text-xs text-slate-500">{c.platform}</div>
-                      <div className="col-span-2 text-end text-xs text-slate-700">{c.reach}</div>
-                      <div className="col-span-2 text-end text-xs font-semibold text-slate-900">{c.er}</div>
-                      <div className="col-span-1 text-end text-xs text-slate-500">{c.cpe}</div>
-                      <div className="col-span-2 text-end text-xs font-medium text-slate-700">{c.cost}</div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {/* AI recommendation */}

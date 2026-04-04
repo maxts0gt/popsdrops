@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
+import { MARKETING_MOCK_IDENTITIES } from "@/lib/marketing/mock-preview";
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -13,6 +14,7 @@ const fade = {
 
 export default function ForCreatorsPage() {
   const { t, isRTL } = useTranslation("marketing.forCreators");
+  const mediaKitIdentity = MARKETING_MOCK_IDENTITIES.yp;
 
   return (
     <div className="bg-white">
@@ -103,10 +105,10 @@ export default function ForCreatorsPage() {
                 {/* Creator header */}
                 <div className="flex items-center gap-4">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-lg font-bold text-slate-500">
-                    YP
+                    {mediaKitIdentity.badge}
                   </div>
                   <div>
-                    <p className="text-base font-bold text-slate-900">Yuna Park</p>
+                    <p className="text-base font-bold text-slate-900">{mediaKitIdentity.label}</p>
                     <p className="text-xs text-slate-400">Seoul, South Korea</p>
                   </div>
                 </div>
