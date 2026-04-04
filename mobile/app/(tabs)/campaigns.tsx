@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
-import { View, Text, Pressable, FlatList } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { View, Text, Pressable, FlatList, Alert, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Layers } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
+import { withdrawApplication } from "../../lib/campaign-actions";
 import { ProfileSetupCard } from "../../components/profile-setup-card";
 import { formatCampaignDate } from "../../lib/campaign-formatters";
 import {
@@ -58,46 +59,62 @@ export default function CampaignsScreen() {
   >([]);
   const [applications, setApplications] = useState<ApplicationRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const homeState = decideCreatorHomeState(profile?.status ?? null);
 
-  useEffect(() => {
-    if (
-      homeState !== "workspace" ||
-      !profileReady ||
-      !session?.user?.id
-    ) {
-      return;
+  const fetchData = useCallback(async () => {
+    if (homeState !== "workspace" || !profileReady || !session?.user?.id) return;
+    try {
+      const workspace = await loadCreatorWorkspace(session.user.id);
+      setActiveCampaigns(workspace.campaigns.active);
+      setCompletedCampaigns(workspace.campaigns.completed);
+      setApplications(workspace.campaigns.applications);
+      setHasError(false);
+    } catch {
+      setHasError(true);
     }
+  }, [homeState, profileReady, session?.user?.id]);
 
-    let cancelled = false;
-
+  useEffect(() => {
     void (async () => {
       setLoading(true);
-      setHasError(false);
-
-      try {
-        const workspace = await loadCreatorWorkspace(session.user.id);
-        if (!cancelled) {
-          setActiveCampaigns(workspace.campaigns.active);
-          setCompletedCampaigns(workspace.campaigns.completed);
-          setApplications(workspace.campaigns.applications);
-        }
-      } catch {
-        if (!cancelled) {
-          setHasError(true);
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
+      await fetchData();
+      setLoading(false);
     })();
+  }, [fetchData]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [homeState, profileReady, session?.user?.id]);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
+
+  const handleWithdraw = (applicationId: string, title: string) => {
+    Alert.alert(
+      t("campaigns.withdrawTitle"),
+      t("campaigns.withdrawConfirm", { title }),
+      [
+        { text: t("action.cancel"), style: "cancel" },
+        {
+          text: t("campaigns.withdraw"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await withdrawApplication(applicationId);
+              setApplications((prev) =>
+                prev.map((a) =>
+                  a.id === applicationId ? { ...a, status: "withdrawn" } : a,
+                ),
+              );
+            } catch (err) {
+              Alert.alert(t("error.generic"), err instanceof Error ? err.message : "Unknown error");
+            }
+          },
+        },
+      ],
+    );
+  };
 
   function tabLabel(tab: Tab): string {
     switch (tab) {
@@ -186,8 +203,12 @@ export default function CampaignsScreen() {
         <FlatList<CampaignListItem>
         data={activeData}
         keyExtractor={(item) => (isApplicationRecord(item) ? item.id : item.campaignId)}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.textMuted} />
+        }
         renderItem={({ item }) => {
           if (isApplicationRecord(item)) {
+            const canWithdraw = item.status === "pending" || item.status === "counter_offer";
             return (
               <Pressable
                 onPress={() =>
@@ -199,9 +220,13 @@ export default function CampaignsScreen() {
                       brandName: item.brandName,
                       platforms: item.platforms.join(","),
                       applicationStatus: item.status,
+                      applicationId: item.id,
+                      ...(item.proposedRate != null && { proposedRate: String(item.proposedRate) }),
+                      ...(item.counterRate != null && { counterRate: String(item.counterRate) }),
                     },
                   })
                 }
+                onLongPress={canWithdraw ? () => handleWithdraw(item.id, item.campaignTitle) : undefined}
                 className="mb-3 rounded-2xl border px-5 py-4"
                 style={surfaceCardStyle}
               >
@@ -269,7 +294,7 @@ export default function CampaignsScreen() {
             <Pressable
               onPress={() =>
                 router.push({
-                  pathname: "/campaign/[id]",
+                  pathname: activeTab === "active" ? "/campaign-room/[id]" : "/campaign/[id]",
                   params: {
                     id: item.campaignId,
                     title: item.title,

@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { View, Text, ScrollView, Pressable, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
+  Bell,
   Layers,
   Clock,
   Star,
@@ -22,6 +23,7 @@ import {
   loadCreatorWorkspace,
   type CreatorWorkspaceSnapshot,
 } from "../../lib/creator-workspace";
+import { getUnreadCount } from "../../lib/notifications";
 import { useI18n } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme-context";
 
@@ -100,32 +102,37 @@ export default function HomeScreen() {
   );
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
   const [workspaceError, setWorkspaceError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const fetchData = useCallback(async () => {
+    if (homeState !== "workspace" || !profileReady || !session?.user?.id) return;
+    try {
+      const [nextWorkspace, count] = await Promise.all([
+        loadCreatorWorkspace(session.user.id),
+        getUnreadCount(session.user.id),
+      ]);
+      setWorkspace(nextWorkspace);
+      setUnreadCount(count);
+      setWorkspaceError(false);
+    } catch {
+      setWorkspaceError(true);
+    }
+  }, [homeState, profileReady, session?.user?.id]);
 
   useEffect(() => {
-    if (homeState !== "workspace" || !profileReady || !session?.user?.id) {
-      return;
-    }
-
-    let cancelled = false;
-
     void (async () => {
       setWorkspaceLoading(true);
-      setWorkspaceError(false);
-
-      try {
-        const nextWorkspace = await loadCreatorWorkspace(session.user.id);
-        if (!cancelled) setWorkspace(nextWorkspace);
-      } catch {
-        if (!cancelled) setWorkspaceError(true);
-      } finally {
-        if (!cancelled) setWorkspaceLoading(false);
-      }
+      await fetchData();
+      setWorkspaceLoading(false);
     })();
+  }, [fetchData]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [homeState, profileReady, session?.user?.id]);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [fetchData]);
 
   const actions = workspace ? buildActionItems(workspace, t) : [];
 
@@ -140,11 +147,15 @@ export default function HomeScreen() {
           className="flex-1"
           contentContainerStyle={{ paddingBottom: 100 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.textMuted} />
+          }
         >
           {/* ── Greeting ── */}
           <View className="px-6 pt-10">
+            <View className="flex-row items-start justify-between">
             <Text
-              className="text-[32px] leading-[38px] tracking-tight"
+              className="flex-1 text-[32px] leading-[38px] tracking-tight"
               style={{
                 color: palette.textPrimary,
                 fontFamily: "Inter_700Bold",
@@ -159,6 +170,27 @@ export default function HomeScreen() {
                     timeOfDay: t(`home.${timeOfDay}`),
                   })}
             </Text>
+            <Pressable
+              onPress={() => router.push("/notifications")}
+              hitSlop={12}
+              className="relative mt-2"
+            >
+              <Bell size={22} color={palette.textTertiary} strokeWidth={1.6} />
+              {unreadCount > 0 ? (
+                <View
+                  className="absolute -top-1 -right-1 h-4 min-w-[16px] items-center justify-center rounded-full px-1"
+                  style={{ backgroundColor: "#EF4444" }}
+                >
+                  <Text
+                    className="text-[10px]"
+                    style={{ color: "#FFFFFF", fontFamily: "Inter_600SemiBold" }}
+                  >
+                    {unreadCount > 9 ? "9+" : String(unreadCount)}
+                  </Text>
+                </View>
+              ) : null}
+            </Pressable>
+            </View>
             <Text
               className="mt-2 text-[15px]"
               style={{

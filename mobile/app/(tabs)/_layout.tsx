@@ -2,7 +2,7 @@ import { Redirect, Tabs } from "expo-router";
 import { Platform, Pressable, StyleSheet, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Compass, Layers, User } from "lucide-react-native";
+import { Home, Compass, Layers, DollarSign, User } from "lucide-react-native";
 import type { BottomTabBarProps } from "@react-navigation/bottom-tabs";
 import { useI18n } from "../../lib/i18n";
 import { useAuth } from "../../lib/auth";
@@ -11,13 +11,14 @@ import { AccessStateScreen } from "../../components/access-state-screen";
 import { useTheme } from "../../lib/theme-context";
 
 const TAB_BAR_HEIGHT = 56;
-const TAB_BAR_MARGIN_H = 48;
+const TAB_BAR_MARGIN_H = 32;
 const TAB_BAR_RADIUS = 28;
 
 const ICONS: Record<string, typeof Home> = {
   home: Home,
   discover: Compass,
   campaigns: Layers,
+  earnings: DollarSign,
   profile: User,
 };
 
@@ -187,6 +188,7 @@ export default function TabLayout() {
       <Tabs.Screen name="home" options={{ title: t("tab.home") }} />
       <Tabs.Screen name="discover" options={{ title: t("tab.discover") }} />
       <Tabs.Screen name="campaigns" options={{ title: t("tab.campaigns") }} />
+      <Tabs.Screen name="earnings" options={{ title: t("tab.earnings") }} />
       <Tabs.Screen name="profile" options={{ title: t("tab.profile") }} />
     </Tabs>
   );
