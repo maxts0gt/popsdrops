@@ -66,31 +66,27 @@ export async function loadCampaignRoom(
   campaignId: string,
   userId: string,
 ): Promise<CampaignRoomData> {
-  const [campaignRes, memberRes, deliverablesRes, submissionsRes] =
-    await Promise.all([
-      supabase
-        .from("campaigns")
-        .select(
-          `id, title, brief_description, brief_requirements, brief_dos, brief_donts,
-           content_due_date, posting_window_start, posting_window_end, max_revisions, status,
-           profiles!campaigns_brand_id_fkey ( full_name, brand_profiles ( company_name ) )`,
-        )
-        .eq("id", campaignId)
-        .single(),
-      supabase
-        .from("campaign_members")
-        .select("id, campaign_id, creator_id, accepted_rate")
-        .eq("campaign_id", campaignId)
-        .eq("creator_id", userId)
-        .single(),
-      supabase
-        .from("campaign_deliverables")
-        .select("id, platform, content_type, quantity, notes")
-        .eq("campaign_id", campaignId),
-      // Fetch submissions via member — done after we know member id
-      // Will be fetched below
-      Promise.resolve(null),
-    ]);
+  const [campaignRes, memberRes, deliverablesRes] = await Promise.all([
+    supabase
+      .from("campaigns")
+      .select(
+        `id, title, brief_description, brief_requirements, brief_dos, brief_donts,
+         content_due_date, posting_window_start, posting_window_end, max_revisions, status,
+         profiles!campaigns_brand_id_fkey ( full_name, brand_profiles ( company_name ) )`,
+      )
+      .eq("id", campaignId)
+      .single(),
+    supabase
+      .from("campaign_members")
+      .select("id, campaign_id, creator_id, accepted_rate")
+      .eq("campaign_id", campaignId)
+      .eq("creator_id", userId)
+      .single(),
+    supabase
+      .from("campaign_deliverables")
+      .select("id, platform, content_type, quantity, notes")
+      .eq("campaign_id", campaignId),
+  ]);
 
   if (campaignRes.error) throw new Error(campaignRes.error.message);
   if (memberRes.error) throw new Error(memberRes.error.message);

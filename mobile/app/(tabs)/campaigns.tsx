@@ -52,6 +52,7 @@ export default function CampaignsScreen() {
   const { t, locale } = useI18n();
   const { palette } = useTheme();
   const router = useRouter();
+  const userId = session?.user?.id ?? null;
   const [activeTab, setActiveTab] = useState<Tab>("active");
   const [activeCampaigns, setActiveCampaigns] = useState<MembershipRecord[]>([]);
   const [completedCampaigns, setCompletedCampaigns] = useState<
@@ -64,9 +65,9 @@ export default function CampaignsScreen() {
   const homeState = decideCreatorHomeState(profile?.status ?? null);
 
   const fetchData = useCallback(async () => {
-    if (homeState !== "workspace" || !profileReady || !session?.user?.id) return;
+    if (homeState !== "workspace" || !profileReady || !userId) return;
     try {
-      const workspace = await loadCreatorWorkspace(session.user.id);
+      const workspace = await loadCreatorWorkspace(userId);
       setActiveCampaigns(workspace.campaigns.active);
       setCompletedCampaigns(workspace.campaigns.completed);
       setApplications(workspace.campaigns.applications);
@@ -74,7 +75,7 @@ export default function CampaignsScreen() {
     } catch {
       setHasError(true);
     }
-  }, [homeState, profileReady, session?.user?.id]);
+  }, [homeState, profileReady, userId]);
 
   useEffect(() => {
     void (async () => {

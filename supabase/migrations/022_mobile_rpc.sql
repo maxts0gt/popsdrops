@@ -31,7 +31,7 @@ BEGIN
   END IF;
 
   -- Verify the caller is the application creator
-  IF v_app.creator_id != auth.uid() THEN
+  IF v_app.creator_id IS DISTINCT FROM auth.uid() THEN
     RAISE EXCEPTION 'Not authorized';
   END IF;
 
@@ -57,6 +57,9 @@ BEGIN
   DO UPDATE SET accepted_rate = EXCLUDED.accepted_rate;
 END;
 $$;
+
+-- Remove default PUBLIC execute privilege before granting intended access
+REVOKE ALL ON FUNCTION public.accept_counter_offer(UUID) FROM PUBLIC;
 
 -- Grant execute to authenticated users (RLS in function body via auth.uid())
 GRANT EXECUTE ON FUNCTION public.accept_counter_offer(UUID) TO authenticated;

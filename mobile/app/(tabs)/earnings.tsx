@@ -35,19 +35,20 @@ export default function EarningsScreen() {
   const { session } = useAuth();
   const { t, locale } = useI18n();
   const { palette } = useTheme();
+  const userId = session?.user?.id ?? null;
   const [data, setData] = useState<EarningsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     try {
-      const earnings = await loadEarnings(session.user.id);
+      const earnings = await loadEarnings(userId);
       setData(earnings);
     } catch {
       // Silent fail — empty state shown
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     void (async () => {

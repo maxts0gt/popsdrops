@@ -93,6 +93,7 @@ export default function HomeScreen() {
   const { t, locale } = useI18n();
   const { palette } = useTheme();
   const router = useRouter();
+  const userId = session?.user?.id ?? null;
   const timeOfDay = getTimeOfDay();
   const firstName = profile?.full_name?.split(" ")[0];
   const homeState = decideCreatorHomeState(profile?.status ?? null);
@@ -106,11 +107,11 @@ export default function HomeScreen() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchData = useCallback(async () => {
-    if (homeState !== "workspace" || !profileReady || !session?.user?.id) return;
+    if (homeState !== "workspace" || !profileReady || !userId) return;
     try {
       const [nextWorkspace, count] = await Promise.all([
-        loadCreatorWorkspace(session.user.id),
-        getUnreadCount(session.user.id),
+        loadCreatorWorkspace(userId),
+        getUnreadCount(userId),
       ]);
       setWorkspace(nextWorkspace);
       setUnreadCount(count);
@@ -118,7 +119,7 @@ export default function HomeScreen() {
     } catch {
       setWorkspaceError(true);
     }
-  }, [homeState, profileReady, session?.user?.id]);
+  }, [homeState, profileReady, userId]);
 
   useEffect(() => {
     void (async () => {

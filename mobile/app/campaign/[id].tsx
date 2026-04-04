@@ -45,6 +45,7 @@ export default function CampaignDetailScreen() {
   const { t, locale } = useI18n();
   const router = useRouter();
   const { user } = useAuth();
+  const userId = user?.id ?? null;
   const params = useLocalSearchParams<{
     id: string;
     title: string;
@@ -94,7 +95,7 @@ export default function CampaignDetailScreen() {
 
   // Fetch latest application status on mount
   useEffect(() => {
-    if (!user?.id || !params.id) return;
+    if (!userId || !params.id) return;
     let cancelled = false;
 
     void (async () => {
@@ -102,7 +103,7 @@ export default function CampaignDetailScreen() {
         .from("campaign_applications")
         .select("id, status, proposed_rate, counter_rate")
         .eq("campaign_id", params.id)
-        .eq("creator_id", user.id)
+        .eq("creator_id", userId)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -118,16 +119,16 @@ export default function CampaignDetailScreen() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id, params.id]);
+  }, [userId, params.id]);
 
   // Pre-fill rate from creator's rate card
   useEffect(() => {
-    if (!user?.id || rateInput) return;
+    if (!userId || rateInput) return;
     void (async () => {
       const { data } = await supabase
         .from("creator_profiles")
         .select("rate_card")
-        .eq("profile_id", user.id)
+        .eq("profile_id", userId)
         .maybeSingle();
 
       if (data?.rate_card && typeof data.rate_card === "object") {
@@ -143,7 +144,7 @@ export default function CampaignDetailScreen() {
         }
       }
     })();
-  }, [user?.id]);
+  }, [userId, rateInput]);
 
   const hasApplied = !!applicationStatus;
   const isCounterOffer = applicationStatus === "counter_offer";

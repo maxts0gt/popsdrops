@@ -118,6 +118,7 @@ export async function withdrawApplication(applicationId: string): Promise<void> 
 
 export async function submitContent(input: {
   campaign_member_id: string;
+  deliverable_id?: string;
   content_url: string;
   caption?: string;
   platform: string;
@@ -156,6 +157,7 @@ export async function submitContent(input: {
     .from("content_submissions")
     .insert({
       campaign_member_id: input.campaign_member_id,
+      deliverable_id: input.deliverable_id ?? null,
       content_url: input.content_url,
       caption: input.caption ?? null,
       platform: input.platform,
@@ -180,21 +182,33 @@ export async function publishContent(
   submissionId: string,
   publishedUrl: string,
 ): Promise<void> {
+  try {
+    new URL(publishedUrl);
+  } catch {
+    throw new Error("Invalid published URL");
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("content_submissions")
     .update({
       status: "published",
       published_url: publishedUrl,
       published_at: new Date().toISOString(),
     })
-    .eq("id", submissionId);
+    .eq("id", submissionId)
+    .eq("status", "approved")
+    .select("id")
+    .maybeSingle();
 
   if (error) throw new Error(error.message);
+  if (!data) {
+    throw new Error("Submission must be approved before publishing");
+  }
 }
 
 // ---------------------------------------------------------------------------

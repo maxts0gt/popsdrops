@@ -30,6 +30,7 @@ import {
   markAllNotificationsRead,
 } from "../lib/campaign-actions";
 import { useI18n } from "../lib/i18n";
+import { formatRelativeTime } from "../lib/relative-time";
 import { useTheme } from "../lib/theme-context";
 
 const TYPE_ICONS: Record<string, typeof Bell> = {
@@ -45,22 +46,23 @@ const TYPE_ICONS: Record<string, typeof Bell> = {
 
 export default function NotificationsScreen() {
   const { session } = useAuth();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { palette } = useTheme();
   const router = useRouter();
+  const userId = session?.user?.id ?? null;
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const load = useCallback(async () => {
-    if (!session?.user?.id) return;
+    if (!userId) return;
     try {
-      const data = await loadNotifications(session.user.id);
+      const data = await loadNotifications(userId);
       setNotifications(data);
     } catch {
       // Silent
     }
-  }, [session?.user?.id]);
+  }, [userId]);
 
   useEffect(() => {
     void (async () => {
@@ -240,7 +242,7 @@ export default function NotificationsScreen() {
                     fontFamily: "Inter_400Regular",
                   }}
                 >
-                  {formatTimeAgo(item.createdAt)}
+                  {formatRelativeTime(item.createdAt, { locale })}
                 </Text>
               </View>
               {!item.read ? (
@@ -284,16 +286,4 @@ export default function NotificationsScreen() {
       />
     </SafeAreaView>
   );
-}
-
-function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return "Just now";
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
 }

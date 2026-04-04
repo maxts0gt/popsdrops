@@ -37,6 +37,10 @@ import {
   type ContentSubmission,
 } from "../../lib/campaign-room";
 import {
+  getDeliverableSubmission,
+  getSelectedDeliverableId,
+} from "../../lib/campaign-room-state";
+import {
   loadCampaignMessages,
   subscribeToCampaignMessages,
   type ChatMessage,
@@ -77,6 +81,8 @@ export default function CampaignRoomScreen() {
     title: string;
     brandName: string;
   }>();
+  const userId = user?.id ?? null;
+  const campaignId = typeof params.id === "string" ? params.id : null;
 
   const [activeTab, setActiveTab] = useState<RoomTab>("brief");
   const [data, setData] = useState<CampaignRoomData | null>(null);
@@ -88,9 +94,11 @@ export default function CampaignRoomScreen() {
   const [chatInput, setChatInput] = useState("");
   const [sending, setSending] = useState(false);
   const [unreadChat, setUnreadChat] = useState(false);
+  const activeTabRef = useRef<RoomTab>("brief");
   const chatListRef = useRef<FlatList>(null);
 
   // Submit state
+  const [selectedDeliverableId, setSelectedDeliverableId] = useState<string | null>(null);
   const [submitUrl, setSubmitUrl] = useState("");
   const [submitCaption, setSubmitCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -98,14 +106,14 @@ export default function CampaignRoomScreen() {
   const [publishing, setPublishing] = useState(false);
 
   const loadData = useCallback(async () => {
-    if (!user?.id || !params.id) return;
+    if (!userId || !campaignId) return;
     try {
-      const roomData = await loadCampaignRoom(params.id, user.id);
+      const roomData = await loadCampaignRoom(campaignId, userId);
       setData(roomData);
     } catch (err) {
       console.error("Failed to load campaign room:", err);
     }
-  }, [user?.id, params.id]);
+  }, [campaignId, userId]);
 
   useEffect(() => {
     void (async () => {
@@ -115,50 +123,66 @@ export default function CampaignRoomScreen() {
     })();
   }, [loadData]);
 
+  useEffect(() => {
+    activeTabRef.current = activeTab;
+    if (activeTab === "chat") {
+      setUnreadChat(false);
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (!data) return;
+    setSelectedDeliverableId((currentId) =>
+      getSelectedDeliverableId(data.deliverables, currentId),
+    );
+  }, [data]);
+
   // Load chat messages
   useEffect(() => {
-    if (!user?.id || !params.id) return;
-    void loadCampaignMessages(params.id, user.id).then(setMessages).catch(() => {});
-  }, [user?.id, params.id]);
+    if (!userId || !campaignId) return;
+    void loadCampaignMessages(campaignId, userId).then(setMessages).catch(() => {});
+  }, [campaignId, userId]);
 
   // Subscribe to realtime chat
   useEffect(() => {
-    if (!user?.id || !params.id) return;
+    if (!userId || !campaignId) return;
 
     const channel = subscribeToCampaignMessages(
-      params.id,
-      user.id,
+      campaignId,
+      userId,
       (msg) => {
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) return prev;
           return [...prev, msg];
         });
-        if (activeTab !== "chat") setUnreadChat(true);
+        if (activeTabRef.current !== "chat") {
+          setUnreadChat(true);
+        }
       },
     );
 
     return () => {
       void channel.unsubscribe();
     };
-  }, [user?.id, params.id, activeTab]);
+  }, [campaignId, userId]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
-    if (user?.id && params.id) {
-      const msgs = await loadCampaignMessages(params.id, user.id).catch(() => []);
+    if (userId && campaignId) {
+      const msgs = await loadCampaignMessages(campaignId, userId).catch(() => []);
       setMessages(msgs);
     }
     setRefreshing(false);
-  }, [loadData, user?.id, params.id]);
+  }, [campaignId, loadData, userId]);
 
   const handleSendMessage = useCallback(async () => {
-    if (!chatInput.trim() || !params.id || !user?.id) return;
+    if (!chatInput.trim() || !campaignId || !userId) return;
     const text = chatInput.trim();
     setSending(true);
     try {
       const result = await sendCampaignMessage({
-        campaign_id: params.id,
+        campaign_id: campaignId,
         content: text,
       });
       setChatInput("");
@@ -169,8 +193,8 @@ export default function CampaignRoomScreen() {
           ...prev,
           {
             id: result.id,
-            campaignId: params.id,
-            senderId: user.id,
+            campaignId,
+            senderId: userId,
             senderName: "You",
             senderAvatarUrl: null,
             content: text,
@@ -184,17 +208,20 @@ export default function CampaignRoomScreen() {
     } finally {
       setSending(false);
     }
-  }, [chatInput, params.id, user?.id, t]);
+  }, [campaignId, chatInput, t, userId]);
 
   const handleSubmitContent = useCallback(async () => {
     if (!data || !submitUrl.trim()) return;
-    const deliverable = data.deliverables[0];
+    const deliverable =
+      data.deliverables.find((item) => item.id === selectedDeliverableId) ??
+      data.deliverables[0];
     if (!deliverable) return;
 
     setSubmitting(true);
     try {
       await submitContent({
         campaign_member_id: data.member.id,
+        deliverable_id: deliverable.id,
         content_url: submitUrl.trim(),
         caption: submitCaption.trim() || undefined,
         platform: deliverable.platform,
@@ -207,7 +234,7 @@ export default function CampaignRoomScreen() {
     } finally {
       setSubmitting(false);
     }
-  }, [data, submitUrl, submitCaption, loadData, t]);
+  }, [data, loadData, selectedDeliverableId, submitCaption, submitUrl, t]);
 
   const handlePublish = useCallback(
     async (submissionId: string) => {
@@ -291,7 +318,6 @@ export default function CampaignRoomScreen() {
               key={tab.key}
               onPress={() => {
                 setActiveTab(tab.key);
-                if (tab.key === "chat") setUnreadChat(false);
               }}
               className="flex-1 items-center py-3"
               style={
@@ -357,6 +383,8 @@ export default function CampaignRoomScreen() {
       {activeTab === "submit" && data ? (
         <SubmitTab
           data={data}
+          selectedDeliverableId={selectedDeliverableId}
+          onSelectDeliverable={setSelectedDeliverableId}
           submitUrl={submitUrl}
           setSubmitUrl={setSubmitUrl}
           submitCaption={submitCaption}
@@ -666,9 +694,7 @@ function TasksTab({
       contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
     >
       {deliverables.map((d) => {
-        const sub = submissions.find(
-          (s) => s.platform === d.platform,
-        );
+        const sub = getDeliverableSubmission(d, submissions);
         const status = sub?.status ?? "not_started";
 
         return (
@@ -738,6 +764,8 @@ function TasksTab({
 
 function SubmitTab({
   data,
+  selectedDeliverableId,
+  onSelectDeliverable,
   submitUrl,
   setSubmitUrl,
   submitCaption,
@@ -752,6 +780,8 @@ function SubmitTab({
   t,
 }: {
   data: CampaignRoomData;
+  selectedDeliverableId: string | null;
+  onSelectDeliverable: (deliverableId: string) => void;
   submitUrl: string;
   setSubmitUrl: (v: string) => void;
   submitCaption: string;
@@ -765,8 +795,13 @@ function SubmitTab({
   palette: ReturnType<typeof useTheme>["palette"];
   t: ReturnType<typeof useI18n>["t"];
 }) {
-  // Find latest submission
-  const latestSub = data.submissions[0] ?? null;
+  const selectedDeliverable =
+    data.deliverables.find((deliverable) => deliverable.id === selectedDeliverableId) ??
+    data.deliverables[0] ??
+    null;
+  const latestSub = selectedDeliverable
+    ? getDeliverableSubmission(selectedDeliverable, data.submissions)
+    : null;
   const needsRevision = latestSub?.status === "revision_requested";
   const isApproved = latestSub?.status === "approved";
   const isPublished = latestSub?.status === "published";
@@ -782,6 +817,65 @@ function SubmitTab({
         contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
+        {data.deliverables.length > 0 ? (
+          <View className="mb-6">
+            <SectionLabel text={t("room.deliverables")} palette={palette} />
+            <View className="mt-3 gap-2">
+              {data.deliverables.map((deliverable) => {
+                const isSelected = deliverable.id === selectedDeliverable?.id;
+                return (
+                  <Pressable
+                    key={deliverable.id}
+                    onPress={() => onSelectDeliverable(deliverable.id)}
+                    className="rounded-xl border px-4 py-3"
+                    style={{
+                      borderColor: isSelected
+                        ? palette.textPrimary
+                        : palette.borderSubtle,
+                      backgroundColor: isSelected
+                        ? palette.accentSoft
+                        : palette.surface,
+                    }}
+                  >
+                    <View className="flex-row items-center justify-between gap-3">
+                      <Text
+                        className="text-sm"
+                        style={{
+                          color: palette.textPrimary,
+                          fontFamily: "Inter_600SemiBold",
+                        }}
+                      >
+                        {PLATFORM_DISPLAY[deliverable.platform] ?? deliverable.platform}
+                      </Text>
+                      <Text
+                        className="text-xs"
+                        style={{
+                          color: palette.textMuted,
+                          fontFamily: "Inter_500Medium",
+                        }}
+                      >
+                        {deliverable.quantity}x{" "}
+                        {FORMAT_DISPLAY[deliverable.contentType] ?? deliverable.contentType}
+                      </Text>
+                    </View>
+                    {deliverable.notes ? (
+                      <Text
+                        className="mt-1.5 text-xs"
+                        style={{
+                          color: palette.textMuted,
+                          fontFamily: "Inter_400Regular",
+                        }}
+                      >
+                        {deliverable.notes}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+
         {/* Current status */}
         {latestSub ? (
           <View
@@ -868,7 +962,7 @@ function SubmitTab({
         ) : null}
 
         {/* Submit new content (or revision) */}
-        {!isSubmitted && !isApproved && !isPublished ? (
+        {selectedDeliverable && !isSubmitted && !isApproved && !isPublished ? (
           <View>
             <SectionLabel
               text={
@@ -963,7 +1057,7 @@ function SubmitTab({
         ) : null}
 
         {/* Publish flow */}
-        {isApproved && latestSub ? (
+        {selectedDeliverable && isApproved && latestSub ? (
           <View>
             <SectionLabel
               text={t("room.publishContent")}
@@ -1074,6 +1168,20 @@ function SubmitTab({
               }}
             >
               {t("room.waitingReviewDetail")}
+            </Text>
+          </View>
+        ) : null}
+
+        {!selectedDeliverable ? (
+          <View className="items-center py-8">
+            <Text
+              className="text-sm"
+              style={{
+                color: palette.textMuted,
+                fontFamily: "Inter_400Regular",
+              }}
+            >
+              {t("room.noDeliverables")}
             </Text>
           </View>
         ) : null}
