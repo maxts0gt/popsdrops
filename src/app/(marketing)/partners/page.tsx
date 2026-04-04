@@ -1,11 +1,17 @@
 "use client";
 
+import { useRef, useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
+import { PartnersInquiryForm } from "@/components/marketing/partners-inquiry-form";
 
 export default function PartnersPage() {
   const { t } = useTranslation("marketing.partners");
+  const inquiryRef = useRef<HTMLElement | null>(null);
+  const [inquiryType, setInquiryType] = useState<"brand" | "distributor">(
+    "brand",
+  );
 
   const chips = [
     t("chip.research"),
@@ -13,6 +19,11 @@ export default function PartnersPage() {
     t("chip.intro"),
     t("chip.deal"),
   ];
+
+  function focusInquiryForm(type: "brand" | "distributor") {
+    setInquiryType(type);
+    inquiryRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   return (
     <div className="bg-white">
@@ -84,13 +95,14 @@ export default function PartnersPage() {
                   </div>
                 ))}
               </div>
-              <a
-                href="mailto:partners@popsdrops.com?subject=Brand%20partnership%20inquiry"
+              <button
+                type="button"
+                onClick={() => focusInquiryForm("brand")}
                 className="group mt-6 inline-flex items-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white hover:bg-slate-800"
               >
                 {t("brands.cta")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
+              </button>
             </motion.div>
 
             {/* Partner side */}
@@ -116,13 +128,14 @@ export default function PartnersPage() {
                   </div>
                 ))}
               </div>
-              <a
-                href="mailto:partners@popsdrops.com?subject=Distributor%20partnership%20inquiry"
+              <button
+                type="button"
+                onClick={() => focusInquiryForm("distributor")}
                 className="group mt-6 inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-900 hover:bg-slate-50"
               >
                 {t("distributors.cta")}
                 <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </a>
+              </button>
             </motion.div>
           </div>
         </div>
@@ -135,6 +148,44 @@ export default function PartnersPage() {
           <p className="mt-3 text-sm leading-relaxed text-slate-500">
             {t("commission.desc")}
           </p>
+        </div>
+      </section>
+
+      <section
+        ref={inquiryRef}
+        id="partner-inquiry"
+        className="border-t border-slate-100 bg-slate-50/50 py-20"
+      >
+        <div className="mx-auto max-w-3xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45 }}
+            className="mb-10 text-center"
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+              {t("form.label")}
+            </p>
+            <h2 className="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+              {t("form.title")}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-500">
+              {t("form.subtitle")}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.45, delay: 0.05 }}
+          >
+            <PartnersInquiryForm
+              type={inquiryType}
+              onTypeChange={setInquiryType}
+            />
+          </motion.div>
         </div>
       </section>
     </div>
