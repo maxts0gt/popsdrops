@@ -44,26 +44,31 @@ export function PartnersInquiryForm({
     }
 
     setLoading(true);
-    const result = await submitPartnerInquiry(
-      {
-        type,
-        full_name: fullName,
-        email,
-        company_name: companyName,
-        website: website || undefined,
-        market,
-        reason,
-      },
-      turnstileToken,
-    );
-    setLoading(false);
+    try {
+      const result = await submitPartnerInquiry(
+        {
+          type,
+          full_name: fullName,
+          email,
+          company_name: companyName,
+          website: website || undefined,
+          market,
+          reason,
+        },
+        turnstileToken,
+      );
 
-    if (!result.success) {
-      toast.error(result.error);
-      return;
+      if (!result.success) {
+        toast.error(result.error);
+        return;
+      }
+
+      setSuccess(true);
+    } catch {
+      toast.error(t("form.error"));
+    } finally {
+      setLoading(false);
     }
-
-    setSuccess(true);
   }
 
   if (success) {

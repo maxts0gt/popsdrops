@@ -351,6 +351,7 @@ export const strings = {
     "form.reason.placeholder.distributor": "Tell us the brands, categories, or channels you want to represent.",
     "form.submit.brand": "Send brand inquiry",
     "form.submit.distributor": "Send distributor inquiry",
+    "form.error": "Something went wrong. Please try again.",
     "form.success.title": "Thanks — we've got it",
     "form.success.body": "Your inquiry is in our queue. We'll review it and follow up directly.",
     "form.verification": "Complete the verification challenge.",
