@@ -21,4 +21,12 @@ describe("MARKETING_MOCK_IDENTITIES", () => {
     expect(MARKETING_MOCK_IDENTITIES.na.badge).toBe("NA");
     expect(MARKETING_MOCK_IDENTITIES.sr.badge).toBe("SR");
   });
+
+  it("uses generic profile slugs for marketing previews", () => {
+    expect(
+      Object.values(MARKETING_MOCK_IDENTITIES).every((identity) =>
+        identity.profileSlug.startsWith("creator-profile-"),
+      ),
+    ).toBe(true);
+  });
 });

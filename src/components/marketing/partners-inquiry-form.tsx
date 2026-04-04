@@ -89,7 +89,11 @@ export function PartnersInquiryForm({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-[0_8px_40px_-20px_rgba(15,23,42,0.16)] sm:p-8">
-      <div className="rounded-xl border border-slate-200 bg-slate-50 p-1">
+      <div
+        role="group"
+        aria-label={t("form.track.label")}
+        className="rounded-xl border border-slate-200 bg-slate-50 p-1"
+      >
         <div className="grid grid-cols-2 gap-1">
           {(["brand", "distributor"] as const).map((track) => {
             const isActive = track === type;
@@ -97,6 +101,7 @@ export function PartnersInquiryForm({
               <button
                 key={track}
                 type="button"
+                aria-pressed={isActive}
                 onClick={() => onTypeChange(track)}
                 className={`rounded-lg px-4 py-2.5 text-sm font-medium transition-colors ${
                   isActive
@@ -104,7 +109,9 @@ export function PartnersInquiryForm({
                     : "text-slate-500 hover:text-slate-900"
                 }`}
               >
-                {track === "brand" ? t("form.track.brand") : t("form.track.distributor")}
+                {track === "brand"
+                  ? t("form.track.brand")
+                  : t("form.track.distributor")}
               </button>
             );
           })}

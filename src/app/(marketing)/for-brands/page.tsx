@@ -4,7 +4,10 @@ import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
 import { getMarketLabel } from "@/lib/constants";
-import { MARKETING_MOCK_IDENTITIES } from "@/lib/marketing/mock-preview";
+import {
+  MARKETING_MOCK_IDENTITIES,
+  type MarketingMockIdentityId,
+} from "@/lib/marketing/mock-preview";
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -15,6 +18,20 @@ const fade = {
 
 export default function ForBrandsPage() {
   const { t, isRTL, locale } = useTranslation("marketing.forBrands");
+  const creatorRows: Array<{
+    id: MarketingMockIdentityId;
+    platform: string;
+    er: string;
+    content: string;
+    statusKey: string;
+    color: string;
+  }> = [
+    { id: "yp", platform: "Instagram", er: "9.3%", content: "4/4", statusKey: "mock.status.published", color: "text-emerald-500" },
+    { id: "st", platform: "TikTok", er: "11.2%", content: "3/3", statusKey: "mock.status.published", color: "text-emerald-500" },
+    { id: "lm", platform: "Instagram", er: "8.1%", content: "2/3", statusKey: "mock.status.inReview", color: "text-blue-500" },
+    { id: "na", platform: "Snapchat", er: "12.4%", content: "3/3", statusKey: "mock.status.approved", color: "text-slate-600" },
+    { id: "sr", platform: "TikTok", er: "10.7%", content: "1/2", statusKey: "mock.status.drafting", color: "text-slate-400" },
+  ];
 
   return (
     <div className="bg-white">
@@ -150,17 +167,8 @@ export default function ForBrandsPage() {
                   <div className="col-span-2 text-end">{t("mock.col.content")}</div>
                   <div className="col-span-2 text-end">{t("mock.col.status")}</div>
                 </div>
-                {[
-                  { id: "yp", platform: "Instagram", er: "9.3%", content: "4/4", statusKey: "mock.status.published", color: "text-emerald-500" },
-                  { id: "st", platform: "TikTok", er: "11.2%", content: "3/3", statusKey: "mock.status.published", color: "text-emerald-500" },
-                  { id: "lm", platform: "Instagram", er: "8.1%", content: "2/3", statusKey: "mock.status.inReview", color: "text-blue-500" },
-                  { id: "na", platform: "Snapchat", er: "12.4%", content: "3/3", statusKey: "mock.status.approved", color: "text-slate-600" },
-                  { id: "sr", platform: "TikTok", er: "10.7%", content: "1/2", statusKey: "mock.status.drafting", color: "text-slate-400" },
-                ].map((c) => {
-                  const identity =
-                    MARKETING_MOCK_IDENTITIES[
-                      c.id as keyof typeof MARKETING_MOCK_IDENTITIES
-                    ];
+                {creatorRows.map((c) => {
+                  const identity = MARKETING_MOCK_IDENTITIES[c.id];
 
                   return (
                     <div

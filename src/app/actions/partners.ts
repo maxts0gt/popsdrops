@@ -37,9 +37,12 @@ export async function submitPartnerInquiry(
 
   const webhookUrl = process.env.SLACK_WAITLIST_WEBHOOK_URL;
   if (!webhookUrl) {
+    console.error(
+      "Partner inquiry failed: missing SLACK_WAITLIST_WEBHOOK_URL configuration.",
+    );
     return {
       success: false,
-      error: "Partner inquiries are not configured yet.",
+      error: "Something went wrong. Please try again.",
     };
   }
 

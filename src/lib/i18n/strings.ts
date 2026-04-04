@@ -331,6 +331,7 @@ export const strings = {
     "form.label": "Partner inquiry",
     "form.title": "Tell us what you're looking for",
     "form.subtitle": "Share the essentials and we'll follow up directly.",
+    "form.track.label": "Inquiry type",
     "form.track.brand": "Brand",
     "form.track.distributor": "Distributor",
     "form.fullName": "Full name",

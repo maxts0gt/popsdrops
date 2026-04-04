@@ -3,6 +3,7 @@
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
+import { getMarketLabel } from "@/lib/constants";
 import { MARKETING_MOCK_IDENTITIES } from "@/lib/marketing/mock-preview";
 
 const fade = {
@@ -13,7 +14,7 @@ const fade = {
 };
 
 export default function ForCreatorsPage() {
-  const { t, isRTL } = useTranslation("marketing.forCreators");
+  const { t, isRTL, locale } = useTranslation("marketing.forCreators");
   const mediaKitIdentity = MARKETING_MOCK_IDENTITIES.yp;
 
   return (
@@ -109,7 +110,9 @@ export default function ForCreatorsPage() {
                   </div>
                   <div>
                     <p className="text-base font-bold text-slate-900">{mediaKitIdentity.label}</p>
-                    <p className="text-xs text-slate-400">Seoul, South Korea</p>
+                    <p className="text-xs text-slate-400">
+                      {getMarketLabel(mediaKitIdentity.marketKey, locale)}
+                    </p>
                   </div>
                 </div>
 
@@ -174,7 +177,9 @@ export default function ForCreatorsPage() {
 
               {/* Footer */}
               <div className="border-t border-slate-100 px-6 py-3 text-center">
-                <p className="text-[10px] text-slate-400">popsdrops.com/c/yuna-park</p>
+                <p className="text-[10px] text-slate-400">
+                  {`popsdrops.com/c/${mediaKitIdentity.profileSlug}`}
+                </p>
               </div>
             </motion.div>
           </div>

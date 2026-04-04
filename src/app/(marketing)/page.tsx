@@ -5,7 +5,10 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
 import { getMarketLabel } from "@/lib/constants";
-import { MARKETING_MOCK_IDENTITIES } from "@/lib/marketing/mock-preview";
+import {
+  MARKETING_MOCK_IDENTITIES,
+  type MarketingMockIdentityId,
+} from "@/lib/marketing/mock-preview";
 import { SocialGrid } from "@/components/social-grid";
 
 const stagger = {
@@ -27,6 +30,20 @@ const sectionFade = {
 
 export default function LandingPage() {
   const { t, isRTL, locale } = useTranslation("marketing.landing");
+  const creatorRows: Array<{
+    id: MarketingMockIdentityId;
+    platform: string;
+    reach: string;
+    er: string;
+    cpe: string;
+    cost: string;
+  }> = [
+    { id: "yp", platform: "Instagram", reach: "520K", er: "9.3%", cpe: "$0.08", cost: "$800" },
+    { id: "st", platform: "TikTok", reach: "680K", er: "11.2%", cpe: "$0.06", cost: "$750" },
+    { id: "lm", platform: "Instagram", reach: "310K", er: "8.1%", cpe: "$0.14", cost: "$900" },
+    { id: "na", platform: "Snapchat", reach: "420K", er: "12.4%", cpe: "$0.10", cost: "$850" },
+    { id: "sr", platform: "TikTok", reach: "390K", er: "10.7%", cpe: "$0.11", cost: "$700" },
+  ];
 
   return (
     <div className="bg-white">
@@ -206,17 +223,8 @@ export default function LandingPage() {
                     <div className="col-span-1 text-end">{t("report.col.cpe")}</div>
                     <div className="col-span-2 text-end">{t("report.col.cost")}</div>
                   </div>
-                  {[
-                    { id: "yp", platform: "Instagram", reach: "520K", er: "9.3%", cpe: "$0.08", cost: "$800" },
-                    { id: "st", platform: "TikTok", reach: "680K", er: "11.2%", cpe: "$0.06", cost: "$750" },
-                    { id: "lm", platform: "Instagram", reach: "310K", er: "8.1%", cpe: "$0.14", cost: "$900" },
-                    { id: "na", platform: "Snapchat", reach: "420K", er: "12.4%", cpe: "$0.10", cost: "$850" },
-                    { id: "sr", platform: "TikTok", reach: "390K", er: "10.7%", cpe: "$0.11", cost: "$700" },
-                  ].map((c) => {
-                    const identity =
-                      MARKETING_MOCK_IDENTITIES[
-                        c.id as keyof typeof MARKETING_MOCK_IDENTITIES
-                      ];
+                  {creatorRows.map((c) => {
+                    const identity = MARKETING_MOCK_IDENTITIES[c.id];
 
                     return (
                       <div
