@@ -169,18 +169,18 @@ export const strings = {
     "trust.platforms": "5 platforms",
     "trust.languages": "30+ languages",
     "trust.market": "Any market",
-    "trust.ai": "AI-powered matching",
+    "trust.ai": "Smart matching",
     // How it works
     "section.how.label": "How it works",
     "section.how.title": "Four steps to a finished campaign",
     "how.step1.title": "Brief",
     "how.step1.desc": "Describe what you need. Auto-translated for every creator.",
     "how.step2.title": "Match",
-    "how.step2.desc": "AI matches your campaign to vetted creators in target markets.",
+    "how.step2.desc": "We match your campaign to vetted creators in target markets.",
     "how.step3.title": "Review",
     "how.step3.desc": "Approve content drafts with structured feedback and versioning.",
     "how.step4.title": "Report",
-    "how.step4.desc": "Get per-creator CPE, engagement rate, and AI recommendations.",
+    "how.step4.desc": "Get per-creator CPE, engagement rate, and actionable insights.",
     // Report section
     "section.report.label": "Real data",
     "section.report.title": "Every campaign ends with an intelligence report",
@@ -203,8 +203,8 @@ export const strings = {
     "report.col.engRate": "Eng. Rate",
     "report.col.cpe": "CPE",
     "report.col.cost": "Cost",
-    // AI recommendation
-    "report.ai.label": "AI Recommendation",
+    // Insight
+    "report.ai.label": "Insight",
     "report.ai.text": "Rebook Sakura Tanaka — delivered 2.3× avg engagement rate at lowest CPE. Consider increasing TikTok allocation for next campaign.",
     // Path cards
     "cta.brands": "For Brands",
@@ -230,7 +230,7 @@ export const strings = {
     "pain.2.problem": "Your brief is in English. Your audience isn't.",
     "pain.2.solution": "Briefs are auto-translated into each creator's language by AI. Requirements stay precise across every market.",
     "pain.3.problem": "You can't measure what you can't compare.",
-    "pain.3.solution": "Platform-specific metrics with benchmark comparisons. CPE as the universal equalizer. AI recommendations.",
+    "pain.3.solution": "Platform-specific metrics with benchmark comparisons. CPE as the universal equalizer. Actionable insights.",
     // Dashboard section
     "dashboard.label": "Your command center",
     "dashboard.title": "One dashboard for every market",

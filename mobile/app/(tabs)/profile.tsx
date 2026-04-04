@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import {
   Image,
   Pressable,
+  RefreshControl,
   ScrollView,
   Text,
   View,
@@ -125,28 +126,39 @@ function buildCompletenessSteps(
 
   return [
     { key: "bio", label: t("profile.stepBio"), done: !!creator.bio, actionable: true },
-    { key: "social", label: t("profile.stepSocial"), done: connectedCount >= 1, actionable: false },
-    { key: "social2", label: t("profile.stepSocial2"), done: connectedCount >= 2, actionable: false },
-    { key: "niches", label: t("profile.stepNiches"), done: creator.niches.length > 0, actionable: false },
-    { key: "rateCard", label: t("profile.stepRateCard"), done: !!creator.rateCard && Object.keys(creator.rateCard).length > 0, actionable: false },
-    { key: "markets", label: t("profile.stepMarkets"), done: creator.markets.length > 0, actionable: false },
+    { key: "social", label: t("profile.stepSocial"), done: connectedCount >= 1, actionable: true },
+    { key: "social2", label: t("profile.stepSocial2"), done: connectedCount >= 2, actionable: true },
+    { key: "niches", label: t("profile.stepNiches"), done: creator.niches.length > 0, actionable: true },
+    { key: "rateCard", label: t("profile.stepRateCard"), done: !!creator.rateCard && Object.keys(creator.rateCard).length > 0, actionable: true },
+    { key: "markets", label: t("profile.stepMarkets"), done: creator.markets.length > 0, actionable: true },
     { key: "languages", label: t("profile.stepLanguages"), done: creator.languages.length > 0, actionable: true },
     { key: "primaryMarket", label: t("profile.stepPrimaryMarket"), done: !!creator.primaryMarket, actionable: true },
   ];
 }
+
+const STEP_ROUTES: Record<string, string> = {
+  bio: "../edit-profile",
+  social: "../edit-socials",
+  social2: "../edit-socials",
+  niches: "../edit-niches",
+  rateCard: "../edit-rates",
+  markets: "../edit-markets",
+  languages: "../edit-profile",
+  primaryMarket: "../edit-profile",
+};
 
 function CompletenessCard({
   creator,
   viewModel,
   palette,
   t,
-  onEditBasics,
+  onEditStep,
 }: {
   creator: LoadedCreatorProfile["creator"];
   viewModel: ReturnType<typeof buildCreatorProfileViewModel>;
   palette: ReturnType<typeof useTheme>["palette"];
   t: (key: string) => string;
-  onEditBasics: () => void;
+  onEditStep: (route: string) => void;
 }) {
   const steps = buildCompletenessSteps(creator, t);
   const isComplete = viewModel.completenessPercent >= 100;
@@ -198,7 +210,7 @@ function CompletenessCard({
             {steps.map((step) => (
               <Pressable
                 key={step.key}
-                onPress={step.actionable && !step.done ? onEditBasics : undefined}
+                onPress={step.actionable && !step.done ? () => onEditStep(STEP_ROUTES[step.key] ?? "../edit-profile") : undefined}
                 disabled={step.done || !step.actionable}
                 className="flex-row items-center gap-3"
               >
@@ -219,13 +231,6 @@ function CompletenessCard({
                 </Text>
                 {!step.done && step.actionable ? (
                   <ChevronRight size={14} color={palette.textTertiary} strokeWidth={1.8} />
-                ) : !step.done ? (
-                  <Text
-                    className="text-[10px]"
-                    style={{ color: palette.textMuted, fontFamily: "Inter_400Regular" }}
-                  >
-                    {t("profile.manageOnWeb")}
-                  </Text>
                 ) : null}
               </Pressable>
             ))}
@@ -253,6 +258,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const [data, setData] = useState<LoadedCreatorProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [hasError, setHasError] = useState(false);
   const mutedCardStyle = {
     backgroundColor: palette.surfaceMuted,
@@ -299,6 +305,19 @@ export default function ProfileScreen() {
       };
     }, [profileReady, session?.user?.id]),
   );
+
+  const onRefresh = useCallback(async () => {
+    if (!session?.user?.id) return;
+    setRefreshing(true);
+    try {
+      const nextData = await loadCreatorProfileData(session.user.id);
+      setData(nextData);
+    } catch {
+      // silently fail on refresh
+    } finally {
+      setRefreshing(false);
+    }
+  }, [session?.user?.id]);
 
   if (loading || !data) {
     return (
@@ -404,7 +423,14 @@ export default function ProfileScreen() {
       edges={["top"]}
       style={{ backgroundColor: palette.background }}
     >
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 100 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.textMuted} />
+        }
+      >
         <View className="items-center px-6 pt-10 pb-8">
           {profile.avatarUrl ? (
             <Image
@@ -458,7 +484,7 @@ export default function ProfileScreen() {
           viewModel={viewModel}
           palette={palette}
           t={t}
-          onEditBasics={() => router.push("../edit-profile")}
+          onEditStep={(route) => router.push(route as never)}
         />
 
         <View
@@ -608,12 +634,22 @@ export default function ProfileScreen() {
         </View>
 
         <View className="mx-6 mt-8">
+          <View className="flex-row items-center justify-between">
           <Text
             className="text-sm uppercase tracking-[1.6px]"
             style={{ color: palette.textMuted, fontFamily: "Inter_500Medium" }}
           >
             {t("profile.socialAccounts")}
           </Text>
+          <Pressable onPress={() => router.push("../edit-socials")}>
+            <Text
+              className="text-sm"
+              style={{ color: palette.textSecondary, fontFamily: "Inter_500Medium" }}
+            >
+              {t("action.edit")}
+            </Text>
+          </Pressable>
+          </View>
           <View className="mt-3 gap-2">
             {PLATFORMS.map((platform) => {
               const account = creator.socialAccounts[platform];
@@ -643,7 +679,7 @@ export default function ProfileScreen() {
                     className="text-xs"
                     style={{ color: palette.textSecondary, fontFamily: "Inter_500Medium" }}
                   >
-                    {account ? t("profile.connected") : t("profile.manageOnWeb")}
+                    {account ? t("profile.connected") : t("profile.notConnected")}
                   </Text>
                 </View>
               );
@@ -652,12 +688,22 @@ export default function ProfileScreen() {
         </View>
 
         <View className="mx-6 mt-8">
+          <View className="flex-row items-center justify-between">
           <Text
             className="text-sm uppercase tracking-[1.6px]"
             style={{ color: palette.textMuted, fontFamily: "Inter_500Medium" }}
           >
             {t("profile.niches")}
           </Text>
+          <Pressable onPress={() => router.push("../edit-niches")}>
+            <Text
+              className="text-sm"
+              style={{ color: palette.textSecondary, fontFamily: "Inter_500Medium" }}
+            >
+              {t("action.edit")}
+            </Text>
+          </Pressable>
+          </View>
           <View className="mt-3 flex-row flex-wrap gap-2">
             {viewModel.niches.length ? (
               viewModel.niches.map((niche) => (
@@ -686,12 +732,22 @@ export default function ProfileScreen() {
         </View>
 
         <View className="mx-6 mt-8">
+          <View className="flex-row items-center justify-between">
           <Text
             className="text-sm uppercase tracking-[1.6px]"
             style={{ color: palette.textMuted, fontFamily: "Inter_500Medium" }}
           >
             {t("profile.rateCard")}
           </Text>
+          <Pressable onPress={() => router.push("../edit-rates")}>
+            <Text
+              className="text-sm"
+              style={{ color: palette.textSecondary, fontFamily: "Inter_500Medium" }}
+            >
+              {t("action.edit")}
+            </Text>
+          </Pressable>
+          </View>
           {rateEntries.length ? (
             <View className="mt-3 gap-2">
               {rateEntries.slice(0, 4).map((entry) => (

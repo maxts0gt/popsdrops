@@ -219,6 +219,7 @@ export type CounterOfferInput = z.infer<typeof counterOfferSchema>;
 
 export const submitContentSchema = z.object({
   campaign_member_id: uuidLike,
+  deliverable_id: uuidLike.optional(),
   content_url: z.string().url("Enter a valid URL"),
   caption: z.string().max(2000).optional(),
   platform: platformEnum,
