@@ -123,7 +123,7 @@ export function I18nProvider({
 
     if (!cache.current[locale]) cache.current[locale] = {};
 
-    // Fetch all chunks concurrently
+    // Fetch all chunks concurrently, then update UI once with all translations
     Promise.all(
       chunks.map(async (chunk) => {
         const pages: Record<string, Record<string, string>> = {};
@@ -144,13 +144,13 @@ export function I18nProvider({
               Object.assign(cache.current[locale]!, pd.strings);
             }
           }
-          // Update after each chunk so UI progressively translates
-          setCacheVersion((n) => n + 1);
         }
       }),
     )
       .then(() => {
         fetchedLocales.current.add(locale);
+        // Single re-render after ALL chunks are done — no progressive flicker
+        setCacheVersion((n) => n + 1);
       })
       .catch((err) => {
         console.error(`Batch translation failed for ${locale}`, err);
