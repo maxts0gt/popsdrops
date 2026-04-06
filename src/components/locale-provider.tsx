@@ -7,9 +7,11 @@ import { useEffect, type ReactNode } from "react";
 export function LocaleProvider({
   children,
   locale,
+  initialTranslations,
 }: {
   children: ReactNode;
   locale: string;
+  initialTranslations?: Record<string, Record<string, string>>;
 }) {
   // Set dir and lang on html element
   useEffect(() => {
@@ -18,7 +20,7 @@ export function LocaleProvider({
   }, [locale]);
 
   return (
-    <I18nProvider initialLocale={locale}>
+    <I18nProvider initialLocale={locale} initialTranslations={initialTranslations}>
       {children}
     </I18nProvider>
   );

@@ -43,14 +43,20 @@ function interpolate(text: string, vars?: Record<string, string>): string {
   return result;
 }
 
+/**
+ * Build the initial flat cache from server-side pre-fetched translations.
+ * Server sends: { pageKey: { stringKey: value, ... }, ... }
+ * We flatten into: { locale: { stringKey: value, ... } }
+ */
 function buildInitialCache(
+  locale: string,
   initialTranslations?: Record<string, Record<string, string>>,
 ): TranslationCache {
   const initial: TranslationCache = {};
-  if (initialTranslations) {
-    for (const [loc, pageStrings] of Object.entries(initialTranslations)) {
-      if (!initial[loc]) initial[loc] = {};
-      Object.assign(initial[loc], pageStrings);
+  if (initialTranslations && locale !== DEFAULT_LOCALE) {
+    initial[locale] = {};
+    for (const pageStrings of Object.values(initialTranslations)) {
+      Object.assign(initial[locale], pageStrings);
     }
   }
   return initial;
@@ -71,10 +77,15 @@ export function I18nProvider({
 
   // Flat cache: { "ko": { "headline": "...", "nav.home": "...", ... } }
   // English strings are always available from source, never fetched.
-  const cache = useRef<TranslationCache>(buildInitialCache(initialTranslations));
+  const cache = useRef<TranslationCache>(buildInitialCache(initialLocale, initialTranslations));
 
-  // Fetch state: tracks whether we've already fetched ALL keys for this locale
-  const fetchedLocales = useRef<Set<string>>(new Set());
+  // Fetch state: tracks whether we've already fetched ALL keys for this locale.
+  // If server pre-fetched translations, mark that locale as already done.
+  const fetchedLocales = useRef<Set<string>>(
+    initialTranslations && initialLocale !== DEFAULT_LOCALE
+      ? new Set([initialLocale])
+      : new Set(),
+  );
   const fetchingLocale = useRef<string | null>(null);
 
   const isRTL = isRTLLocale(locale);

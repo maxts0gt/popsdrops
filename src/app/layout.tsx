@@ -3,8 +3,8 @@ import { Inter, Cairo } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { LocaleProvider } from "@/components/locale-provider";
-import { getLocale } from "@/lib/i18n/server";
-import { isRTLLocale } from "@/lib/i18n/strings";
+import { getLocale, getMultipleTranslations } from "@/lib/i18n/server";
+import { isRTLLocale, strings, type PageKey } from "@/lib/i18n/strings";
 import "./globals.css";
 
 const inter = Inter({
@@ -51,6 +51,13 @@ export default async function RootLayout({
   const locale = await getLocale();
   const isRTL = isRTLLocale(locale);
 
+  // Pre-fetch all translations server-side from DB cache so the client
+  // hydrates with translated strings instantly — no client-side edge function calls.
+  const allPageKeys = Object.keys(strings) as PageKey[];
+  const initialTranslations = locale !== "en"
+    ? await getMultipleTranslations(allPageKeys, locale)
+    : undefined;
+
   return (
     <html
       lang={locale}
@@ -65,7 +72,7 @@ export default async function RootLayout({
           forcedTheme="light"
           disableTransitionOnChange
         >
-          <LocaleProvider locale={locale}>
+          <LocaleProvider locale={locale} initialTranslations={initialTranslations}>
             {children}
             <Toaster position={isRTL ? "top-left" : "top-right"} richColors />
           </LocaleProvider>
