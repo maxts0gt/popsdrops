@@ -3,7 +3,12 @@ import { Inter, Cairo } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { LocaleProvider } from "@/components/locale-provider";
-import { getCachedTranslations, getLocale } from "@/lib/i18n/server";
+import {
+  getCachedTranslations,
+  getLocale,
+  getPublicCachedTranslations,
+  isPublicRouteRequest,
+} from "@/lib/i18n/server";
 import { isRTLLocale, strings, type PageKey } from "@/lib/i18n/strings";
 import "./globals.css";
 
@@ -49,13 +54,16 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const locale = await getLocale();
+  const isPublicRoute = await isPublicRouteRequest();
   const isRTL = isRTLLocale(locale);
 
-  // Pre-fetch only DB-cached translations so returning visitors hydrate immediately
-  // without blocking cold-cache requests on a full server-side translation run.
+  // Public routes use Next's data cache to avoid repeat Supabase reads for warmed
+  // anonymous locales. Signed-in/app routes keep the direct DB path.
   const allPageKeys = Object.keys(strings) as PageKey[];
   const initialTranslations = locale !== "en"
-    ? await getCachedTranslations(allPageKeys, locale)
+    ? isPublicRoute
+      ? await getPublicCachedTranslations(locale)
+      : await getCachedTranslations(allPageKeys, locale)
     : undefined;
 
   return (

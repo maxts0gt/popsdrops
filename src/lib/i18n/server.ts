@@ -1,8 +1,84 @@
 import "server-only";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { unstable_cache } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { type PageKey, getSourceStrings, DEFAULT_LOCALE } from "./strings";
+import { type PageKey, getSourceStrings, DEFAULT_LOCALE, strings } from "./strings";
+import { PUBLIC_TRANSLATION_SOURCE_VERSION } from "./cache-version";
 import { chunkPageKeys } from "./runtime";
+
+type TranslationRecord = {
+  overrides: Record<string, string> | null;
+  page_key: PageKey;
+  strings: Record<string, string>;
+};
+
+const ALL_PAGE_KEYS = Object.keys(strings) as PageKey[];
+const PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS = 60 * 60;
+const publicTranslationClient = createSupabaseClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  },
+);
+
+function getSourceTranslations(
+  pageKeys: PageKey[],
+): Partial<Record<PageKey, Record<string, string>>> {
+  const results: Partial<Record<PageKey, Record<string, string>>> = {};
+
+  for (const pageKey of pageKeys) {
+    results[pageKey] = getSourceStrings(pageKey);
+  }
+
+  return results;
+}
+
+function mergeCachedRows(
+  pageKeys: PageKey[],
+  cachedRows: TranslationRecord[] | null | undefined,
+): Partial<Record<PageKey, Record<string, string>>> {
+  const results: Partial<Record<PageKey, Record<string, string>>> = {};
+  const cachedMap = new Map((cachedRows || []).map((row) => [row.page_key, row]));
+
+  for (const pageKey of pageKeys) {
+    const cached = cachedMap.get(pageKey);
+    if (cached) {
+      results[pageKey] = { ...cached.strings, ...cached.overrides };
+    }
+  }
+
+  return results;
+}
+
+// Public web traffic should reuse a request-independent translation blob instead
+// of re-reading the translations table on every warmed anonymous visit.
+const loadPublicCachedTranslations = unstable_cache(
+  async (
+    locale: string,
+    sourceVersion: string,
+  ): Promise<Partial<Record<PageKey, Record<string, string>>>> => {
+    void sourceVersion;
+
+    if (locale === DEFAULT_LOCALE) {
+      return getSourceTranslations(ALL_PAGE_KEYS);
+    }
+
+    const { data: cachedRows } = await publicTranslationClient
+      .from("translations")
+      .select("page_key, strings, overrides")
+      .eq("locale", locale)
+      .in("page_key", ALL_PAGE_KEYS);
+
+    return mergeCachedRows(ALL_PAGE_KEYS, cachedRows as TranslationRecord[] | null);
+  },
+  ["public-translation-preload"],
+  { revalidate: PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS },
+);
 
 /** Validate that a string is a plausible ISO 639-1 locale code (2-3 lowercase letters). */
 function isValidLocaleCode(code: string): boolean {
@@ -70,6 +146,11 @@ export async function getLocale(): Promise<string> {
   return DEFAULT_LOCALE;
 }
 
+export async function isPublicRouteRequest(): Promise<boolean> {
+  const headerStore = await headers();
+  return headerStore.get("x-route-scope") === "public";
+}
+
 /**
  * Parse Accept-Language header into ranked supported locale codes.
  * Used by server components to pass detected languages to client for the language switcher.
@@ -109,13 +190,9 @@ export async function getCachedTranslations(
   locale?: string,
 ): Promise<Partial<Record<PageKey, Record<string, string>>>> {
   const targetLocale = locale || (await getLocale());
-  const results: Partial<Record<PageKey, Record<string, string>>> = {};
 
   if (targetLocale === DEFAULT_LOCALE) {
-    for (const pk of pageKeys) {
-      results[pk] = getSourceStrings(pk);
-    }
-    return results;
+    return getSourceTranslations(pageKeys);
   }
 
   try {
@@ -126,19 +203,22 @@ export async function getCachedTranslations(
       .eq("locale", targetLocale)
       .in("page_key", pageKeys);
 
-    const cachedMap = new Map((cachedRows || []).map((row) => [row.page_key, row]));
-
-    for (const pk of pageKeys) {
-      const cached = cachedMap.get(pk);
-      if (cached) {
-        results[pk] = { ...cached.strings, ...cached.overrides };
-      }
-    }
+    return mergeCachedRows(pageKeys, cachedRows as TranslationRecord[] | null);
   } catch {
     // Return whatever cached translations we were able to read.
+    return {};
   }
+}
 
-  return results;
+export async function getPublicCachedTranslations(
+  locale?: string,
+): Promise<Partial<Record<PageKey, Record<string, string>>>> {
+  const targetLocale = locale || (await getLocale());
+
+  return loadPublicCachedTranslations(
+    targetLocale,
+    PUBLIC_TRANSLATION_SOURCE_VERSION,
+  );
 }
 
 /**

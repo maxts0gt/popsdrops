@@ -56,6 +56,7 @@ export async function updateSession(request: NextRequest) {
     : publicRouting?.locale ?? detectedLocale;
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-locale", locale);
+  requestHeaders.set("x-route-scope", isPublic ? "public" : "private");
 
   if (publicRouting?.action === "redirect") {
     const redirectUrl = request.nextUrl.clone();
