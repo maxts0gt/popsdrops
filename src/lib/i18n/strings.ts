@@ -131,10 +131,10 @@ export const strings = {
     // Language
     "language.label": "Language",
     "language.description": "The platform will display in your chosen language.",
-    "language.preparingBadge": "Preparing your language",
-    "language.preparingTitle": "Preparing PopsDrops in {language}",
-    "language.preparingBody": "We are generating a translated version of the current experience for this language.",
-    "language.preparingHint": "This usually happens once. After that, {language} loads from cache.",
+    "language.preparingBadge": "Changing language",
+    "language.preparingTitle": "Switching PopsDrops to {language}",
+    "language.preparingBody": "We are getting everything ready in your selected language.",
+    "language.preparingHint": "This should only take a moment.",
     // Niche labels (translatable)
     "niche.beauty": "Beauty & Skincare",
     "niche.fashion": "Fashion & Apparel",
@@ -365,7 +365,7 @@ export const strings = {
     "form.error": "Something went wrong. Please try again.",
     "form.success.title": "Thanks — we've got it",
     "form.success.body": "Your inquiry is in our queue. We'll review it and follow up directly.",
-    "form.verification": "Complete the verification challenge.",
+    "form.verification": "Please complete verification to continue.",
   },
 
   "marketing.requestInvite": {
@@ -480,7 +480,7 @@ export const strings = {
     "email.placeholder": "your@email.com",
     "or": "or",
     "error.generic": "Something went wrong. Please try again.",
-    "error.magicLink": "Could not send magic link. Please try again.",
+    "error.magicLink": "Could not send sign-in link. Please try again.",
     "error.authFailed": "Authentication failed. Please try again.",
     "noAccount": "Don't have an account?",
     "requestInvite": "Request an invite",
@@ -1311,7 +1311,7 @@ export const strings = {
     "auth.signInGoogle": "Continue with Google",
     "auth.signInEmail": "Continue with email",
     "auth.emailPlaceholder": "your@email.com",
-    "auth.sendLink": "Send magic link",
+    "auth.sendLink": "Send sign-in link",
     "auth.checkEmail": "Check your email",
     "auth.checkEmailDetail": "We sent a sign-in link to {email}",
     "auth.orDivider": "or",

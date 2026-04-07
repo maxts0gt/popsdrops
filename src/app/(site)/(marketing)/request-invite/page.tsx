@@ -121,7 +121,7 @@ function RequestInvitePageContent({
     }
 
     if (requiresTurnstile && !turnstileToken) {
-      toast.error("Complete the verification challenge.");
+      toast.error(t("form.verification"));
       return;
     }
 

@@ -53,7 +53,7 @@ export const strings: Record<string, Record<string, string>> = {
     "auth.signInGoogle": "Continue with Google",
     "auth.signInEmail": "Continue with email",
     "auth.emailPlaceholder": "your@email.com",
-    "auth.sendLink": "Send magic link",
+    "auth.sendLink": "Send sign-in link",
     "auth.checkEmail": "Check your email",
     "auth.checkEmailDetail": "We sent a sign-in link to {email}",
     "auth.orDivider": "or",
