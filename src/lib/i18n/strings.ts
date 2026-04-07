@@ -131,6 +131,10 @@ export const strings = {
     // Language
     "language.label": "Language",
     "language.description": "The platform will display in your chosen language.",
+    "language.preparingBadge": "Preparing your language",
+    "language.preparingTitle": "Preparing PopsDrops in {language}",
+    "language.preparingBody": "We are generating a translated version of the current experience for this language.",
+    "language.preparingHint": "This usually happens once. After that, {language} loads from cache.",
     // Niche labels (translatable)
     "niche.beauty": "Beauty & Skincare",
     "niche.fashion": "Fashion & Apparel",

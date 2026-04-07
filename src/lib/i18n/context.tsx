@@ -34,6 +34,7 @@ interface I18nContextValue {
   t: (pageKey: PageKey, key: string, vars?: Record<string, string>) => string;
   preload: (...pageKeys: PageKey[]) => Promise<void>;
   isLoading: boolean;
+  isLocaleReady: boolean;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
@@ -57,8 +58,15 @@ export function I18nProvider({
   initialLocale: string;
   initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
 }) {
+  const initialLocaleReady = hasCompleteTranslations(
+    initialLocale,
+    ALL_PAGE_KEYS,
+    initialTranslations,
+  );
   const [locale, setLocaleState] = useState(initialLocale);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(
+    initialLocale !== DEFAULT_LOCALE && !initialLocaleReady,
+  );
   const [cacheVersion, setCacheVersion] = useState(0);
 
   // Nested cache: { "ko": { "marketing.landing": { "headline": "..." } } }
@@ -78,6 +86,7 @@ export function I18nProvider({
 
   const isRTL = isRTLLocale(locale);
   const dir = isRTL ? "rtl" as const : "ltr" as const;
+  const isLocaleReady = locale === DEFAULT_LOCALE || fetchedLocales.current.has(locale);
 
   const setLocale = useCallback((newLocale: string) => {
     setLocaleState(newLocale);
@@ -187,6 +196,7 @@ export function I18nProvider({
         t,
         preload,
         isLoading,
+        isLocaleReady,
       }}
     >
       {children}
@@ -205,7 +215,7 @@ export function useI18n() {
  * Translations are fetched by the provider — this hook just provides the t() accessor.
  */
 export function useTranslation(pageKey: PageKey) {
-  const { t, locale, isRTL, dir, isLoading } = useI18n();
+  const { t, locale, isRTL, dir, isLoading, isLocaleReady } = useI18n();
 
   return {
     t: (key: string, vars?: Record<string, string>) => t(pageKey, key, vars),
@@ -213,5 +223,6 @@ export function useTranslation(pageKey: PageKey) {
     isRTL,
     dir,
     isLoading,
+    isLocaleReady,
   };
 }
