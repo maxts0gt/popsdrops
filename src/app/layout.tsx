@@ -30,7 +30,6 @@ export const metadata: Metadata = {
     description:
       "Global cross-border influencer marketing platform. Any market, any language.",
     type: "website",
-    locale: "en_US",
     siteName: "PopsDrops",
   },
   twitter: {
