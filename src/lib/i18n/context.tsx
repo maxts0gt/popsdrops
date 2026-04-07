@@ -25,6 +25,12 @@ import {
   mergeTranslationsIntoCache,
   type TranslationCache,
 } from "./runtime";
+import {
+  beginLocaleFetch,
+  createLocaleFetchState,
+  finishLocaleFetch,
+  isLocaleFetchInFlight,
+} from "./fetch-state";
 
 interface I18nContextValue {
   locale: string;
@@ -82,7 +88,7 @@ export function I18nProvider({
       ? new Set([initialLocale])
       : new Set(),
   );
-  const fetchingLocale = useRef<string | null>(null);
+  const fetchState = useRef(createLocaleFetchState());
 
   const isRTL = isRTLLocale(locale);
   const dir = isRTL ? "rtl" as const : "ltr" as const;
@@ -103,9 +109,11 @@ export function I18nProvider({
   useEffect(() => {
     if (locale === DEFAULT_LOCALE) return;
     if (fetchedLocales.current.has(locale)) return;
-    if (fetchingLocale.current === locale) return;
+    if (isLocaleFetchInFlight(fetchState.current, locale)) return;
 
-    fetchingLocale.current = locale;
+    const nextFetch = beginLocaleFetch(fetchState.current, locale);
+    fetchState.current = nextFetch.state;
+    const requestId = nextFetch.requestId;
     setIsLoading(true);
 
     const supabase = createClient();
@@ -146,8 +154,13 @@ export function I18nProvider({
         console.error(`Batch translation failed for ${locale}`, err);
       })
       .finally(() => {
-        fetchingLocale.current = null;
-        setIsLoading(false);
+        const nextState = finishLocaleFetch(fetchState.current, requestId);
+        const didFinishActiveRequest = nextState !== fetchState.current;
+
+        fetchState.current = nextState;
+        if (didFinishActiveRequest) {
+          setIsLoading(false);
+        }
       });
   }, [locale]);
 
