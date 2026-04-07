@@ -17,10 +17,14 @@ import {
   isRTLLocale,
   DEFAULT_LOCALE,
 } from "./strings";
-
-interface TranslationCache {
-  [locale: string]: Record<string, string>; // flat: all page keys merged per locale
-}
+import {
+  buildInitialTranslationCache,
+  chunkPageKeys,
+  getCachedTranslation,
+  hasCompleteTranslations,
+  mergeTranslationsIntoCache,
+  type TranslationCache,
+} from "./runtime";
 
 interface I18nContextValue {
   locale: string;
@@ -33,6 +37,7 @@ interface I18nContextValue {
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
+const ALL_PAGE_KEYS = Object.keys(strings) as PageKey[];
 
 function interpolate(text: string, vars?: Record<string, string>): string {
   if (!vars) return text;
@@ -43,25 +48,6 @@ function interpolate(text: string, vars?: Record<string, string>): string {
   return result;
 }
 
-/**
- * Build the initial flat cache from server-side pre-fetched translations.
- * Server sends: { pageKey: { stringKey: value, ... }, ... }
- * We flatten into: { locale: { stringKey: value, ... } }
- */
-function buildInitialCache(
-  locale: string,
-  initialTranslations?: Record<string, Record<string, string>>,
-): TranslationCache {
-  const initial: TranslationCache = {};
-  if (initialTranslations && locale !== DEFAULT_LOCALE) {
-    initial[locale] = {};
-    for (const pageStrings of Object.values(initialTranslations)) {
-      Object.assign(initial[locale], pageStrings);
-    }
-  }
-  return initial;
-}
-
 export function I18nProvider({
   children,
   initialLocale,
@@ -69,20 +55,22 @@ export function I18nProvider({
 }: {
   children: ReactNode;
   initialLocale: string;
-  initialTranslations?: Record<string, Record<string, string>>;
+  initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
 }) {
   const [locale, setLocaleState] = useState(initialLocale);
   const [isLoading, setIsLoading] = useState(false);
   const [cacheVersion, setCacheVersion] = useState(0);
 
-  // Flat cache: { "ko": { "headline": "...", "nav.home": "...", ... } }
+  // Nested cache: { "ko": { "marketing.landing": { "headline": "..." } } }
   // English strings are always available from source, never fetched.
-  const cache = useRef<TranslationCache>(buildInitialCache(initialLocale, initialTranslations));
+  const cache = useRef<TranslationCache>(
+    buildInitialTranslationCache(initialLocale, initialTranslations),
+  );
 
   // Fetch state: tracks whether we've already fetched ALL keys for this locale.
-  // If server pre-fetched translations, mark that locale as already done.
+  // Partial server hydration should still trigger the client fetch path.
   const fetchedLocales = useRef<Set<string>>(
-    initialTranslations && initialLocale !== DEFAULT_LOCALE
+    hasCompleteTranslations(initialLocale, ALL_PAGE_KEYS, initialTranslations)
       ? new Set([initialLocale])
       : new Set(),
   );
@@ -111,17 +99,8 @@ export function I18nProvider({
     fetchingLocale.current = locale;
     setIsLoading(true);
 
-    const allPageKeys = Object.keys(strings) as PageKey[];
     const supabase = createClient();
-
-    // Chunk page keys into groups of 5 to keep Gemini output within limits
-    const CHUNK_SIZE = 5;
-    const chunks: PageKey[][] = [];
-    for (let i = 0; i < allPageKeys.length; i += CHUNK_SIZE) {
-      chunks.push(allPageKeys.slice(i, i + CHUNK_SIZE));
-    }
-
-    if (!cache.current[locale]) cache.current[locale] = {};
+    const chunks = chunkPageKeys(ALL_PAGE_KEYS);
 
     // Fetch all chunks concurrently, then update UI once with all translations
     Promise.all(
@@ -138,12 +117,14 @@ export function I18nProvider({
         if (error) throw error;
 
         if (data?.pages) {
-          for (const [, pageData] of Object.entries(data.pages)) {
-            const pd = pageData as { strings: Record<string, string> };
-            if (pd.strings) {
-              Object.assign(cache.current[locale]!, pd.strings);
-            }
-          }
+          const chunkTranslations = Object.fromEntries(
+            Object.entries(data.pages).flatMap(([pageKey, pageData]) => {
+              const pd = pageData as { strings: Record<string, string> };
+              return pd.strings ? [[pageKey as PageKey, pd.strings]] : [];
+            }),
+          ) as Partial<Record<PageKey, Record<string, string>>>;
+
+          mergeTranslationsIntoCache(cache.current, locale, chunkTranslations);
         }
       }),
     )
@@ -182,7 +163,7 @@ export function I18nProvider({
       }
 
       // Other locale — check cache
-      const translated = cache.current[locale]?.[key];
+      const translated = getCachedTranslation(cache.current, locale, pageKey, key);
       if (translated) {
         return interpolate(translated, vars);
       }

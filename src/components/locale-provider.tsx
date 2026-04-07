@@ -1,7 +1,7 @@
 "use client";
 
 import { I18nProvider } from "@/lib/i18n";
-import { isRTLLocale } from "@/lib/i18n/strings";
+import { isRTLLocale, type PageKey } from "@/lib/i18n/strings";
 import { useEffect, type ReactNode } from "react";
 
 export function LocaleProvider({
@@ -11,7 +11,7 @@ export function LocaleProvider({
 }: {
   children: ReactNode;
   locale: string;
-  initialTranslations?: Record<string, Record<string, string>>;
+  initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
 }) {
   // Set dir and lang on html element
   useEffect(() => {

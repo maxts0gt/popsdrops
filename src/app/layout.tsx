@@ -3,7 +3,7 @@ import { Inter, Cairo } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Toaster } from "@/components/ui/sonner";
 import { LocaleProvider } from "@/components/locale-provider";
-import { getLocale, getMultipleTranslations } from "@/lib/i18n/server";
+import { getCachedTranslations, getLocale } from "@/lib/i18n/server";
 import { isRTLLocale, strings, type PageKey } from "@/lib/i18n/strings";
 import "./globals.css";
 
@@ -51,11 +51,11 @@ export default async function RootLayout({
   const locale = await getLocale();
   const isRTL = isRTLLocale(locale);
 
-  // Pre-fetch all translations server-side from DB cache so the client
-  // hydrates with translated strings instantly — no client-side edge function calls.
+  // Pre-fetch only DB-cached translations so returning visitors hydrate immediately
+  // without blocking cold-cache requests on a full server-side translation run.
   const allPageKeys = Object.keys(strings) as PageKey[];
   const initialTranslations = locale !== "en"
-    ? await getMultipleTranslations(allPageKeys, locale)
+    ? await getCachedTranslations(allPageKeys, locale)
     : undefined;
 
   return (
