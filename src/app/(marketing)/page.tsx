@@ -5,6 +5,7 @@ import { ArrowRight, Sparkles } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
 import { getMarketLabel } from "@/lib/constants";
+import { buildLocalizedMarketingPath } from "@/lib/i18n/public-locale";
 import {
   MARKETING_MOCK_IDENTITIES,
   type MarketingMockIdentityId,
@@ -88,7 +89,7 @@ export default function LandingPage() {
             className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center"
           >
             <Link
-              href="/request-invite"
+              href={buildLocalizedMarketingPath(locale, "/request-invite")}
               className="group relative inline-flex items-center gap-2.5 rounded-xl bg-white px-8 py-4 text-sm font-semibold text-slate-900 shadow-2xl shadow-white/10 transition-all hover:scale-[1.02] hover:shadow-white/20"
             >
               {t("cta")}
@@ -294,8 +295,8 @@ export default function LandingPage() {
             transition={{ duration: 0.5 }}
             className="grid gap-4 sm:grid-cols-2"
           >
-            <a
-              href="/for-brands"
+            <Link
+              href={buildLocalizedMarketingPath(locale, "/for-brands")}
               className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
             >
               <div className="pointer-events-none absolute -end-8 -top-8 h-24 w-24 rounded-full bg-slate-100/50 transition-transform group-hover:scale-150" />
@@ -312,9 +313,9 @@ export default function LandingPage() {
                   <ArrowRight className={`h-3.5 w-3.5 transition-transform group-hover:translate-x-1 ${isRTL ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
                 </div>
               </div>
-            </a>
-            <a
-              href="/for-creators"
+            </Link>
+            <Link
+              href={buildLocalizedMarketingPath(locale, "/for-creators")}
               className="group relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-7 transition-all hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-lg"
             >
               <div className="pointer-events-none absolute -end-8 -top-8 h-24 w-24 rounded-full bg-slate-100/50 transition-transform group-hover:scale-150" />
@@ -331,7 +332,7 @@ export default function LandingPage() {
                   <ArrowRight className={`h-3.5 w-3.5 transition-transform group-hover:translate-x-1 ${isRTL ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
                 </div>
               </div>
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>
@@ -347,7 +348,7 @@ export default function LandingPage() {
             </h2>
             <div className="mt-8">
               <Link
-                href="/request-invite"
+                href={buildLocalizedMarketingPath(locale, "/request-invite")}
                 className="group inline-flex items-center gap-2 rounded-xl bg-slate-900 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-slate-800 hover:shadow-xl hover:shadow-slate-900/25"
               >
                 {t("final.cta")}

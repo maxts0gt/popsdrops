@@ -15,6 +15,14 @@ function isValidLocaleCode(code: string): boolean {
  * Accepts ANY valid locale code — Gemini translates on demand.
  */
 export async function getLocale(): Promise<string> {
+  const headerStore = await headers();
+
+  // 0. Locale from pathname rewrite/redirect for public marketing routes
+  const routedLocale = headerStore.get("x-locale");
+  if (routedLocale && isValidLocaleCode(routedLocale)) {
+    return routedLocale;
+  }
+
   // 1. Cookie (set by client-side locale switcher)
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get("popsdrops-locale")?.value;
@@ -41,7 +49,6 @@ export async function getLocale(): Promise<string> {
   }
 
   // 3. Accept-Language header
-  const headerStore = await headers();
   const acceptLang = headerStore.get("accept-language");
   if (acceptLang) {
     const preferred = acceptLang

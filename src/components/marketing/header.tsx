@@ -7,6 +7,10 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useTranslation } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { usePathname } from "next/navigation";
+import {
+  buildLocalizedMarketingPath,
+  stripMarketingLocalePrefix,
+} from "@/lib/i18n/public-locale";
 
 const navLinks = [
   { href: "/for-brands", labelKey: "nav.forBrands" },
@@ -17,11 +21,12 @@ const navLinks = [
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { t } = useTranslation("ui.common");
+  const { t, locale } = useTranslation("ui.common");
   const pathname = usePathname();
+  const marketingPathname = stripMarketingLocalePrefix(pathname);
 
   // Only the landing page has a dark hero
-  const hasDarkHero = pathname === "/";
+  const hasDarkHero = marketingPathname === "/";
   // On dark hero pages, header starts transparent. On light pages, always solid.
   const isLight = !hasDarkHero || scrolled;
 
@@ -35,7 +40,7 @@ export function MarketingHeader() {
   }, [hasDarkHero]);
 
   function navLinkClass(href: string) {
-    const isActive = pathname === href;
+    const isActive = marketingPathname === href;
     if (isLight) {
       return `text-sm font-medium transition-colors ${
         isActive ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
@@ -56,7 +61,7 @@ export function MarketingHeader() {
     >
       <nav className="mx-auto flex max-w-7xl items-center px-6 py-4">
         <Link
-          href="/"
+          href={buildLocalizedMarketingPath(locale, "/")}
           className={`text-lg font-extrabold tracking-tight transition-colors ${
             isLight ? "text-slate-900" : "text-white"
           }`}
@@ -67,7 +72,11 @@ export function MarketingHeader() {
         {/* Desktop — right-aligned */}
         <div className="hidden items-center gap-8 ms-auto md:flex">
           {navLinks.map((link) => (
-            <Link key={link.href} href={link.href} className={navLinkClass(link.href)}>
+            <Link
+              key={link.href}
+              href={buildLocalizedMarketingPath(locale, link.href)}
+              className={navLinkClass(link.href)}
+            >
               {t(link.labelKey)}
             </Link>
           ))}
@@ -83,7 +92,7 @@ export function MarketingHeader() {
             {t("nav.login")}
           </Link>
           <Link
-            href="/request-invite"
+            href={buildLocalizedMarketingPath(locale, "/request-invite")}
             className={`rounded-lg px-4 py-2 text-sm font-semibold transition-all ${
               isLight
                 ? "bg-slate-900 text-white hover:bg-slate-800"
@@ -106,11 +115,11 @@ export function MarketingHeader() {
           <SheetContent side="right" className="w-72 border-l border-slate-200 bg-white p-6">
             <div className="flex flex-col gap-1 pt-8">
               {navLinks.map((link) => {
-                const isActive = pathname === link.href;
+                const isActive = marketingPathname === link.href;
                 return (
                   <Link
                     key={link.href}
-                    href={link.href}
+                    href={buildLocalizedMarketingPath(locale, link.href)}
                     onClick={() => setOpen(false)}
                     className={`rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                       isActive
@@ -134,7 +143,7 @@ export function MarketingHeader() {
                   <LanguageSwitcher variant="minimal" />
                 </div>
                 <Link
-                  href="/request-invite"
+                  href={buildLocalizedMarketingPath(locale, "/request-invite")}
                   onClick={() => setOpen(false)}
                   className="mt-2 block rounded-lg bg-slate-900 px-4 py-2.5 text-center text-sm font-semibold text-white hover:bg-slate-800"
                 >

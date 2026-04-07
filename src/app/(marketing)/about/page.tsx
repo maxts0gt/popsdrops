@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
+import { buildLocalizedMarketingPath } from "@/lib/i18n/public-locale";
 
 const fade = {
   initial: { opacity: 0, y: 16 },
@@ -13,7 +14,7 @@ const fade = {
 };
 
 export default function AboutPage() {
-  const { t, isRTL } = useTranslation("marketing.about");
+  const { t, isRTL, locale } = useTranslation("marketing.about");
 
   return (
     <div className="bg-white">
@@ -175,7 +176,7 @@ export default function AboutPage() {
             </p>
             <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
               <Link
-                href="/request-invite"
+                href={buildLocalizedMarketingPath(locale, "/request-invite")}
                 className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-slate-800"
               >
                 {t("cta.primary")}

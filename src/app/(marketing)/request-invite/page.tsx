@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { submitWaitlistRequest } from "@/app/actions/waitlist";
 import { useTranslation } from "@/lib/i18n/context";
+import { buildLocalizedMarketingPath } from "@/lib/i18n/public-locale";
 import {
   PLATFORMS,
   PLATFORM_LABELS,
@@ -42,7 +43,7 @@ const FOLLOWER_RANGES = [
 export default function RequestInvitePage() {
   const searchParams = useSearchParams();
   const initialType = searchParams.get("type") === "creator" ? "creator" : "brand";
-  const { t } = useTranslation("marketing.requestInvite");
+  const { t, locale } = useTranslation("marketing.requestInvite");
   const requiresTurnstile =
     process.env.NODE_ENV === "production" ||
     Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
@@ -136,7 +137,7 @@ export default function RequestInvitePage() {
             {t("success.message")}
           </p>
           <Link
-            href="/"
+            href={buildLocalizedMarketingPath(locale, "/")}
             className="mt-8 inline-flex items-center gap-2 text-sm font-medium text-foreground hover:text-muted-foreground transition-colors"
           >
             {t("success.back")}

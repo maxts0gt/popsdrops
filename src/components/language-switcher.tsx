@@ -5,8 +5,10 @@ import {
   SUPPORTED_LOCALES,
   getLocaleDisplayName,
 } from "@/lib/i18n/strings";
+import { getPublicLocaleNavigationHref } from "@/lib/i18n/public-locale";
 import { Check, Globe } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function LanguageSwitcher({
   variant = "default",
@@ -16,6 +18,9 @@ export function LanguageSwitcher({
   const { locale, setLocale, isLoading } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Close on outside click
   useEffect(() => {
@@ -86,7 +91,17 @@ export function LanguageSwitcher({
       <button
         key={loc}
         onClick={() => {
+          const search = searchParams.toString();
+          const navigationHref = getPublicLocaleNavigationHref(
+            loc,
+            pathname,
+            search ? `?${search}` : "",
+          );
+
           setLocale(loc);
+          if (navigationHref && navigationHref !== `${pathname}${search ? `?${search}` : ""}`) {
+            router.push(navigationHref);
+          }
           setOpen(false);
         }}
         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
