@@ -1,6 +1,6 @@
 import { getLocalizedMarketingMetadata } from "@/lib/i18n/public-metadata.server";
 
-export { default } from "@/app/(marketing)/about/page";
+export { default } from "@/app/(site)/(marketing)/about/page";
 
 export async function generateMetadata({
   params,

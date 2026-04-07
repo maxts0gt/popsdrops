@@ -1,13 +1,17 @@
 import { notFound } from "next/navigation";
 
+import { DocumentShell } from "@/components/document-shell";
 import { LocalizedRouteShell } from "@/components/localized-route-shell";
 import { getPublicCachedTranslations } from "@/lib/i18n/server";
 import {
   DEFAULT_MARKETING_LOCALE,
   SUPPORTED_MARKETING_LOCALES,
 } from "@/lib/i18n/public-locale";
+import { ROOT_METADATA } from "@/lib/root-metadata";
+import "../globals.css";
 
 export const revalidate = 60;
+export const metadata = ROOT_METADATA;
 
 export async function generateStaticParams() {
   return [{ locale: DEFAULT_MARKETING_LOCALE }];
@@ -32,8 +36,10 @@ export default async function LocalizedPublicLayout({
     : undefined;
 
   return (
-    <LocalizedRouteShell locale={locale} initialTranslations={initialTranslations}>
-      {children}
-    </LocalizedRouteShell>
+    <DocumentShell locale={locale}>
+      <LocalizedRouteShell locale={locale} initialTranslations={initialTranslations}>
+        {children}
+      </LocalizedRouteShell>
+    </DocumentShell>
   );
 }
