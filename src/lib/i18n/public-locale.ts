@@ -29,11 +29,6 @@ export type PublicLocaleRoutingDecision =
       action: "redirect";
       destination: string;
       locale: string;
-    }
-  | {
-      action: "rewrite";
-      pathname: string;
-      locale: string;
     };
 
 function normalizePathname(pathname: string): string {
@@ -117,15 +112,6 @@ export function resolvePublicLocaleRouting(
   locale: string,
 ): PublicLocaleRoutingDecision | null {
   const normalized = normalizePathname(pathname);
-  const localizedMarketingLocale = getMarketingLocaleFromPathname(normalized);
-
-  if (localizedMarketingLocale) {
-    return {
-      action: "rewrite",
-      pathname: stripMarketingLocalePrefix(normalized),
-      locale: localizedMarketingLocale,
-    };
-  }
 
   if (!LOCALIZED_MARKETING_PATHS.has(normalized)) {
     return null;

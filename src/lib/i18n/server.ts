@@ -14,7 +14,7 @@ type TranslationRecord = {
 };
 
 const ALL_PAGE_KEYS = Object.keys(strings) as PageKey[];
-const PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS = 60 * 60;
+const PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS = 60;
 const publicTranslationClient = createSupabaseClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -24,6 +24,32 @@ const publicTranslationClient = createSupabaseClient(
       persistSession: false,
     },
   },
+);
+
+// Public marketing pages intentionally use a shorter cache window than the
+// signed-in path so newly generated locale pages converge quickly after the
+// first translation write, while still avoiding repeated DB reads.
+const loadPublicCachedTranslations = unstable_cache(
+  async (
+    locale: string,
+    sourceVersion: string,
+  ): Promise<Partial<Record<PageKey, Record<string, string>>>> => {
+    void sourceVersion;
+
+    if (locale === DEFAULT_LOCALE) {
+      return getSourceTranslations(ALL_PAGE_KEYS);
+    }
+
+    const { data: cachedRows } = await publicTranslationClient
+      .from("translations")
+      .select("page_key, strings, overrides")
+      .eq("locale", locale)
+      .in("page_key", ALL_PAGE_KEYS);
+
+    return mergeCachedRows(ALL_PAGE_KEYS, cachedRows as TranslationRecord[] | null);
+  },
+  ["public-translation-preload"],
+  { revalidate: PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS },
 );
 
 function getSourceTranslations(
@@ -54,31 +80,6 @@ function mergeCachedRows(
 
   return results;
 }
-
-// Public web traffic should reuse a request-independent translation blob instead
-// of re-reading the translations table on every warmed anonymous visit.
-const loadPublicCachedTranslations = unstable_cache(
-  async (
-    locale: string,
-    sourceVersion: string,
-  ): Promise<Partial<Record<PageKey, Record<string, string>>>> => {
-    void sourceVersion;
-
-    if (locale === DEFAULT_LOCALE) {
-      return getSourceTranslations(ALL_PAGE_KEYS);
-    }
-
-    const { data: cachedRows } = await publicTranslationClient
-      .from("translations")
-      .select("page_key, strings, overrides")
-      .eq("locale", locale)
-      .in("page_key", ALL_PAGE_KEYS);
-
-    return mergeCachedRows(ALL_PAGE_KEYS, cachedRows as TranslationRecord[] | null);
-  },
-  ["public-translation-preload"],
-  { revalidate: PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS },
-);
 
 /** Validate that a string is a plausible ISO 639-1 locale code (2-3 lowercase letters). */
 function isValidLocaleCode(code: string): boolean {
@@ -145,12 +146,6 @@ export async function getLocale(): Promise<string> {
 
   return DEFAULT_LOCALE;
 }
-
-export async function isPublicRouteRequest(): Promise<boolean> {
-  const headerStore = await headers();
-  return headerStore.get("x-route-scope") === "public";
-}
-
 /**
  * Parse Accept-Language header into ranked supported locale codes.
  * Used by server components to pass detected languages to client for the language switcher.

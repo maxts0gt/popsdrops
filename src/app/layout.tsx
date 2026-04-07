@@ -1,15 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Cairo } from "next/font/google";
 import { ThemeProvider } from "next-themes";
-import { Toaster } from "@/components/ui/sonner";
-import { LocaleProvider } from "@/components/locale-provider";
-import {
-  getCachedTranslations,
-  getLocale,
-  getPublicCachedTranslations,
-  isPublicRouteRequest,
-} from "@/lib/i18n/server";
-import { isRTLLocale, strings, type PageKey } from "@/lib/i18n/strings";
+import { getSafePublicLocale } from "@/lib/i18n/public-locale";
+import { isRTLLocale } from "@/lib/i18n/strings";
 import "./globals.css";
 
 const inter = Inter({
@@ -50,25 +43,19 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({
   children,
+  params,
 }: Readonly<{
   children: React.ReactNode;
+  params: Promise<Record<string, string | string[] | undefined>>;
 }>) {
-  const locale = await getLocale();
-  const isPublicRoute = await isPublicRouteRequest();
-  const isRTL = isRTLLocale(locale);
-
-  // Public routes use Next's data cache to avoid repeat Supabase reads for warmed
-  // anonymous locales. Signed-in/app routes keep the direct DB path.
-  const allPageKeys = Object.keys(strings) as PageKey[];
-  const initialTranslations = locale !== "en"
-    ? isPublicRoute
-      ? await getPublicCachedTranslations(locale)
-      : await getCachedTranslations(allPageKeys, locale)
-    : undefined;
+  const routeParams = await params;
+  const routeLocale = typeof routeParams.locale === "string" ? routeParams.locale : undefined;
+  const documentLocale = routeLocale ? getSafePublicLocale(routeLocale) : "en";
+  const isRTL = isRTLLocale(documentLocale);
 
   return (
     <html
-      lang={locale}
+      lang={documentLocale}
       dir={isRTL ? "rtl" : "ltr"}
       className={`${inter.variable} ${cairo.variable} h-full antialiased`}
       suppressHydrationWarning
@@ -80,10 +67,7 @@ export default async function RootLayout({
           forcedTheme="light"
           disableTransitionOnChange
         >
-          <LocaleProvider locale={locale} initialTranslations={initialTranslations}>
-            {children}
-            <Toaster position={isRTL ? "top-left" : "top-right"} richColors />
-          </LocaleProvider>
+          {children}
         </ThemeProvider>
       </body>
     </html>

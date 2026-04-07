@@ -60,11 +60,7 @@ describe("public locale routing", () => {
       locale: "ko",
     });
 
-    expect(resolvePublicLocaleRouting("/ko/for-brands", "", "en")).toEqual({
-      action: "rewrite",
-      pathname: "/for-brands",
-      locale: "ko",
-    });
+    expect(resolvePublicLocaleRouting("/ko/for-brands", "", "en")).toBeNull();
 
     expect(resolvePublicLocaleRouting("/terms", "", "ko")).toBeNull();
   });

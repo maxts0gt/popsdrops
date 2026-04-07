@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import {
-  getSafePublicLocale,
+  getMarketingLocaleFromPathname,
   isPublicPath,
   resolvePublicLocaleRouting,
 } from "@/lib/i18n/public-locale";
@@ -45,18 +45,17 @@ function detectLocale(request: NextRequest): string {
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const detectedLocale = detectLocale(request);
+  const routeLocale = getMarketingLocaleFromPathname(pathname);
   const publicRouting = resolvePublicLocaleRouting(
     pathname,
     request.nextUrl.search,
     detectedLocale,
   );
   const isPublic = isPublicPath(pathname);
-  const locale = isPublic
-    ? getSafePublicLocale(publicRouting?.locale ?? detectedLocale)
-    : publicRouting?.locale ?? detectedLocale;
   const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-locale", locale);
-  requestHeaders.set("x-route-scope", isPublic ? "public" : "private");
+  if (routeLocale) {
+    requestHeaders.set("x-locale", routeLocale);
+  }
 
   if (publicRouting?.action === "redirect") {
     const redirectUrl = request.nextUrl.clone();
@@ -74,30 +73,20 @@ export async function updateSession(request: NextRequest) {
     return redirectResponse;
   }
 
-  if (publicRouting?.action === "rewrite") {
-    const rewriteUrl = request.nextUrl.clone();
-    rewriteUrl.pathname = publicRouting.pathname;
-
-    const rewriteResponse = NextResponse.rewrite(rewriteUrl, {
-      request: {
-        headers: requestHeaders,
-      },
-    });
-    rewriteResponse.cookies.set("popsdrops-locale", publicRouting.locale, {
-      path: "/",
-      maxAge: 60 * 60 * 24 * 365,
-      sameSite: "lax",
-    });
-    return rewriteResponse;
-  }
-
   if (isPublic) {
     const publicResponse = NextResponse.next({
       request: {
         headers: requestHeaders,
       },
     });
-    publicResponse.headers.set("x-locale", locale);
+    if (routeLocale) {
+      publicResponse.headers.set("content-language", routeLocale);
+      publicResponse.cookies.set("popsdrops-locale", routeLocale, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
     return publicResponse;
   }
 
@@ -106,7 +95,6 @@ export async function updateSession(request: NextRequest) {
       headers: requestHeaders,
     },
   });
-  supabaseResponse.headers.set("x-locale", locale);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

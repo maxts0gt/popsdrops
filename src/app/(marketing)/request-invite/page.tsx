@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Turnstile } from "@/components/security/turnstile";
@@ -41,8 +41,25 @@ const FOLLOWER_RANGES = [
 ] as const;
 
 export default function RequestInvitePage() {
+  return (
+    <Suspense fallback={<RequestInvitePageContent initialType="brand" />}>
+      <RequestInvitePageWithSearchParams />
+    </Suspense>
+  );
+}
+
+function RequestInvitePageWithSearchParams() {
   const searchParams = useSearchParams();
   const initialType = searchParams.get("type") === "creator" ? "creator" : "brand";
+
+  return <RequestInvitePageContent initialType={initialType} />;
+}
+
+function RequestInvitePageContent({
+  initialType,
+}: {
+  initialType: "brand" | "creator";
+}) {
   const { t, locale } = useTranslation("marketing.requestInvite");
   const requiresTurnstile =
     process.env.NODE_ENV === "production" ||
