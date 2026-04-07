@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
@@ -191,13 +192,13 @@ export default function ForCreatorsPage() {
         <div className="mx-auto max-w-md px-6 text-center">
           <h2 className="text-xl font-bold text-slate-900 sm:text-2xl">{t("final.title")}</h2>
           <div className="mt-6">
-            <a
+            <Link
               href="/login?action=signup&role=creator"
               className="group inline-flex items-center gap-2 rounded-xl bg-slate-900 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/20 transition-all hover:bg-slate-800 hover:shadow-xl"
             >
               {t("cta")}
               <ArrowRight className={`h-4 w-4 transition-transform group-hover:translate-x-0.5 ${isRTL ? "rotate-180 group-hover:-translate-x-0.5" : ""}`} />
-            </a>
+            </Link>
           </div>
           <p className="mt-3 text-xs text-slate-400">{t("free")}</p>
         </div>

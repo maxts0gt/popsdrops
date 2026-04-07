@@ -131,6 +131,10 @@ export const strings = {
     // Language
     "language.label": "Language",
     "language.description": "The platform will display in your chosen language.",
+    "language.preparingBadge": "Preparing your language",
+    "language.preparingTitle": "Preparing PopsDrops in {language}",
+    "language.preparingBody": "We are generating a translated version of the current experience for this language.",
+    "language.preparingHint": "This usually happens once. After that, {language} loads from cache.",
     // Niche labels (translatable)
     "niche.beauty": "Beauty & Skincare",
     "niche.fashion": "Fashion & Apparel",
@@ -161,6 +165,8 @@ export const strings = {
   // MARKETING PAGES — minimal copy, visuals do the talking
   // ============================================================
   "marketing.landing": {
+    "meta.title": "Creator Campaigns Without Borders",
+    "meta.description": "Global cross-border influencer marketing. Run creator campaigns in any market.",
     "headline": "Creator campaigns.\nAny market. Any language.",
     "subheadline": "Brief creators, review content, measure results — across borders.",
     "badge": "Now accepting early access brands",
@@ -220,6 +226,8 @@ export const strings = {
   },
 
   "marketing.forBrands": {
+    "meta.title": "For Brands",
+    "meta.description": "Run creator campaigns in any market from one dashboard.",
     "headline": "Brief. Match.\nReview. Report.",
     "subheadline": "Set up a campaign in 20 minutes. Get a report for your boss.",
     "cta": "Request Invite",
@@ -270,6 +278,8 @@ export const strings = {
   },
 
   "marketing.forCreators": {
+    "meta.title": "For Creators",
+    "meta.description": "Get paid campaigns from global brands. Receive briefs in your language.",
     "headline": "Get briefs.\nGet paid.",
     "subheadline": "Global brands post campaigns. You apply. Briefs arrive in your language.",
     "cta": "Join Free",
@@ -359,6 +369,8 @@ export const strings = {
   },
 
   "marketing.requestInvite": {
+    "meta.title": "Request Early Access",
+    "meta.description": "Tell us about yourself and we'll get back to you within 24 hours.",
     "title": "Request Early Access",
     "subtitle": "Tell us about yourself and we'll get back to you within 24 hours.",
     "tab.brand": "I'm a Brand",
@@ -413,6 +425,8 @@ export const strings = {
   },
 
   "marketing.about": {
+    "meta.title": "About PopsDrops",
+    "meta.description": "We built PopsDrops to make cross-border creator campaigns and market entry work.",
     "label": "About PopsDrops",
     "headline": "The hard part was never building the product.",
     "intro": "We built products, ran factories, managed inventory. We thought creation was the challenge. It wasn't. The real challenge was getting what we made into the hands of the people who needed it.",

@@ -119,7 +119,6 @@ async function loadTranslations(locale: string): Promise<Record<string, string>>
         body: {
           locale,
           pages: { "mobile.app": sourceStrings },
-          force: true,
         },
       },
     );

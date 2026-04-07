@@ -1,5 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  getMarketingLocaleFromPathname,
+  isPublicPath,
+  resolvePublicLocaleRouting,
+} from "@/lib/i18n/public-locale";
 
 const DEFAULT_LOCALE = "en";
 
@@ -38,10 +43,58 @@ function detectLocale(request: NextRequest): string {
 }
 
 export async function updateSession(request: NextRequest) {
-  const locale = detectLocale(request);
-  let supabaseResponse = NextResponse.next({ request });
-  // Pass locale to Server Components via header
-  supabaseResponse.headers.set("x-locale", locale);
+  const pathname = request.nextUrl.pathname;
+  const detectedLocale = detectLocale(request);
+  const routeLocale = getMarketingLocaleFromPathname(pathname);
+  const publicRouting = resolvePublicLocaleRouting(
+    pathname,
+    request.nextUrl.search,
+    detectedLocale,
+  );
+  const isPublic = isPublicPath(pathname);
+  const requestHeaders = new Headers(request.headers);
+  if (routeLocale) {
+    requestHeaders.set("x-locale", routeLocale);
+  }
+
+  if (publicRouting?.action === "redirect") {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = publicRouting.destination.split("?")[0];
+    redirectUrl.search = publicRouting.destination.includes("?")
+      ? `?${publicRouting.destination.split("?")[1]}`
+      : "";
+
+    const redirectResponse = NextResponse.redirect(redirectUrl);
+    redirectResponse.cookies.set("popsdrops-locale", publicRouting.locale, {
+      path: "/",
+      maxAge: 60 * 60 * 24 * 365,
+      sameSite: "lax",
+    });
+    return redirectResponse;
+  }
+
+  if (isPublic) {
+    const publicResponse = NextResponse.next({
+      request: {
+        headers: requestHeaders,
+      },
+    });
+    if (routeLocale) {
+      publicResponse.headers.set("content-language", routeLocale);
+      publicResponse.cookies.set("popsdrops-locale", routeLocale, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+    }
+    return publicResponse;
+  }
+
+  let supabaseResponse = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -55,7 +108,11 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          supabaseResponse = NextResponse.next({ request });
+          supabaseResponse = NextResponse.next({
+            request: {
+              headers: requestHeaders,
+            },
+          });
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           );
@@ -68,32 +125,6 @@ export async function updateSession(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
-
-  // Public routes — no auth required
-  const publicPaths = [
-    "/",
-    "/about",
-    "/for-brands",
-    "/for-creators",
-    "/partners",
-    "/request-invite",
-    "/terms",
-    "/privacy",
-    "/login",
-    "/dev/login",
-  ];
-
-  const isPublic =
-    publicPaths.includes(pathname) ||
-    pathname.startsWith("/auth/") ||
-    pathname.startsWith("/c/") ||
-    pathname.startsWith("/apply/");
-
-  if (isPublic) {
-    return supabaseResponse;
-  }
 
   // Not logged in → redirect to login
   if (!user) {

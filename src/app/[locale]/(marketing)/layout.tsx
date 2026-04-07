@@ -1,7 +1,7 @@
-import { MarketingHeader } from "@/components/marketing/header";
 import { MarketingFooter } from "@/components/marketing/footer";
+import { MarketingHeader } from "@/components/marketing/header";
 
-export default function MarketingLayout({
+export default function LocalizedMarketingLayout({
   children,
 }: {
   children: React.ReactNode;

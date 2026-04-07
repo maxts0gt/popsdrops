@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useTranslation } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { buildLocalizedMarketingPath } from "@/lib/i18n/public-locale";
 
 export function MarketingFooter() {
-  const { t } = useTranslation("ui.common");
+  const { t, locale } = useTranslation("ui.common");
 
   return (
     <footer className="border-t border-slate-200 bg-white">
@@ -13,7 +14,10 @@ export function MarketingFooter() {
         <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
           {/* Brand */}
           <div className="max-w-xs">
-            <Link href="/" className="text-lg font-extrabold tracking-tight text-slate-900">
+            <Link
+              href={buildLocalizedMarketingPath(locale, "/")}
+              className="text-lg font-extrabold tracking-tight text-slate-900"
+            >
               PopsDrops
             </Link>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
@@ -30,17 +34,26 @@ export function MarketingFooter() {
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t("footer.section.platform")}</p>
               <ul className="mt-4 space-y-3">
                 <li>
-                  <Link href="/for-brands" className="text-sm text-slate-600 transition-colors hover:text-slate-900">
+                  <Link
+                    href={buildLocalizedMarketingPath(locale, "/for-brands")}
+                    className="text-sm text-slate-600 transition-colors hover:text-slate-900"
+                  >
                     {t("nav.forBrands")}
                   </Link>
                 </li>
                 <li>
-                  <Link href="/for-creators" className="text-sm text-slate-600 transition-colors hover:text-slate-900">
+                  <Link
+                    href={buildLocalizedMarketingPath(locale, "/for-creators")}
+                    className="text-sm text-slate-600 transition-colors hover:text-slate-900"
+                  >
                     {t("nav.forCreators")}
                   </Link>
                 </li>
                 <li>
-                  <Link href="/partners" className="text-sm text-slate-600 transition-colors hover:text-slate-900">
+                  <Link
+                    href={buildLocalizedMarketingPath(locale, "/partners")}
+                    className="text-sm text-slate-600 transition-colors hover:text-slate-900"
+                  >
                     {t("nav.partners")}
                   </Link>
                 </li>
@@ -50,7 +63,10 @@ export function MarketingFooter() {
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t("footer.section.company")}</p>
               <ul className="mt-4 space-y-3">
                 <li>
-                  <Link href="/about" className="text-sm text-slate-600 transition-colors hover:text-slate-900">
+                  <Link
+                    href={buildLocalizedMarketingPath(locale, "/about")}
+                    className="text-sm text-slate-600 transition-colors hover:text-slate-900"
+                  >
                     {t("footer.about")}
                   </Link>
                 </li>

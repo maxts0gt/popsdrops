@@ -5,10 +5,24 @@ import {
   SUPPORTED_LOCALES,
   getLocaleDisplayName,
 } from "@/lib/i18n/strings";
+import { getPublicLocaleNavigationHref } from "@/lib/i18n/public-locale";
 import { Check, Globe } from "lucide-react";
-import { useState, useRef, useEffect, useMemo } from "react";
+import { Suspense, useState, useRef, useEffect, useMemo } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function LanguageSwitcher({
+  variant = "default",
+}: {
+  variant?: "default" | "minimal" | "dark" | "header";
+}) {
+  return (
+    <Suspense fallback={<LanguageSwitcherFallback variant={variant} />}>
+      <LanguageSwitcherInner variant={variant} />
+    </Suspense>
+  );
+}
+
+function LanguageSwitcherInner({
   variant = "default",
 }: {
   variant?: "default" | "minimal" | "dark" | "header";
@@ -16,6 +30,9 @@ export function LanguageSwitcher({
   const { locale, setLocale, isLoading } = useI18n();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Close on outside click
   useEffect(() => {
@@ -86,7 +103,17 @@ export function LanguageSwitcher({
       <button
         key={loc}
         onClick={() => {
+          const search = searchParams.toString();
+          const navigationHref = getPublicLocaleNavigationHref(
+            loc,
+            pathname,
+            search ? `?${search}` : "",
+          );
+
           setLocale(loc);
+          if (navigationHref && navigationHref !== `${pathname}${search ? `?${search}` : ""}`) {
+            router.push(navigationHref);
+          }
           setOpen(false);
         }}
         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
@@ -145,6 +172,38 @@ export function LanguageSwitcher({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function LanguageSwitcherFallback({
+  variant,
+}: {
+  variant: "default" | "minimal" | "dark" | "header";
+}) {
+  const { locale, isLoading } = useI18n();
+  const isHeader = variant === "header";
+
+  const buttonClass = {
+    default:
+      "flex items-center gap-2 rounded-lg border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all",
+    minimal:
+      "flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors",
+    dark:
+      "flex items-center gap-1.5 text-sm text-white/60 hover:text-white transition-colors",
+    header:
+      "flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors",
+  };
+
+  return (
+    <div className="relative">
+      <button className={buttonClass[variant]} aria-label="Change language" type="button">
+        <Globe className="h-4 w-4" />
+        {!isHeader && <span>{getLocaleDisplayName(locale)}</span>}
+        {isLoading && (
+          <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+        )}
+      </button>
     </div>
   );
 }

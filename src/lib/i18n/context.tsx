@@ -17,10 +17,20 @@ import {
   isRTLLocale,
   DEFAULT_LOCALE,
 } from "./strings";
-
-interface TranslationCache {
-  [locale: string]: Record<string, string>; // flat: all page keys merged per locale
-}
+import {
+  buildInitialTranslationCache,
+  chunkPageKeys,
+  getCachedTranslation,
+  hasCompleteTranslations,
+  mergeTranslationsIntoCache,
+  type TranslationCache,
+} from "./runtime";
+import {
+  beginLocaleFetch,
+  createLocaleFetchState,
+  finishLocaleFetch,
+  isLocaleFetchInFlight,
+} from "./fetch-state";
 
 interface I18nContextValue {
   locale: string;
@@ -30,9 +40,11 @@ interface I18nContextValue {
   t: (pageKey: PageKey, key: string, vars?: Record<string, string>) => string;
   preload: (...pageKeys: PageKey[]) => Promise<void>;
   isLoading: boolean;
+  isLocaleReady: boolean;
 }
 
 const I18nContext = createContext<I18nContextValue | null>(null);
+const ALL_PAGE_KEYS = Object.keys(strings) as PageKey[];
 
 function interpolate(text: string, vars?: Record<string, string>): string {
   if (!vars) return text;
@@ -43,19 +55,6 @@ function interpolate(text: string, vars?: Record<string, string>): string {
   return result;
 }
 
-function buildInitialCache(
-  initialTranslations?: Record<string, Record<string, string>>,
-): TranslationCache {
-  const initial: TranslationCache = {};
-  if (initialTranslations) {
-    for (const [loc, pageStrings] of Object.entries(initialTranslations)) {
-      if (!initial[loc]) initial[loc] = {};
-      Object.assign(initial[loc], pageStrings);
-    }
-  }
-  return initial;
-}
-
 export function I18nProvider({
   children,
   initialLocale,
@@ -63,22 +62,37 @@ export function I18nProvider({
 }: {
   children: ReactNode;
   initialLocale: string;
-  initialTranslations?: Record<string, Record<string, string>>;
+  initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
 }) {
+  const initialLocaleReady = hasCompleteTranslations(
+    initialLocale,
+    ALL_PAGE_KEYS,
+    initialTranslations,
+  );
   const [locale, setLocaleState] = useState(initialLocale);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(
+    initialLocale !== DEFAULT_LOCALE && !initialLocaleReady,
+  );
   const [cacheVersion, setCacheVersion] = useState(0);
 
-  // Flat cache: { "ko": { "headline": "...", "nav.home": "...", ... } }
+  // Nested cache: { "ko": { "marketing.landing": { "headline": "..." } } }
   // English strings are always available from source, never fetched.
-  const cache = useRef<TranslationCache>(buildInitialCache(initialTranslations));
+  const cache = useRef<TranslationCache>(
+    buildInitialTranslationCache(initialLocale, initialTranslations),
+  );
 
-  // Fetch state: tracks whether we've already fetched ALL keys for this locale
-  const fetchedLocales = useRef<Set<string>>(new Set());
-  const fetchingLocale = useRef<string | null>(null);
+  // Fetch state: tracks whether we've already fetched ALL keys for this locale.
+  // Partial server hydration should still trigger the client fetch path.
+  const fetchedLocales = useRef<Set<string>>(
+    hasCompleteTranslations(initialLocale, ALL_PAGE_KEYS, initialTranslations)
+      ? new Set([initialLocale])
+      : new Set(),
+  );
+  const fetchState = useRef(createLocaleFetchState());
 
   const isRTL = isRTLLocale(locale);
   const dir = isRTL ? "rtl" as const : "ltr" as const;
+  const isLocaleReady = locale === DEFAULT_LOCALE || fetchedLocales.current.has(locale);
 
   const setLocale = useCallback((newLocale: string) => {
     setLocaleState(newLocale);
@@ -95,24 +109,17 @@ export function I18nProvider({
   useEffect(() => {
     if (locale === DEFAULT_LOCALE) return;
     if (fetchedLocales.current.has(locale)) return;
-    if (fetchingLocale.current === locale) return;
+    if (isLocaleFetchInFlight(fetchState.current, locale)) return;
 
-    fetchingLocale.current = locale;
+    const nextFetch = beginLocaleFetch(fetchState.current, locale);
+    fetchState.current = nextFetch.state;
+    const requestId = nextFetch.requestId;
     setIsLoading(true);
 
-    const allPageKeys = Object.keys(strings) as PageKey[];
     const supabase = createClient();
+    const chunks = chunkPageKeys(ALL_PAGE_KEYS);
 
-    // Chunk page keys into groups of 5 to keep Gemini output within limits
-    const CHUNK_SIZE = 5;
-    const chunks: PageKey[][] = [];
-    for (let i = 0; i < allPageKeys.length; i += CHUNK_SIZE) {
-      chunks.push(allPageKeys.slice(i, i + CHUNK_SIZE));
-    }
-
-    if (!cache.current[locale]) cache.current[locale] = {};
-
-    // Fetch all chunks concurrently
+    // Fetch all chunks concurrently, then update UI once with all translations
     Promise.all(
       chunks.map(async (chunk) => {
         const pages: Record<string, Record<string, string>> = {};
@@ -127,26 +134,33 @@ export function I18nProvider({
         if (error) throw error;
 
         if (data?.pages) {
-          for (const [, pageData] of Object.entries(data.pages)) {
-            const pd = pageData as { strings: Record<string, string> };
-            if (pd.strings) {
-              Object.assign(cache.current[locale]!, pd.strings);
-            }
-          }
-          // Update after each chunk so UI progressively translates
-          setCacheVersion((n) => n + 1);
+          const chunkTranslations = Object.fromEntries(
+            Object.entries(data.pages).flatMap(([pageKey, pageData]) => {
+              const pd = pageData as { strings: Record<string, string> };
+              return pd.strings ? [[pageKey as PageKey, pd.strings]] : [];
+            }),
+          ) as Partial<Record<PageKey, Record<string, string>>>;
+
+          mergeTranslationsIntoCache(cache.current, locale, chunkTranslations);
         }
       }),
     )
       .then(() => {
         fetchedLocales.current.add(locale);
+        // Single re-render after ALL chunks are done — no progressive flicker
+        setCacheVersion((n) => n + 1);
       })
       .catch((err) => {
         console.error(`Batch translation failed for ${locale}`, err);
       })
       .finally(() => {
-        fetchingLocale.current = null;
-        setIsLoading(false);
+        const nextState = finishLocaleFetch(fetchState.current, requestId);
+        const didFinishActiveRequest = nextState !== fetchState.current;
+
+        fetchState.current = nextState;
+        if (didFinishActiveRequest) {
+          setIsLoading(false);
+        }
       });
   }, [locale]);
 
@@ -171,7 +185,7 @@ export function I18nProvider({
       }
 
       // Other locale — check cache
-      const translated = cache.current[locale]?.[key];
+      const translated = getCachedTranslation(cache.current, locale, pageKey, key);
       if (translated) {
         return interpolate(translated, vars);
       }
@@ -195,6 +209,7 @@ export function I18nProvider({
         t,
         preload,
         isLoading,
+        isLocaleReady,
       }}
     >
       {children}
@@ -213,7 +228,7 @@ export function useI18n() {
  * Translations are fetched by the provider — this hook just provides the t() accessor.
  */
 export function useTranslation(pageKey: PageKey) {
-  const { t, locale, isRTL, dir, isLoading } = useI18n();
+  const { t, locale, isRTL, dir, isLoading, isLocaleReady } = useI18n();
 
   return {
     t: (key: string, vars?: Record<string, string>) => t(pageKey, key, vars),
@@ -221,5 +236,6 @@ export function useTranslation(pageKey: PageKey) {
     isRTL,
     dir,
     isLoading,
+    isLocaleReady,
   };
 }
