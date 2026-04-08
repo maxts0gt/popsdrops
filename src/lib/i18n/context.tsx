@@ -18,7 +18,6 @@ import {
   DEFAULT_LOCALE,
 } from "./strings";
 import {
-  buildInitialTranslationCache,
   chunkPageKeys,
   getCachedTranslation,
   hasCompleteTranslations,
@@ -27,10 +26,17 @@ import {
 } from "./runtime";
 import {
   beginLocaleFetch,
-  createLocaleFetchState,
   finishLocaleFetch,
   isLocaleFetchInFlight,
 } from "./fetch-state";
+import {
+  getSessionFetchState,
+  getSessionTranslationCache,
+  hasFetchedLocaleInSession,
+  hydrateLocaleSession,
+  markFetchedLocaleInSession,
+  setSessionFetchState,
+} from "./session-cache";
 
 interface I18nContextValue {
   locale: string;
@@ -59,40 +65,42 @@ export function I18nProvider({
   children,
   initialLocale,
   initialTranslations,
+  runtimeTranslationEnabled = true,
 }: {
   children: ReactNode;
   initialLocale: string;
   initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
+  runtimeTranslationEnabled?: boolean;
 }) {
-  const initialLocaleReady = hasCompleteTranslations(
+  const initialLocaleReadyFromProps = hasCompleteTranslations(
     initialLocale,
     ALL_PAGE_KEYS,
     initialTranslations,
   );
+  hydrateLocaleSession(
+    initialLocale,
+    initialTranslations,
+    initialLocaleReadyFromProps,
+  );
+  const initialLocaleReady = hasFetchedLocaleInSession(initialLocale);
   const [locale, setLocaleState] = useState(initialLocale);
   const [isLoading, setIsLoading] = useState(
-    initialLocale !== DEFAULT_LOCALE && !initialLocaleReady,
+    runtimeTranslationEnabled &&
+      initialLocale !== DEFAULT_LOCALE &&
+      !initialLocaleReady,
   );
   const [cacheVersion, setCacheVersion] = useState(0);
 
   // Nested cache: { "ko": { "marketing.landing": { "headline": "..." } } }
   // English strings are always available from source, never fetched.
-  const cache = useRef<TranslationCache>(
-    buildInitialTranslationCache(initialLocale, initialTranslations),
-  );
-
-  // Fetch state: tracks whether we've already fetched ALL keys for this locale.
-  // Partial server hydration should still trigger the client fetch path.
-  const fetchedLocales = useRef<Set<string>>(
-    hasCompleteTranslations(initialLocale, ALL_PAGE_KEYS, initialTranslations)
-      ? new Set([initialLocale])
-      : new Set(),
-  );
-  const fetchState = useRef(createLocaleFetchState());
+  const cache = useRef<TranslationCache>(getSessionTranslationCache());
 
   const isRTL = isRTLLocale(locale);
   const dir = isRTL ? "rtl" as const : "ltr" as const;
-  const isLocaleReady = locale === DEFAULT_LOCALE || fetchedLocales.current.has(locale);
+  const isLocaleReady =
+    !runtimeTranslationEnabled ||
+    locale === DEFAULT_LOCALE ||
+    hasFetchedLocaleInSession(locale);
 
   const setLocale = useCallback((newLocale: string) => {
     setLocaleState(newLocale);
@@ -107,12 +115,15 @@ export function I18nProvider({
    * Only fires once per locale. All components share the result.
    */
   useEffect(() => {
+    if (!runtimeTranslationEnabled) return;
     if (locale === DEFAULT_LOCALE) return;
-    if (fetchedLocales.current.has(locale)) return;
-    if (isLocaleFetchInFlight(fetchState.current, locale)) return;
+    if (hasFetchedLocaleInSession(locale)) return;
 
-    const nextFetch = beginLocaleFetch(fetchState.current, locale);
-    fetchState.current = nextFetch.state;
+    const activeFetchState = getSessionFetchState();
+    if (isLocaleFetchInFlight(activeFetchState, locale)) return;
+
+    const nextFetch = beginLocaleFetch(activeFetchState, locale);
+    setSessionFetchState(nextFetch.state);
     const requestId = nextFetch.requestId;
     setIsLoading(true);
 
@@ -146,7 +157,7 @@ export function I18nProvider({
       }),
     )
       .then(() => {
-        fetchedLocales.current.add(locale);
+        markFetchedLocaleInSession(locale);
         // Single re-render after ALL chunks are done — no progressive flicker
         setCacheVersion((n) => n + 1);
       })
@@ -154,15 +165,16 @@ export function I18nProvider({
         console.error(`Batch translation failed for ${locale}`, err);
       })
       .finally(() => {
-        const nextState = finishLocaleFetch(fetchState.current, requestId);
-        const didFinishActiveRequest = nextState !== fetchState.current;
+        const currentFetchState = getSessionFetchState();
+        const nextState = finishLocaleFetch(currentFetchState, requestId);
+        const didFinishActiveRequest = nextState !== currentFetchState;
 
-        fetchState.current = nextState;
+        setSessionFetchState(nextState);
         if (didFinishActiveRequest) {
           setIsLoading(false);
         }
       });
-  }, [locale]);
+  }, [locale, runtimeTranslationEnabled]);
 
   /**
    * Preload is now a no-op — the provider fetches ALL keys on locale change.

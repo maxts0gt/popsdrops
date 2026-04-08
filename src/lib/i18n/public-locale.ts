@@ -1,4 +1,5 @@
 import { SUPPORTED_LOCALES } from "./strings";
+import { PUBLIC_TRANSLATION_LOCALES } from "./generated/public-translation-locales";
 
 export const DEFAULT_MARKETING_LOCALE = "en";
 
@@ -19,9 +20,10 @@ export const ROOT_PUBLIC_PATHS = new Set([
   "/dev/login",
 ]);
 
-// Anonymous public traffic is restricted to our curated marketing locales so
-// crawlers and agents cannot spray arbitrary cold locales into Gemini/DB.
-export const SUPPORTED_MARKETING_LOCALES = new Set(SUPPORTED_LOCALES);
+// We still recognize any known locale prefix in a public URL so stale links
+// can be redirected safely, but only bundled locales are offered publicly.
+const KNOWN_MARKETING_LOCALES = new Set(SUPPORTED_LOCALES);
+export const SUPPORTED_MARKETING_LOCALES = new Set(PUBLIC_TRANSLATION_LOCALES);
 const PUBLIC_PATH_PREFIXES = ["/auth/", "/c/", "/apply/"] as const;
 
 export type PublicLocaleRoutingDecision =
@@ -53,7 +55,7 @@ export function getMarketingLocaleFromPathname(
   const segments = normalized.split("/").filter(Boolean);
   const candidate = segments[0];
 
-  if (!candidate || !SUPPORTED_MARKETING_LOCALES.has(candidate)) {
+  if (!candidate || !KNOWN_MARKETING_LOCALES.has(candidate)) {
     return null;
   }
 
@@ -112,12 +114,30 @@ export function resolvePublicLocaleRouting(
   locale: string,
 ): PublicLocaleRoutingDecision | null {
   const normalized = normalizePathname(pathname);
+  const prefixedLocale = getMarketingLocaleFromPathname(normalized);
+  const safeLocale = getSafePublicLocale(locale);
+
+  if (prefixedLocale) {
+    const unprefixedPath = stripMarketingLocalePrefix(normalized);
+    const currentTarget = `${normalized}${search}`;
+    const localizedTarget = buildLocalizedMarketingPath(
+      safeLocale,
+      `${unprefixedPath}${search}`,
+    );
+
+    return localizedTarget === currentTarget
+      ? null
+      : {
+          action: "redirect",
+          destination: localizedTarget,
+          locale: safeLocale,
+        };
+  }
 
   if (!LOCALIZED_MARKETING_PATHS.has(normalized)) {
     return null;
   }
 
-  const safeLocale = getSafePublicLocale(locale);
   const currentTarget = `${normalized}${search}`;
   const localizedTarget = buildLocalizedMarketingPath(safeLocale, currentTarget);
 

@@ -4,6 +4,8 @@ import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY")!;
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const TRANSLATION_MODEL =
+  Deno.env.get("TRANSLATION_MODEL") ?? "gemini-3-flash-preview";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
@@ -96,7 +98,7 @@ STRINGS TO ADAPT (not translate — adapt naturally):
 ${JSON.stringify(strings, null, 2)}`;
 
   const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+    `https://generativelanguage.googleapis.com/v1beta/models/${TRANSLATION_MODEL}:generateContent?key=${GEMINI_API_KEY}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -235,7 +237,7 @@ Deno.serve(async (req) => {
             locale,
             strings: translatedStrings,
             source_hash: sourceHashes[pageKey],
-            generated_by: "gemini-2.0-flash",
+            generated_by: TRANSLATION_MODEL,
             updated_at: new Date().toISOString(),
           },
           { onConflict: "page_key,locale" },

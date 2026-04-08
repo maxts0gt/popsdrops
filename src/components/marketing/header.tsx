@@ -80,7 +80,7 @@ export function MarketingHeader() {
               {t(link.labelKey)}
             </Link>
           ))}
-          <LanguageSwitcher variant={isLight ? "header" : "dark"} />
+          <LanguageSwitcher variant={isLight ? "header" : "dark"} scope="public" />
           <Link
             href="/login"
             className={`text-sm font-medium transition-colors ${
@@ -140,7 +140,7 @@ export function MarketingHeader() {
               </Link>
               <div className="mt-4 border-t border-slate-200 pt-4">
                 <div className="px-3 py-2.5">
-                  <LanguageSwitcher variant="minimal" />
+                  <LanguageSwitcher variant="minimal" scope="public" />
                 </div>
                 <Link
                   href={buildLocalizedMarketingPath(locale, "/request-invite")}

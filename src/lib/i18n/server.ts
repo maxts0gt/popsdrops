@@ -1,56 +1,15 @@
 import "server-only";
-import { createClient as createSupabaseClient } from "@supabase/supabase-js";
-import { unstable_cache } from "next/cache";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { type PageKey, getSourceStrings, DEFAULT_LOCALE, strings } from "./strings";
-import { PUBLIC_TRANSLATION_SOURCE_VERSION } from "./cache-version";
+import { type PageKey, getSourceStrings, DEFAULT_LOCALE } from "./strings";
 import { chunkPageKeys } from "./runtime";
+import { resolvePublicBundleTranslations } from "./public-bundles";
 
 type TranslationRecord = {
   overrides: Record<string, string> | null;
   page_key: PageKey;
   strings: Record<string, string>;
 };
-
-const ALL_PAGE_KEYS = Object.keys(strings) as PageKey[];
-const PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS = 60;
-const publicTranslationClient = createSupabaseClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
-
-// Public marketing pages intentionally use a shorter cache window than the
-// signed-in path so newly generated locale pages converge quickly after the
-// first translation write, while still avoiding repeated DB reads.
-const loadPublicCachedTranslations = unstable_cache(
-  async (
-    locale: string,
-    sourceVersion: string,
-  ): Promise<Partial<Record<PageKey, Record<string, string>>>> => {
-    void sourceVersion;
-
-    if (locale === DEFAULT_LOCALE) {
-      return getSourceTranslations(ALL_PAGE_KEYS);
-    }
-
-    const { data: cachedRows } = await publicTranslationClient
-      .from("translations")
-      .select("page_key, strings, overrides")
-      .eq("locale", locale)
-      .in("page_key", ALL_PAGE_KEYS);
-
-    return mergeCachedRows(ALL_PAGE_KEYS, cachedRows as TranslationRecord[] | null);
-  },
-  ["public-translation-preload"],
-  { revalidate: PUBLIC_TRANSLATION_CACHE_REVALIDATE_SECONDS },
-);
 
 function getSourceTranslations(
   pageKeys: PageKey[],
@@ -210,10 +169,7 @@ export async function getPublicCachedTranslations(
 ): Promise<Partial<Record<PageKey, Record<string, string>>>> {
   const targetLocale = locale || (await getLocale());
 
-  return loadPublicCachedTranslations(
-    targetLocale,
-    PUBLIC_TRANSLATION_SOURCE_VERSION,
-  );
+  return resolvePublicBundleTranslations(targetLocale);
 }
 
 /**

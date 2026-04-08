@@ -8,15 +8,21 @@ export function LocalizedRouteShell({
   children,
   initialTranslations,
   locale,
+  runtimeTranslationEnabled = true,
 }: {
   children: ReactNode;
   initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
   locale: string;
+  runtimeTranslationEnabled?: boolean;
 }) {
   const isRTL = isRTLLocale(locale);
 
   return (
-    <LocaleProvider locale={locale} initialTranslations={initialTranslations}>
+    <LocaleProvider
+      locale={locale}
+      initialTranslations={initialTranslations}
+      runtimeTranslationEnabled={runtimeTranslationEnabled}
+    >
       {children}
       <Toaster position={isRTL ? "top-left" : "top-right"} richColors />
     </LocaleProvider>
