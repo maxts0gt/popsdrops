@@ -76,14 +76,9 @@ function TranslationPreparationOverlay() {
             {t("language.preparingHint", { language: languageName })}
           </p>
 
-          <div className="mt-8 space-y-3">
-            <div className="h-2 rounded-full bg-slate-100">
+          <div className="mt-10">
+            <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full w-2/3 animate-pulse rounded-full bg-slate-900" />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <div className="h-24 rounded-2xl border border-slate-200/80 bg-slate-50/80" />
-              <div className="h-24 rounded-2xl border border-slate-200/80 bg-slate-50/70" />
-              <div className="h-24 rounded-2xl border border-slate-200/80 bg-slate-50/60" />
             </div>
           </div>
         </div>
