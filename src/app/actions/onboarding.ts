@@ -45,7 +45,7 @@ export async function submitCreatorOnboarding(input: {
   // Create creator profile
   const { error: creatorError } = await supabase
     .from("creator_profiles")
-    .insert({
+    .upsert({
       profile_id: user.id,
       slug: input.slug,
       primary_market: input.primary_market,
@@ -53,7 +53,7 @@ export async function submitCreatorOnboarding(input: {
       rate_currency: "USD",
       markets: [input.primary_market],
       ...socialFields,
-    });
+    }, { onConflict: "profile_id" });
 
   if (creatorError) {
     if (creatorError.code === "23505") {
@@ -96,7 +96,7 @@ export async function submitBrandOnboarding(input: {
   // Create brand profile
   const { error: brandError } = await supabase
     .from("brand_profiles")
-    .insert({
+    .upsert({
       profile_id: user.id,
       company_name: input.company_name,
       industry: input.industry,
@@ -105,7 +105,7 @@ export async function submitBrandOnboarding(input: {
       website: input.website ?? null,
       contact_name: user.user_metadata?.full_name ?? "",
       contact_email: user.email!,
-    });
+    }, { onConflict: "profile_id" });
 
   if (brandError) throw new Error(brandError.message);
 

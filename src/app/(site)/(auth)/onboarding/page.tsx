@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Sparkles, Building2 } from "lucide-react";
+import { Sparkles, Building2, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/lib/i18n/context";
 
@@ -10,13 +12,27 @@ export default function OnboardingPage() {
   const searchParams = useSearchParams();
   const suggestedRole = searchParams.get("role");
   const { t } = useTranslation("auth.onboarding");
+  const [selectedRole, setSelectedRole] = useState<"creator" | "brand" | null>(
+    suggestedRole === "creator" || suggestedRole === "brand"
+      ? suggestedRole
+      : null
+  );
 
-  function selectRole(role: "creator" | "brand") {
-    router.push(`/onboarding/${role}`);
+  function continueToRole() {
+    if (!selectedRole) {
+      return;
+    }
+
+    router.push(`/onboarding/${selectedRole}`);
   }
 
   return (
     <div>
+      <div className="mb-6 flex gap-2">
+        <div className="h-1 flex-1 rounded-full bg-foreground" />
+        <div className="h-1 flex-1 rounded-full bg-border" />
+      </div>
+
       <div className="text-center">
         <h1 className="text-2xl font-bold text-foreground">
           {t("selectRole.title")}
@@ -28,10 +44,11 @@ export default function OnboardingPage() {
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2">
         <button
-          onClick={() => selectRole("creator")}
+          type="button"
+          onClick={() => setSelectedRole("creator")}
           className={cn(
             "group rounded-xl border-2 p-6 text-start transition-all hover:border-foreground hover:shadow-md",
-            suggestedRole === "creator"
+            selectedRole === "creator"
               ? "border-foreground bg-muted/50"
               : "border-border bg-card"
           )}
@@ -48,10 +65,11 @@ export default function OnboardingPage() {
         </button>
 
         <button
-          onClick={() => selectRole("brand")}
+          type="button"
+          onClick={() => setSelectedRole("brand")}
           className={cn(
             "group rounded-xl border-2 p-6 text-start transition-all hover:border-foreground hover:shadow-md",
-            suggestedRole === "brand"
+            selectedRole === "brand"
               ? "border-foreground bg-muted/50"
               : "border-border bg-card"
           )}
@@ -67,6 +85,15 @@ export default function OnboardingPage() {
           </p>
         </button>
       </div>
+
+      <Button
+        className="mt-6 w-full"
+        disabled={!selectedRole}
+        onClick={continueToRole}
+      >
+        {t("selectRole.continue")}
+        <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
+      </Button>
     </div>
   );
 }
