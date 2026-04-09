@@ -58,6 +58,44 @@ describe("creator onboarding social accounts", () => {
     });
   });
 
+  it("preserves supported YouTube profile URL shapes", () => {
+    expect(
+      normalizeCreatorSocialAccount({
+        platform: "youtube",
+        value: "https://youtube.com/@maxstudio",
+      }),
+    ).toEqual({
+      handle: "@maxstudio",
+      url: "https://youtube.com/@maxstudio",
+    });
+
+    expect(
+      normalizeCreatorSocialAccount({
+        platform: "youtube",
+        value: "https://youtube.com/channel/UC123456789",
+      }),
+    ).toEqual({
+      handle: "@UC123456789",
+      url: "https://youtube.com/channel/UC123456789",
+    });
+  });
+
+  it("rejects YouTube watch and video URLs", () => {
+    expect(() =>
+      normalizeCreatorSocialAccount({
+        platform: "youtube",
+        value: "https://youtube.com/watch?v=abc123",
+      }),
+    ).toThrow("Enter a valid YouTube profile link");
+
+    expect(() =>
+      normalizeCreatorSocialAccount({
+        platform: "youtube",
+        value: "https://youtu.be/abc123",
+      }),
+    ).toThrow("Enter a valid YouTube profile link");
+  });
+
   it("builds creator profile fields for every selected platform", () => {
     expect(
       buildCreatorOnboardingSocialFields(

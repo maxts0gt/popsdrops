@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useMemo } from "react";
 import { ShieldCheck } from "lucide-react";
 import {
   Sheet,
@@ -44,6 +44,29 @@ export function ConnectPlatformSheet({
     currentAccount?.followers ? String(currentAccount.followers) : ""
   );
   const [isPending, startTransition] = useTransition();
+  const normalizedInput = useMemo(() => {
+    if (!url.trim()) {
+      return { account: null, error: null as string | null };
+    }
+
+    try {
+      return {
+        account: normalizeCreatorSocialAccount({
+          platform,
+          value: url,
+        }),
+        error: null as string | null,
+      };
+    } catch (error) {
+      return {
+        account: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Enter a valid social handle or profile link",
+      };
+    }
+  }, [platform, url]);
 
   const onUrlChange = useCallback(
     (value: string) => {
@@ -55,9 +78,7 @@ export function ConnectPlatformSheet({
         });
         if (normalized.handle) setHandle(normalized.handle);
       } catch {
-        if (!value.trim()) {
-          setHandle("");
-        }
+        setHandle("");
       }
     },
     [platform]
@@ -69,19 +90,17 @@ export function ConnectPlatformSheet({
       return;
     }
 
-    let normalized;
-    try {
-      normalized = normalizeCreatorSocialAccount({
-        platform,
-        value: url,
-      });
-    } catch {
+    if (!normalizedInput.account) {
       return;
     }
 
     const account: SocialAccount = {
-      url: normalized.url,
-      handle: handle.trim().startsWith("@") ? handle.trim() : normalized.handle,
+      url: normalizedInput.account.url,
+      handle: handle.trim()
+        ? handle.trim().startsWith("@")
+          ? handle.trim()
+          : `@${handle.trim().replace(/^@/, "")}`
+        : normalizedInput.account.handle,
       followers: followerCount,
       verified: currentAccount?.verified || false,
     };
@@ -102,7 +121,7 @@ export function ConnectPlatformSheet({
   }
 
   const isValid =
-    url.trim().length > 0 &&
+    Boolean(normalizedInput.account) &&
     handle.trim().length > 0 &&
     parseInt(followers, 10) > 0;
 
@@ -170,6 +189,9 @@ export function ConnectPlatformSheet({
               placeholder="@yourhandle"
               autoFocus
             />
+            {normalizedInput.error && (
+              <p className="mt-1 text-[11px] text-red-500">{normalizedInput.error}</p>
+            )}
           </div>
 
           <div>

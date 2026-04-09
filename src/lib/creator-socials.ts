@@ -16,6 +16,11 @@ interface CreatorOnboardingSocialFields {
   facebook?: SocialAccount;
 }
 
+interface NormalizedSocialAccount {
+  handle: string;
+  url: string;
+}
+
 const PLATFORM_HOSTS: Record<Platform, string[]> = {
   tiktok: ["tiktok.com", "www.tiktok.com"],
   instagram: ["instagram.com", "www.instagram.com"],
@@ -69,58 +74,6 @@ function normalizeRawIdentifier(value: string) {
     .trim();
 }
 
-function extractIdentifierFromUrl(platform: Platform, url: URL): string {
-  const hostname = url.hostname.toLowerCase();
-
-  if (!PLATFORM_HOSTS[platform].includes(hostname)) {
-    throw new Error("Profile URL does not match the selected platform");
-  }
-
-  const segments = url.pathname
-    .split("/")
-    .map((segment) => segment.trim())
-    .filter(Boolean);
-
-  if (segments.length === 0) {
-    return "";
-  }
-
-  if (platform === "snapchat") {
-    if (segments[0]?.toLowerCase() === "add") {
-      return segments[1]?.replace(/^@/, "") ?? "";
-    }
-
-    return segments[0].replace(/^@/, "");
-  }
-
-  if (platform === "youtube") {
-    const [first, second] = segments;
-
-    if (first?.startsWith("@")) {
-      return first.slice(1);
-    }
-
-    if (["channel", "c", "user", "handle"].includes(first?.toLowerCase() ?? "")) {
-      return second?.replace(/^@/, "") ?? "";
-    }
-
-    return first?.replace(/^@/, "") ?? "";
-  }
-
-  return segments[0]?.replace(/^@/, "") ?? "";
-}
-
-function sanitizeIdentifier(identifier: string) {
-  return identifier
-    .replace(/^@/, "")
-    .replace(/^add\//i, "")
-    .replace(/^channel\//i, "")
-    .replace(/^c\//i, "")
-    .replace(/^user\//i, "")
-    .replace(/^handle\//i, "")
-    .trim();
-}
-
 function buildCanonicalProfileUrl(platform: Platform, identifier: string) {
   if (platform === "snapchat") {
     return `${PLATFORM_PROFILE_BASE[platform]}/${identifier}`;
@@ -137,6 +90,91 @@ function buildCanonicalProfileUrl(platform: Platform, identifier: string) {
   return `${PLATFORM_PROFILE_BASE[platform]}/${identifier}`;
 }
 
+function extractNormalizedFromUrl(
+  platform: Platform,
+  url: URL,
+): NormalizedSocialAccount {
+  const hostname = url.hostname.toLowerCase();
+
+  if (!PLATFORM_HOSTS[platform].includes(hostname)) {
+    throw new Error("Profile URL does not match the selected platform");
+  }
+
+  const segments = url.pathname
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (segments.length === 0) {
+    throw new Error("Enter a valid social handle or profile link");
+  }
+
+  if (platform === "snapchat") {
+    const identifier =
+      segments[0]?.toLowerCase() === "add"
+        ? segments[1]?.replace(/^@/, "") ?? ""
+        : segments[0].replace(/^@/, "");
+
+    if (segments[0]?.toLowerCase() === "add") {
+      return {
+        handle: `@${identifier}`,
+        url: `${PLATFORM_PROFILE_BASE[platform]}/${identifier}`,
+      };
+    }
+
+    return {
+      handle: `@${identifier}`,
+      url: buildCanonicalProfileUrl(platform, identifier),
+    };
+  }
+
+  if (platform === "youtube") {
+    const [first, second] = segments;
+    const normalizedFirst = first?.toLowerCase() ?? "";
+
+    if (first?.startsWith("@")) {
+      const identifier = first.slice(1);
+      return {
+        handle: `@${identifier}`,
+        url: `https://youtube.com/${first}`,
+      };
+    }
+
+    if (["channel", "c", "user", "handle"].includes(normalizedFirst)) {
+      const identifier = second?.replace(/^@/, "") ?? "";
+
+      if (!identifier) {
+        throw new Error("Enter a valid YouTube profile link");
+      }
+
+      return {
+        handle: `@${identifier}`,
+        url: `https://youtube.com/${normalizedFirst}/${identifier}`,
+      };
+    }
+
+    throw new Error("Enter a valid YouTube profile link");
+  }
+
+  const identifier = segments[0]?.replace(/^@/, "") ?? "";
+
+  return {
+    handle: `@${identifier}`,
+    url: buildCanonicalProfileUrl(platform, identifier),
+  };
+}
+
+function sanitizeIdentifier(identifier: string) {
+  return identifier
+    .replace(/^@/, "")
+    .replace(/^add\//i, "")
+    .replace(/^channel\//i, "")
+    .replace(/^c\//i, "")
+    .replace(/^user\//i, "")
+    .replace(/^handle\//i, "")
+    .trim();
+}
+
 export function normalizeCreatorSocialAccount(
   input: CreatorSocialAccountInput,
 ): Pick<SocialAccount, "url" | "handle"> {
@@ -147,16 +185,22 @@ export function normalizeCreatorSocialAccount(
   }
 
   const parsed = tryParseProfileUrl(trimmed);
-  const fromUrl = parsed ? extractIdentifierFromUrl(input.platform, parsed) : "";
-  const identifier = sanitizeIdentifier(fromUrl || normalizeRawIdentifier(trimmed));
+  const fromUrl = parsed ? extractNormalizedFromUrl(input.platform, parsed) : null;
+  const identifier = sanitizeIdentifier(
+    fromUrl?.handle || normalizeRawIdentifier(trimmed),
+  );
 
   if (!identifier) {
-    throw new Error("Enter a valid social handle or profile link");
+    throw new Error(
+      input.platform === "youtube"
+        ? "Enter a valid YouTube profile link"
+        : "Enter a valid social handle or profile link",
+    );
   }
 
   return {
     handle: `@${identifier}`,
-    url: buildCanonicalProfileUrl(input.platform, identifier),
+    url: fromUrl?.url || buildCanonicalProfileUrl(input.platform, identifier),
   };
 }
 
