@@ -3,13 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { buildCreatorOnboardingSocialFields } from "@/lib/creator-socials";
+import type { Platform } from "@/lib/constants";
 import { getUser } from "./auth";
 
 export async function submitCreatorOnboarding(input: {
   full_name: string;
   primary_market: string;
-  social_url: string;
-  social_platform: string;
+  social_accounts: Array<{
+    platform: Platform;
+    value: string;
+  }>;
   niches: string[];
   base_rate: number;
   slug: string;
@@ -17,28 +21,26 @@ export async function submitCreatorOnboarding(input: {
   const user = await getUser();
   const supabase = await createClient();
 
-  // Extract handle from social URL
-  const handle = extractHandle(input.social_url, input.social_platform);
-
   // Update base profile
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .update({
+  const { error: profileError } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
       full_name: input.full_name,
+      email: user.email!,
+      avatar_url: user.user_metadata?.avatar_url ?? null,
       role: "creator",
+      status: "pending",
       onboarding_completed: true,
-    })
-    .eq("id", user.id);
+    },
+    { onConflict: "id" }
+  );
 
   if (profileError) throw new Error(profileError.message);
 
-  // Build social account data
-  const socialData = {
-    url: input.social_url,
-    handle,
-    followers: 0,
-    verified: false,
-  };
+  const socialFields = buildCreatorOnboardingSocialFields(
+    input.social_accounts,
+    input.base_rate,
+  );
 
   // Create creator profile
   const { error: creatorError } = await supabase
@@ -48,15 +50,21 @@ export async function submitCreatorOnboarding(input: {
       slug: input.slug,
       primary_market: input.primary_market,
       niches: input.niches,
-      rate_card: { [input.social_platform]: { video: input.base_rate } },
+      rate_currency: "USD",
       markets: [input.primary_market],
-      [input.social_platform]: socialData,
+      ...socialFields,
     });
 
-  if (creatorError) throw new Error(creatorError.message);
+  if (creatorError) {
+    if (creatorError.code === "23505") {
+      throw new Error("SLUG_TAKEN");
+    }
+
+    throw new Error(creatorError.message);
+  }
 
   revalidatePath("/", "layout");
-  redirect("/pending-approval");
+  return { success: true as const };
 }
 
 export async function submitBrandOnboarding(input: {
@@ -70,13 +78,18 @@ export async function submitBrandOnboarding(input: {
   const supabase = await createClient();
 
   // Update base profile
-  const { error: profileError } = await supabase
-    .from("profiles")
-    .update({
+  const { error: profileError } = await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      full_name: user.user_metadata?.full_name ?? input.company_name,
+      email: user.email!,
+      avatar_url: user.user_metadata?.avatar_url ?? null,
       role: "brand",
+      status: "pending",
       onboarding_completed: true,
-    })
-    .eq("id", user.id);
+    },
+    { onConflict: "id" }
+  );
 
   if (profileError) throw new Error(profileError.message);
 
@@ -90,12 +103,14 @@ export async function submitBrandOnboarding(input: {
       target_markets: [input.primary_market],
       description: input.description ?? null,
       website: input.website ?? null,
+      contact_name: user.user_metadata?.full_name ?? "",
+      contact_email: user.email!,
     });
 
   if (brandError) throw new Error(brandError.message);
 
   revalidatePath("/", "layout");
-  redirect("/pending-approval");
+  return { success: true as const };
 }
 
 export async function selectRole(role: "creator" | "brand") {
@@ -117,17 +132,4 @@ export async function selectRole(role: "creator" | "brand") {
 
   revalidatePath("/", "layout");
   redirect(`/onboarding/${role}`);
-}
-
-function extractHandle(url: string, platform: string): string {
-  void platform;
-  try {
-    const parsed = new URL(url);
-    const path = parsed.pathname.replace(/\/$/, "");
-    const segments = path.split("/").filter(Boolean);
-    const last = segments[segments.length - 1] ?? "";
-    return last.startsWith("@") ? last : `@${last}`;
-  } catch {
-    return url;
-  }
 }

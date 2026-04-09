@@ -17,37 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "@/components/platform-icons";
 import { PLATFORM_LABELS, OAUTH_PLATFORMS, type Platform } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
+import { normalizeCreatorSocialAccount } from "@/lib/creator-socials";
 import { updateCreatorProfile } from "@/app/actions/profile";
 import type { SocialAccount } from "@/types/database";
-
-// URL patterns for validation hints
-const URL_PATTERNS: Record<Platform, string> = {
-  tiktok: "https://tiktok.com/@username",
-  instagram: "https://instagram.com/username",
-  snapchat: "https://snapchat.com/add/username",
-  youtube: "https://youtube.com/@username",
-  facebook: "https://facebook.com/username",
-};
-
-// Attempt to extract handle from URL
-function extractHandle(platform: Platform, url: string): string {
-  try {
-    const u = new URL(url);
-    const path = u.pathname.replace(/^\//, "").replace(/\/$/, "");
-    // Remove common prefixes
-    const cleaned = path
-      .replace(/^@/, "")
-      .replace(/^add\//, "")
-      .replace(/^c\//, "")
-      .replace(/^channel\//, "");
-    // Return just the first segment (username)
-    const segment = cleaned.split("/")[0];
-    return segment ? `@${segment}` : "";
-  } catch {
-    // Not a URL — treat as handle
-    return url.startsWith("@") ? url : url ? `@${url}` : "";
-  }
-}
 
 interface ConnectPlatformSheetProps {
   open: boolean;
@@ -76,8 +48,17 @@ export function ConnectPlatformSheet({
   const onUrlChange = useCallback(
     (value: string) => {
       setUrl(value);
-      const extracted = extractHandle(platform, value);
-      if (extracted) setHandle(extracted);
+      try {
+        const normalized = normalizeCreatorSocialAccount({
+          platform,
+          value,
+        });
+        if (normalized.handle) setHandle(normalized.handle);
+      } catch {
+        if (!value.trim()) {
+          setHandle("");
+        }
+      }
     },
     [platform]
   );
@@ -88,9 +69,19 @@ export function ConnectPlatformSheet({
       return;
     }
 
+    let normalized;
+    try {
+      normalized = normalizeCreatorSocialAccount({
+        platform,
+        value: url,
+      });
+    } catch {
+      return;
+    }
+
     const account: SocialAccount = {
-      url: url.trim(),
-      handle: handle.trim(),
+      url: normalized.url,
+      handle: handle.trim().startsWith("@") ? handle.trim() : normalized.handle,
       followers: followerCount,
       verified: currentAccount?.verified || false,
     };
@@ -173,10 +164,10 @@ export function ConnectPlatformSheet({
             </Label>
             <Input
               id="platform-url"
-              type="url"
+              type="text"
               value={url}
               onChange={(e) => onUrlChange(e.target.value)}
-              placeholder={URL_PATTERNS[platform]}
+              placeholder="@yourhandle"
               autoFocus
             />
           </div>

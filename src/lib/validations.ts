@@ -8,6 +8,10 @@ import {
   NICHES,
   PLATFORMS,
 } from "./constants";
+import {
+  hasDuplicatePlatforms,
+  normalizeCreatorSocialAccount,
+} from "./creator-socials";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -31,9 +35,6 @@ const uuidLike = z
     "Invalid ID format",
   );
 
-const socialUrlRegex =
-  /^https?:\/\/(www\.)?(tiktok\.com|instagram\.com|snapchat\.com|youtube\.com|facebook\.com)\/.+$/i;
-
 // ---------------------------------------------------------------------------
 // 1. Login
 // ---------------------------------------------------------------------------
@@ -48,20 +49,43 @@ export type LoginInput = z.infer<typeof loginSchema>;
 // 2. Creator Onboarding (two steps combined)
 // ---------------------------------------------------------------------------
 
+const creatorSocialAccountSchema = z
+  .object({
+    platform: platformEnum,
+    value: z
+      .string()
+      .trim()
+      .min(1, "Enter a social handle or profile link")
+      .max(200, "Social handle or profile link is too long"),
+  })
+  .superRefine((account, ctx) => {
+    try {
+      normalizeCreatorSocialAccount(account);
+    } catch (error) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["value"],
+        message:
+          error instanceof Error
+            ? error.message
+            : "Enter a valid social handle or profile link",
+      });
+    }
+  });
+
 export const creatorOnboardingStep1Schema = z.object({
   full_name: z
     .string()
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be 100 characters or less"),
   primary_market: marketEnum,
-  social_url: z
-    .string()
-    .url("Enter a valid URL")
-    .regex(
-      socialUrlRegex,
-      "URL must be from TikTok, Instagram, Snapchat, YouTube, or Facebook",
-    ),
-  social_platform: platformEnum,
+  social_accounts: z
+    .array(creatorSocialAccountSchema)
+    .min(1, "Add at least 1 social account")
+    .max(PLATFORMS.length, `Add up to ${PLATFORMS.length} social accounts`)
+    .refine((accounts) => !hasDuplicatePlatforms(accounts), {
+      message: "Each platform can only be added once",
+    }),
 });
 
 export const creatorOnboardingStep2Schema = z.object({

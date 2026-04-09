@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execFileSync } from "node:child_process";
+import { createRequire } from "node:module";
 import ts from "typescript";
 import vm from "node:vm";
 import { createClient } from "@supabase/supabase-js";

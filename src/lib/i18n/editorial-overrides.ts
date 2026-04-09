@@ -41,11 +41,20 @@ export const WEB_EDITORIAL_OVERRIDES: Partial<
     "ui.common": {
       "nav.discover": "探す",
     },
+    "onboarding.creator": {
+      "field.addSocial.hint":
+        "普段投稿しているすべてのプラットフォームを追加してください。ユーザー名またはプロフィールリンクを貼り付けてください。",
+      "action.addPlatform": "別のプラットフォームを追加",
+    },
     "brand.home": {
       "greeting": "{name}様、お戻りいただきありがとうございます",
     },
     "brand.creators": {
       "title": "クリエイター一覧",
+    },
+    "creator.profile": {
+      "connectSheet.connectDescription":
+        "ユーザー名またはプロフィールリンクとフォロワー数を入力してください。",
     },
   },
   kk: {
@@ -58,11 +67,18 @@ export const WEB_EDITORIAL_OVERRIDES: Partial<
       "nav.discover": "둘러보기",
       "language.preparingTitle": "PopsDrops를 {language}로 전환하는 중입니다",
     },
+    "onboarding.creator": {
+      "action.addPlatform": "다른 플랫폼 추가",
+    },
     "brand.home": {
       "greeting": "다시 오신 것을 환영합니다, {name}님",
     },
     "brand.creators": {
       "title": "크리에이터 디렉터리",
+    },
+    "creator.profile": {
+      "connectSheet.connectDescription":
+        "계정명 또는 프로필 링크와 팔로워 수를 입력하세요.",
     },
   },
   nl: {
