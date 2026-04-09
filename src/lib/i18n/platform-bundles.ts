@@ -1,4 +1,8 @@
 import { getSourceStrings } from "./strings";
+import {
+  WEB_EDITORIAL_OVERRIDES,
+  applyWebEditorialOverrides,
+} from "./editorial-overrides";
 import { PLATFORM_BUNDLE_PAGE_KEYS } from "./platform-bundle-config";
 import { PLATFORM_TRANSLATION_LOCALES } from "./generated/platform-translation-locales";
 import {
@@ -23,11 +27,12 @@ export function resolvePlatformBundleTranslations(
   locale: string,
   bundles: Partial<Record<string, PlatformTranslationBundle>> = PLATFORM_TRANSLATION_BUNDLES,
 ): PlatformTranslationBundle {
-  if (locale === "en") {
-    return buildPlatformBundleFallback();
-  }
+  const resolved =
+    locale === "en"
+      ? buildPlatformBundleFallback()
+      : bundles[locale] ?? buildPlatformBundleFallback();
 
-  return bundles[locale] ?? buildPlatformBundleFallback();
+  return applyWebEditorialOverrides(resolved, WEB_EDITORIAL_OVERRIDES[locale]);
 }
 
 export function hasPlatformBundle(locale: string): boolean {

@@ -1,4 +1,8 @@
 import { strings } from "./strings";
+import {
+  MOBILE_EDITORIAL_OVERRIDES,
+  applyMobileEditorialOverrides,
+} from "./editorial-overrides";
 import { MOBILE_TRANSLATION_LOCALES } from "./generated/mobile-translation-locales";
 import {
   MOBILE_TRANSLATION_BUNDLES,
@@ -22,11 +26,13 @@ export function resolveMobileBundleTranslations(
   locale: string,
   bundles: Partial<Record<string, MobileTranslationBundle>> = MOBILE_TRANSLATION_BUNDLES,
 ): MobileTranslationBundle {
-  if (locale === "en") {
-    return buildMobileEnglishSource();
-  }
+  const resolved =
+    locale === "en" ? buildMobileEnglishSource() : bundles[locale] ?? buildMobileEnglishSource();
 
-  return bundles[locale] ?? buildMobileEnglishSource();
+  return applyMobileEditorialOverrides(
+    resolved,
+    MOBILE_EDITORIAL_OVERRIDES[locale],
+  );
 }
 
 export function hasMobileBundle(locale: string): boolean {

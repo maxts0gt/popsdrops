@@ -21,6 +21,20 @@ describe("platform translation bundles", () => {
     expect(bundled["brand.home"]?.title).toBe("브랜드 홈");
   });
 
+  it("applies editorial overrides for premium signed-in copy", () => {
+    const bundled = resolvePlatformBundleTranslations("ko", {
+      ko: {
+        "brand.home": {
+          "greeting": "OLD",
+        },
+      } as Partial<Record<PageKey, Record<string, string>>>,
+    });
+
+    expect(bundled["brand.home"]?.greeting).toBe(
+      "다시 오신 것을 환영합니다, {name}님",
+    );
+  });
+
   it("falls back to english source copy when a platform locale bundle is missing", () => {
     const fallback = resolvePlatformBundleTranslations("sv", {});
 

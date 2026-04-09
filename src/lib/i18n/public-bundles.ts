@@ -1,4 +1,8 @@
 import { getSourceStrings } from "./strings";
+import {
+  WEB_EDITORIAL_OVERRIDES,
+  applyWebEditorialOverrides,
+} from "./editorial-overrides";
 import { PUBLIC_BUNDLE_PAGE_KEYS } from "./public-bundle-config";
 import { PUBLIC_TRANSLATION_LOCALES } from "./generated/public-translation-locales";
 import {
@@ -23,11 +27,10 @@ export function resolvePublicBundleTranslations(
   locale: string,
   bundles: Partial<Record<string, PublicTranslationBundle>> = PUBLIC_TRANSLATION_BUNDLES,
 ): PublicTranslationBundle {
-  if (locale === "en") {
-    return buildPublicBundleFallback();
-  }
+  const resolved =
+    locale === "en" ? buildPublicBundleFallback() : bundles[locale] ?? buildPublicBundleFallback();
 
-  return bundles[locale] ?? buildPublicBundleFallback();
+  return applyWebEditorialOverrides(resolved, WEB_EDITORIAL_OVERRIDES[locale]);
 }
 
 export function hasPublicBundle(locale: string): boolean {

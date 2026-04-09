@@ -20,6 +20,20 @@ describe("public translation bundles", () => {
     expect(bundled["ui.common"]?.["nav.login"]).toBe("로그인");
   });
 
+  it("applies editorial overrides for premium public copy", () => {
+    const bundled = resolvePublicBundleTranslations("ko", {
+      ko: {
+        "ui.common": {
+          "language.preparingTitle": "OLD",
+        },
+      } as Partial<Record<PageKey, Record<string, string>>>,
+    });
+
+    expect(bundled["ui.common"]?.["language.preparingTitle"]).toBe(
+      "PopsDrops를 {language}로 전환하는 중입니다",
+    );
+  });
+
   it("falls back to english source copy when a public locale bundle is missing", () => {
     const fallback = resolvePublicBundleTranslations("sv", {});
 

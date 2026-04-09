@@ -17,6 +17,21 @@ describe("mobile translation bundles", () => {
     expect(bundled["tab.home"]).toBe("홈");
   });
 
+  it("applies editorial overrides for high-visibility mobile copy", () => {
+    const bundled = resolveMobileBundleTranslations("zh", {
+      zh: {
+        "preferences.languageDetail":
+          "选择此设备的界面语言。你可以随时切换回 English。",
+        "discover.search": "搜索合作…",
+      },
+    });
+
+    expect(bundled["preferences.languageDetail"]).toBe(
+      "选择此设备的界面语言。你可以随时切换回英语。",
+    );
+    expect(bundled["discover.search"]).toBe("搜索营销活动…");
+  });
+
   it("falls back to english source copy when a mobile locale bundle is missing", () => {
     const fallback = resolveMobileBundleTranslations("sv", {});
 
