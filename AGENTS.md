@@ -12,7 +12,7 @@ Global cross-border influencer marketing platform connecting brands with vetted 
 - **Database/Auth/Storage/Realtime:** Supabase (Postgres + Auth + Storage + Realtime + pgvector + pg_trgm)
 - **AI:** Vercel AI SDK (`ai` package) + Gemini API (translation, recommendations) + Cohere embed-v3 (multilingual embeddings for semantic search/matching)
 - **Email:** AWS SES + React Email templates — SPF/DKIM/DMARC/SNS bounce handling configured
-- **Translation:** AI-first i18n — Gemini Flash via Supabase Edge Function (`translate`), cached in `translations` table. No static locale files. Accepts ANY language.
+- **Translation:** Static bundled UI i18n — 30 curated locales generated offline with Gemini and checked into the repo. Runtime AI translation remains only for dynamic content like briefs.
 - **Search:** Hybrid — tsvector (keyword) + pg_trgm (fuzzy) + pgvector with HNSW (semantic)
 - **DNS:** Cloudflare (DNS only, no proxy — domain registered there)
 - **Analytics:** Vercel Analytics (free)
@@ -206,23 +206,20 @@ Draft → Recruiting → In Progress → Publishing → Monitoring → Completed
 
 New → Rising (3+ campaigns, 4.0+ rating) → Established (10+, 4.5+) → Top (25+, 4.7+, manual review). MVP ships New + Rising only.
 
-## i18n — Any Language, Zero Config
+## i18n — Static, Premium, Fast
 
-The platform accepts ANY language. Not just our 30 curated locales — if someone's browser is set to Amharic, we translate to Amharic. Gemini handles any language, `Intl.DisplayNames` provides native names, cached forever.
+The platform ships with 30 reviewed UI locales bundled into the web and mobile apps. Language switching is instant and does not call Gemini or the database at runtime for fixed interface copy.
 
 ### How it works
 
-English source strings live in `src/lib/i18n/strings.ts` organized by page key. When a non-English user visits, the Supabase Edge Function `translate` calls Gemini Flash to generate natural translations, caches them in the `translations` table, and serves from cache on subsequent requests.
+English source strings live in `src/lib/i18n/strings.ts` organized by page key. Locale bundles are generated offline into checked-in JSON artifacts for public web, signed-in web, and mobile. Route shells seed those bundles at render time, so UI copy is served directly from the app bundle.
 
-**Batch-only mode:** ALL page keys merged into ONE Gemini call per locale. Ensures consistent terminology. No single-page mode.
+**Runtime behavior:**
+1. Build-time bundle generation — Gemini generates locale JSON offline
+2. App bundle / prerendered HTML — web serves bundled copy directly
+3. In-memory UI state — switching locales is just a bundle swap, no network translation call
 
-**Cache layers (4 tiers):**
-1. Gemini generation (~2-3s) — first visitor in a new language
-2. DB cache (~300ms) — any subsequent visitor, same language
-3. Vercel edge cache (instant) — via `use cache` in Server Components
-4. Browser in-memory cache (0ms) — same session
-
-**Locale detection:** Cookie → Accept-Language header → English default. Any valid ISO 639-1 code accepted (2-3 lowercase letters). No whitelist.
+**Locale detection:** Cookie → profile preference → Accept-Language header → English default. Unsupported locales fall back to English; UI does not generate new locales on demand.
 
 **RTL detection:** Known RTL set (ar, he, fa, ur, ps, sd, yi, dv, ku, ckb, ug) + `Intl.Locale.getTextInfo()` for dynamic detection.
 
@@ -244,27 +241,26 @@ English source strings live in `src/lib/i18n/strings.ts` organized by page key. 
 - **Pinned (top):** Current locale + English (always)
 - **Divider**
 - **All languages:** 30 curated locales sorted alphabetically by native display name
-- Unknown locales from browser detection appear pinned at top via `Intl.DisplayNames`
 
 ### 30 Curated Locales
 
 en, ar, bn, de, el, es, fa, fr, he, hi, id, it, ja, kk, ko, ms, nl, pl, pt, ro, ru, sv, sw, th, tl, tr, uk, uz, vi, zh
 
-Plus ANY additional locale detected from user's browser — dynamically supported via Gemini.
-
 ### i18n File Map
 
 - `src/lib/i18n/strings.ts` — English source strings, `LOCALE_DISPLAY_NAMES`, `getLocaleDisplayName()`, `isRTLLocale()`
 - `src/lib/i18n/context.tsx` — `I18nProvider`, `useI18n()`, `useTranslation()` hooks
-- `src/lib/i18n/server.ts` — `getLocale()`, `getDetectedLocales()`, `getTranslations()`
+- `src/lib/i18n/server.ts` — `getLocale()`, `getDetectedLocales()`, bundle resolvers
+- `src/lib/i18n/generated/public-bundles/*` — public marketing locale bundles
+- `src/lib/i18n/generated/platform-bundles/*` — signed-in web locale bundles
+- `mobile/lib/generated/mobile-bundles/*` — mobile locale bundles
 - `src/lib/supabase/middleware.ts` — Locale detection from cookie → Accept-Language
 - `src/components/language-switcher.tsx` — Globe dropdown (default, minimal, dark, header variants)
-- `supabase/functions/translate/index.ts` — Edge Function: Gemini Flash, glossary, DB caching
+- `scripts/generate-public-translation-bundles.mjs` — regenerate public locale bundles
+- `scripts/generate-platform-translation-bundles.mjs` — regenerate signed-in web locale bundles
+- `scripts/generate-mobile-translation-bundles.mjs` — regenerate mobile locale bundles
 
 ## Backend Architecture
-
-### Supabase Edge Functions (Deno)
-- `translate` — AI-first i18n: Gemini Flash, any locale, glossary + DB caching
 
 ### Vercel Server Actions (Node.js)
 - `translate-brief` — Gemini API on campaign publish

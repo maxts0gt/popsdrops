@@ -17,7 +17,7 @@ describe("buildLocaleBootstrapPlan", () => {
     });
   });
 
-  it("boots immediately for non-english locales and loads translations in the background", () => {
+  it("boots immediately for non-english bundled locales", () => {
     expect(
       buildLocaleBootstrapPlan({
         storedLocale: "ar",

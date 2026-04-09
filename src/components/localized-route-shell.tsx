@@ -16,7 +16,10 @@ export function LocalizedRouteShell({
   const isRTL = isRTLLocale(locale);
 
   return (
-    <LocaleProvider locale={locale} initialTranslations={initialTranslations}>
+    <LocaleProvider
+      locale={locale}
+      initialTranslations={initialTranslations}
+    >
       {children}
       <Toaster position={isRTL ? "top-left" : "top-right"} richColors />
     </LocaleProvider>

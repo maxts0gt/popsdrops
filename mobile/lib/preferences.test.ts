@@ -23,7 +23,7 @@ describe("resolvePreferredLocale", () => {
         profileLocale: "am",
         deviceLocales: ["ko"],
       }),
-    ).toBe("am");
+    ).toBe("ko");
   });
 
   it("falls back to the first valid device locale and then english", () => {
@@ -48,37 +48,35 @@ describe("resolvePreferredLocale", () => {
 describe("buildLanguagePickerModel", () => {
   it("pins the current locale and english, then suggests device locales", () => {
     const model = buildLanguagePickerModel({
-      currentLocale: "am",
-      deviceLocales: ["am", "fr", "ko"],
+      currentLocale: "fr",
+      deviceLocales: ["fr", "ko", "am"],
       query: "",
     });
 
-    expect(model.pinned.map((option) => option.code)).toEqual(["am", "en"]);
-    expect(model.suggested.map((option) => option.code)).toEqual(["fr", "ko"]);
-    expect(model.rest.some((option) => option.code === "am")).toBe(false);
+    expect(model.pinned.map((option) => option.code)).toEqual(["fr", "en"]);
+    expect(model.suggested.map((option) => option.code)).toEqual(["ko"]);
+    expect(model.rest.some((option) => option.code === "fr")).toBe(false);
     expect(model.rest.some((option) => option.code === "en")).toBe(false);
   });
 
-  it("supports searching by english language name for extended locales", () => {
+  it("supports searching by english language name for bundled locales", () => {
     const model = buildLanguagePickerModel({
       currentLocale: "en",
       deviceLocales: [],
-      query: "amharic",
+      query: "arabic",
     });
 
     expect(model.pinned.map((option) => option.code)).toEqual(["en"]);
-    expect(model.rest.some((option) => option.code === "am")).toBe(true);
-    expect(model.custom).toBeNull();
+    expect(model.rest.some((option) => option.code === "ar")).toBe(true);
   });
 
-  it("offers a custom locale code path for any valid locale", () => {
+  it("does not offer a custom locale path outside the bundled set", () => {
     const model = buildLanguagePickerModel({
       currentLocale: "en",
       deviceLocales: [],
       query: "zza",
     });
 
-    expect(model.custom?.code).toBe("zza");
-    expect(model.custom?.nativeLabel.length).toBeGreaterThan(0);
+    expect(model.rest).toHaveLength(0);
   });
 });

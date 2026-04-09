@@ -1,11 +1,12 @@
 import { resolvePreferredLocale } from "./preferences";
+import { getSafeMobileLocale } from "./mobile-bundles";
 
 export function buildLocaleBootstrapPlan(input: {
   storedLocale: string | null;
   profileLocale: string | null;
   deviceLocales: string[];
 }) {
-  const locale = resolvePreferredLocale(input);
+  const locale = getSafeMobileLocale(resolvePreferredLocale(input));
 
   return {
     locale,

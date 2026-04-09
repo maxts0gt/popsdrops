@@ -24,7 +24,7 @@ export function MarketingFooter() {
               {t("footer.description")}
             </p>
             <div className="mt-5">
-              <LanguageSwitcher variant="minimal" />
+              <LanguageSwitcher variant="minimal" scope="public" />
             </div>
           </div>
 

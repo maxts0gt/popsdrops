@@ -25,7 +25,10 @@ export function LocaleProvider({
   }, [locale]);
 
   return (
-    <I18nProvider initialLocale={locale} initialTranslations={initialTranslations}>
+    <I18nProvider
+      initialLocale={locale}
+      initialTranslations={initialTranslations}
+    >
       <TranslationPreparationOverlay />
       {children}
     </I18nProvider>

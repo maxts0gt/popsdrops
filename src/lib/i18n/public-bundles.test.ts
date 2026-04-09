@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+
+import type { PageKey } from "./strings";
+import {
+  PUBLIC_BUNDLE_PAGE_KEYS,
+  buildPublicBundleFallback,
+  resolvePublicBundleTranslations,
+} from "./public-bundles";
+
+describe("public translation bundles", () => {
+  it("uses a bundled locale when one is available", () => {
+    const bundled = resolvePublicBundleTranslations("ko", {
+      ko: {
+        "ui.common": {
+          "nav.login": "로그인",
+        },
+      } as Partial<Record<PageKey, Record<string, string>>>,
+    });
+
+    expect(bundled["ui.common"]?.["nav.login"]).toBe("로그인");
+  });
+
+  it("applies editorial overrides for premium public copy", () => {
+    const bundled = resolvePublicBundleTranslations("ko", {
+      ko: {
+        "ui.common": {
+          "language.preparingTitle": "OLD",
+          "nav.discover": "OLD",
+        },
+      } as Partial<Record<PageKey, Record<string, string>>>,
+    });
+
+    expect(bundled["ui.common"]?.["language.preparingTitle"]).toBe(
+      "PopsDrops를 {language}로 전환하는 중입니다",
+    );
+    expect(bundled["ui.common"]?.["nav.discover"]).toBe("둘러보기");
+  });
+
+  it("falls back to english source copy when a public locale bundle is missing", () => {
+    const fallback = resolvePublicBundleTranslations("sv", {});
+
+    expect(Object.keys(fallback).sort()).toEqual(
+      [...PUBLIC_BUNDLE_PAGE_KEYS].sort(),
+    );
+    expect(fallback["marketing.landing"]?.headline).toBe(
+      "Creator campaigns.\nAny market. Any language.",
+    );
+  });
+
+  it("builds fallback copy only for public page keys", () => {
+    const fallback = buildPublicBundleFallback();
+
+    expect(fallback["brand.home"]).toBeUndefined();
+    expect(fallback["public.apply"]).toBeDefined();
+  });
+});

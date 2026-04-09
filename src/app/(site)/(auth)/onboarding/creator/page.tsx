@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   PLATFORMS,
@@ -23,24 +22,33 @@ import {
   NICHE_LABELS,
   MARKETS,
   MARKET_LABELS,
+  type Platform,
 } from "@/lib/constants";
 import {
   creatorOnboardingStep1Schema,
   creatorOnboardingStep2Schema,
 } from "@/lib/validations";
+import { submitCreatorOnboarding } from "@/app/actions";
+
+interface SocialAccountInput {
+  id: string;
+  platform: string;
+  value: string;
+}
 
 export default function CreatorOnboardingPage() {
   const router = useRouter();
-  const supabase = createClient();
   const { t } = useTranslation("onboarding.creator");
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const nextSocialId = useRef(1);
 
   // Step 1 fields
   const [fullName, setFullName] = useState("");
   const [primaryMarket, setPrimaryMarket] = useState("");
-  const [platformUrl, setPlatformUrl] = useState("");
-  const [selectedPlatform, setSelectedPlatform] = useState("");
+  const [socialAccounts, setSocialAccounts] = useState<SocialAccountInput[]>([
+    { id: "social-0", platform: "", value: "" },
+  ]);
 
   // Step 2 fields
   const [selectedNiches, setSelectedNiches] = useState<string[]>([]);
@@ -67,6 +75,69 @@ export default function CreatorOnboardingPage() {
       .replace(/^-|-$/g, "");
   }
 
+  function getFirstAvailablePlatform(accounts: SocialAccountInput[]) {
+    const used = new Set(
+      accounts
+        .map((account) => account.platform)
+        .filter((platform): platform is Platform => PLATFORMS.includes(platform as Platform))
+    );
+
+    return PLATFORMS.find((platform) => !used.has(platform)) ?? "";
+  }
+
+  function getSocialAccountPayload() {
+    return socialAccounts.map((account) => ({
+      platform: account.platform as Platform,
+      value: account.value,
+    }));
+  }
+
+  function mapIssuesToFieldErrors(
+    issues: Array<{ path: PropertyKey[]; message: string }>,
+  ) {
+    const errs: Record<string, string> = {};
+
+    for (const issue of issues) {
+      const key = issue.path.map(String).join(".");
+      if (!errs[key]) errs[key] = issue.message;
+    }
+
+    return errs;
+  }
+
+  function updateSocialAccount(id: string, patch: Partial<SocialAccountInput>) {
+    setSocialAccounts((prev) =>
+      prev.map((account) =>
+        account.id === id ? { ...account, ...patch } : account
+      )
+    );
+  }
+
+  function addSocialAccount() {
+    setSocialAccounts((prev) => {
+      if (prev.length >= PLATFORMS.length) {
+        return prev;
+      }
+
+      return [
+        ...prev,
+        {
+          id: `social-${nextSocialId.current++}`,
+          platform: getFirstAvailablePlatform(prev),
+          value: "",
+        },
+      ];
+    });
+  }
+
+  function removeSocialAccount(id: string) {
+    setSocialAccounts((prev) =>
+      prev.length === 1
+        ? [{ ...prev[0], platform: "", value: "" }]
+        : prev.filter((account) => account.id !== id)
+    );
+  }
+
   async function handleSubmit() {
     const profileSlugValue = slug || generateSlug(fullName);
     const step2Result = creatorOnboardingStep2Schema.safeParse({
@@ -75,11 +146,7 @@ export default function CreatorOnboardingPage() {
       slug: profileSlugValue,
     });
     if (!step2Result.success) {
-      const errs: Record<string, string> = {};
-      for (const issue of step2Result.error.issues) {
-        const key = issue.path[0] as string;
-        if (!errs[key]) errs[key] = issue.message;
-      }
+      const errs = mapIssuesToFieldErrors(step2Result.error.issues);
       setFieldErrors(errs);
       const firstMsg = step2Result.error.issues[0]?.message;
       toast.error(firstMsg || t("error.fillAll"));
@@ -87,62 +154,32 @@ export default function CreatorOnboardingPage() {
     }
     setFieldErrors({});
 
-    setLoading(true);
+    startTransition(async () => {
+      try {
+        await submitCreatorOnboarding({
+          full_name: fullName,
+          primary_market: primaryMarket,
+          social_accounts: getSocialAccountPayload(),
+          niches: selectedNiches,
+          base_rate: baseRate ? parseInt(baseRate, 10) : 0,
+          slug: profileSlugValue,
+        });
+        router.push("/pending-approval");
+      } catch (error) {
+        if (error instanceof Error && error.message === "Not authenticated") {
+          toast.error(t("error.sessionExpired"));
+          router.push("/login");
+          return;
+        }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+        if (error instanceof Error && error.message === "SLUG_TAKEN") {
+          toast.error(t("error.slugTaken"));
+          return;
+        }
 
-    if (!user) {
-      toast.error(t("error.sessionExpired"));
-      router.push("/login");
-      return;
-    }
-
-    const profileSlug = slug || generateSlug(fullName);
-
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "creator",
-      full_name: fullName,
-      email: user.email!,
-      avatar_url: user.user_metadata?.avatar_url ?? null,
-      status: "pending",
-      onboarding_completed: true,
-    });
-
-    if (profileError) {
-      toast.error(t("error.profileFailed"));
-      setLoading(false);
-      return;
-    }
-
-    const { error: creatorError } = await supabase
-      .from("creator_profiles")
-      .insert({
-        profile_id: user.id,
-        slug: profileSlug,
-        primary_market: primaryMarket,
-        [selectedPlatform]: { url: platformUrl },
-        niches: selectedNiches,
-        markets: [primaryMarket],
-        rate_card: baseRate
-          ? { [selectedPlatform]: { post: parseInt(baseRate) } }
-          : null,
-        rate_currency: "USD",
-      });
-
-    if (creatorError) {
-      if (creatorError.code === "23505") {
-        toast.error(t("error.slugTaken"));
-      } else {
         toast.error(t("error.creatorFailed"));
       }
-      setLoading(false);
-      return;
-    }
-
-    router.push("/pending-approval");
+    });
   }
 
   return (
@@ -202,36 +239,114 @@ export default function CreatorOnboardingPage() {
 
             <div>
               <Label>{t("field.addSocial")}</Label>
-              <div className="mt-1.5 flex flex-wrap gap-2">
-                {PLATFORMS.map((p) => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setSelectedPlatform(p)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
-                      selectedPlatform === p
-                        ? "bg-foreground text-background"
-                        : "bg-muted text-muted-foreground hover:bg-muted"
-                    }`}
-                  >
-                    {PLATFORM_LABELS[p]}
-                  </button>
-                ))}
+              <p className="mt-1 text-xs text-muted-foreground/70">
+                {t("field.addSocial.hint")}
+              </p>
+              <div className="mt-3 space-y-3">
+                {socialAccounts.map((account, index) => {
+                  const platformError =
+                    fieldErrors[`social_accounts.${index}.platform`];
+                  const valueError =
+                    fieldErrors[`social_accounts.${index}.value`];
+                  const availablePlatforms = PLATFORMS.filter(
+                    (platform) =>
+                      platform === account.platform ||
+                      !socialAccounts.some(
+                        (otherAccount) =>
+                          otherAccount.id !== account.id &&
+                          otherAccount.platform === platform
+                      )
+                  );
+
+                  return (
+                    <div
+                      key={account.id}
+                      className="rounded-lg border border-border bg-background p-3"
+                    >
+                      <div className="grid gap-3 sm:grid-cols-[minmax(0,180px)_minmax(0,1fr)_auto]">
+                        <div>
+                          <Label>{t("field.platform")}</Label>
+                          <Select
+                            value={account.platform || undefined}
+                            onValueChange={(value) =>
+                              updateSocialAccount(account.id, {
+                                platform: value ?? "",
+                              })
+                            }
+                          >
+                            <SelectTrigger className="mt-1.5">
+                              <SelectValue
+                                placeholder={t("field.platform.placeholder")}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availablePlatforms.map((platform) => (
+                                <SelectItem key={platform} value={platform}>
+                                  {PLATFORM_LABELS[platform]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {platformError && (
+                            <p className="mt-1 text-xs text-red-500">
+                              {platformError}
+                            </p>
+                          )}
+                        </div>
+
+                        <div>
+                          <Label>{t("field.socialHandle")}</Label>
+                          <Input
+                            value={account.value}
+                            onChange={(e) =>
+                              updateSocialAccount(account.id, {
+                                value: e.target.value,
+                              })
+                            }
+                            className="mt-1.5"
+                            placeholder={t("field.socialHandle.placeholder")}
+                          />
+                          {valueError && (
+                            <p className="mt-1 text-xs text-red-500">
+                              {valueError}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => removeSocialAccount(account.id)}
+                            disabled={socialAccounts.length === 1}
+                            aria-label={t("action.removePlatform")}
+                            className="h-10 w-10 shrink-0"
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              {selectedPlatform && (
-                <Input
-                  placeholder={`Your ${PLATFORM_LABELS[selectedPlatform as keyof typeof PLATFORM_LABELS]} profile URL`}
-                  value={platformUrl}
-                  onChange={(e) => setPlatformUrl(e.target.value)}
-                  className="mt-2"
-                />
+              {fieldErrors.social_accounts && (
+                <p className="mt-1 text-xs text-red-500">
+                  {fieldErrors.social_accounts}
+                </p>
               )}
-              {fieldErrors.social_url && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.social_url}</p>
-              )}
-              {fieldErrors.social_platform && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.social_platform}</p>
-              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={addSocialAccount}
+                disabled={socialAccounts.length >= PLATFORMS.length}
+                className="mt-3"
+              >
+                <Plus className="me-2 h-4 w-4" />
+                {t("action.addPlatform")}
+              </Button>
             </div>
           </div>
 
@@ -241,15 +356,10 @@ export default function CreatorOnboardingPage() {
               const result = creatorOnboardingStep1Schema.safeParse({
                 full_name: fullName,
                 primary_market: primaryMarket,
-                social_url: platformUrl,
-                social_platform: selectedPlatform,
+                social_accounts: getSocialAccountPayload(),
               });
               if (!result.success) {
-                const errs: Record<string, string> = {};
-                for (const issue of result.error.issues) {
-                  const key = issue.path[0] as string;
-                  if (!errs[key]) errs[key] = issue.message;
-                }
+                const errs = mapIssuesToFieldErrors(result.error.issues);
                 setFieldErrors(errs);
                 const firstMsg = result.error.issues[0]?.message;
                 toast.error(firstMsg || t("error.fillFields"));
@@ -353,10 +463,10 @@ export default function CreatorOnboardingPage() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={isPending}
               className="flex-1"
             >
-              {loading ? (
+              {isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 t("action.submit")

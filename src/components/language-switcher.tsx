@@ -5,34 +5,42 @@ import {
   SUPPORTED_LOCALES,
   getLocaleDisplayName,
 } from "@/lib/i18n/strings";
+import { PUBLIC_TRANSLATION_LOCALES } from "@/lib/i18n/generated/public-translation-locales";
 import { getPublicLocaleNavigationHref } from "@/lib/i18n/public-locale";
 import { Check, Globe } from "lucide-react";
-import { Suspense, useState, useRef, useEffect, useMemo } from "react";
+import { Suspense, useState, useRef, useEffect, useMemo, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 export function LanguageSwitcher({
   variant = "default",
+  scope = "all",
 }: {
   variant?: "default" | "minimal" | "dark" | "header";
+  scope?: "all" | "public";
 }) {
   return (
-    <Suspense fallback={<LanguageSwitcherFallback variant={variant} />}>
-      <LanguageSwitcherInner variant={variant} />
+    <Suspense fallback={<LanguageSwitcherFallback variant={variant} scope={scope} />}>
+      <LanguageSwitcherInner variant={variant} scope={scope} />
     </Suspense>
   );
 }
 
 function LanguageSwitcherInner({
   variant = "default",
+  scope = "all",
 }: {
   variant?: "default" | "minimal" | "dark" | "header";
+  scope?: "all" | "public";
 }) {
-  const { locale, setLocale, isLoading } = useI18n();
+  const { locale, isLoading } = useI18n();
   const [open, setOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const ref = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const availableLocales =
+    scope === "public" ? PUBLIC_TRANSLATION_LOCALES : SUPPORTED_LOCALES;
 
   // Close on outside click
   useEffect(() => {
@@ -59,7 +67,7 @@ function LanguageSwitcherInner({
     const pinnedList = Array.from(pinnedSet);
 
     // Remaining curated locales sorted by native display name
-    const restList = SUPPORTED_LOCALES
+    const restList = availableLocales
       .filter((loc) => !pinnedSet.has(loc))
       .sort((a, b) =>
         getLocaleDisplayName(a).localeCompare(
@@ -70,7 +78,7 @@ function LanguageSwitcherInner({
       );
 
     return { pinned: pinnedList, rest: restList };
-  }, [locale]);
+  }, [availableLocales, locale]);
 
   const isDark = variant === "dark";
   const isHeader = variant === "header";
@@ -103,6 +111,7 @@ function LanguageSwitcherInner({
       <button
         key={loc}
         onClick={() => {
+          document.cookie = `popsdrops-locale=${loc};path=/;max-age=31536000;samesite=lax`;
           const search = searchParams.toString();
           const navigationHref = getPublicLocaleNavigationHref(
             loc,
@@ -110,11 +119,18 @@ function LanguageSwitcherInner({
             search ? `?${search}` : "",
           );
 
-          setLocale(loc);
-          if (navigationHref && navigationHref !== `${pathname}${search ? `?${search}` : ""}`) {
-            router.push(navigationHref);
-          }
           setOpen(false);
+          startTransition(() => {
+            if (
+              navigationHref &&
+              navigationHref !== `${pathname}${search ? `?${search}` : ""}`
+            ) {
+              router.push(navigationHref);
+              return;
+            }
+
+            router.refresh();
+          });
         }}
         className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
           isActive
@@ -145,7 +161,7 @@ function LanguageSwitcherInner({
         {!isHeader && (
           <span>{getLocaleDisplayName(locale)}</span>
         )}
-        {isLoading && (
+        {(isLoading || isPending) && (
           <span className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
         )}
       </button>
@@ -178,9 +194,12 @@ function LanguageSwitcherInner({
 
 function LanguageSwitcherFallback({
   variant,
+  scope,
 }: {
   variant: "default" | "minimal" | "dark" | "header";
+  scope: "all" | "public";
 }) {
+  void scope;
   const { locale, isLoading } = useI18n();
   const isHeader = variant === "header";
 

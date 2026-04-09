@@ -28,11 +28,10 @@ export const strings: Record<string, Record<string, string>> = {
     "preferences.languageSync":
       "Your selection also syncs to your PopsDrops profile when you are signed in.",
     "preferences.languageCurrent": "Current language",
-    "preferences.languageSearch": "Search languages or enter a code",
+    "preferences.languageSearch": "Search languages",
     "preferences.languagePinned": "Pinned",
     "preferences.languageSuggested": "Suggested",
     "preferences.languageAll": "All languages",
-    "preferences.languageCustom": "Use custom language code",
     "preferences.languageLoading": "Updating language…",
     "preferences.themeSystem": "System",
     "preferences.themeLight": "Light",

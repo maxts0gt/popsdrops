@@ -7,6 +7,7 @@ import {
   DEFAULT_MARKETING_LOCALE,
   SUPPORTED_MARKETING_LOCALES,
 } from "@/lib/i18n/public-locale";
+import { PUBLIC_TRANSLATION_LOCALES } from "@/lib/i18n/generated/public-translation-locales";
 import { ROOT_METADATA } from "@/lib/root-metadata";
 import "../globals.css";
 
@@ -14,7 +15,7 @@ export const revalidate = 60;
 export const metadata = ROOT_METADATA;
 
 export async function generateStaticParams() {
-  return [{ locale: DEFAULT_MARKETING_LOCALE }];
+  return PUBLIC_TRANSLATION_LOCALES.map((locale) => ({ locale }));
 }
 
 export default async function LocalizedPublicLayout({
@@ -37,7 +38,10 @@ export default async function LocalizedPublicLayout({
 
   return (
     <DocumentShell locale={locale}>
-      <LocalizedRouteShell locale={locale} initialTranslations={initialTranslations}>
+      <LocalizedRouteShell
+        locale={locale}
+        initialTranslations={initialTranslations}
+      >
         {children}
       </LocalizedRouteShell>
     </DocumentShell>

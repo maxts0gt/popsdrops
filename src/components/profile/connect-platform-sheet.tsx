@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useCallback } from "react";
+import { useState, useTransition, useCallback, useMemo } from "react";
 import { ShieldCheck } from "lucide-react";
 import {
   Sheet,
@@ -17,37 +17,9 @@ import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "@/components/platform-icons";
 import { PLATFORM_LABELS, OAUTH_PLATFORMS, type Platform } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
+import { normalizeCreatorSocialAccount } from "@/lib/creator-socials";
 import { updateCreatorProfile } from "@/app/actions/profile";
 import type { SocialAccount } from "@/types/database";
-
-// URL patterns for validation hints
-const URL_PATTERNS: Record<Platform, string> = {
-  tiktok: "https://tiktok.com/@username",
-  instagram: "https://instagram.com/username",
-  snapchat: "https://snapchat.com/add/username",
-  youtube: "https://youtube.com/@username",
-  facebook: "https://facebook.com/username",
-};
-
-// Attempt to extract handle from URL
-function extractHandle(platform: Platform, url: string): string {
-  try {
-    const u = new URL(url);
-    const path = u.pathname.replace(/^\//, "").replace(/\/$/, "");
-    // Remove common prefixes
-    const cleaned = path
-      .replace(/^@/, "")
-      .replace(/^add\//, "")
-      .replace(/^c\//, "")
-      .replace(/^channel\//, "");
-    // Return just the first segment (username)
-    const segment = cleaned.split("/")[0];
-    return segment ? `@${segment}` : "";
-  } catch {
-    // Not a URL — treat as handle
-    return url.startsWith("@") ? url : url ? `@${url}` : "";
-  }
-}
 
 interface ConnectPlatformSheetProps {
   open: boolean;
@@ -72,12 +44,42 @@ export function ConnectPlatformSheet({
     currentAccount?.followers ? String(currentAccount.followers) : ""
   );
   const [isPending, startTransition] = useTransition();
+  const normalizedInput = useMemo(() => {
+    if (!url.trim()) {
+      return { account: null, error: null as string | null };
+    }
+
+    try {
+      return {
+        account: normalizeCreatorSocialAccount({
+          platform,
+          value: url,
+        }),
+        error: null as string | null,
+      };
+    } catch (error) {
+      return {
+        account: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Enter a valid social handle or profile link",
+      };
+    }
+  }, [platform, url]);
 
   const onUrlChange = useCallback(
     (value: string) => {
       setUrl(value);
-      const extracted = extractHandle(platform, value);
-      if (extracted) setHandle(extracted);
+      try {
+        const normalized = normalizeCreatorSocialAccount({
+          platform,
+          value,
+        });
+        if (normalized.handle) setHandle(normalized.handle);
+      } catch {
+        setHandle("");
+      }
     },
     [platform]
   );
@@ -88,9 +90,17 @@ export function ConnectPlatformSheet({
       return;
     }
 
+    if (!normalizedInput.account) {
+      return;
+    }
+
     const account: SocialAccount = {
-      url: url.trim(),
-      handle: handle.trim(),
+      url: normalizedInput.account.url,
+      handle: handle.trim()
+        ? handle.trim().startsWith("@")
+          ? handle.trim()
+          : `@${handle.trim().replace(/^@/, "")}`
+        : normalizedInput.account.handle,
       followers: followerCount,
       verified: currentAccount?.verified || false,
     };
@@ -111,7 +121,7 @@ export function ConnectPlatformSheet({
   }
 
   const isValid =
-    url.trim().length > 0 &&
+    Boolean(normalizedInput.account) &&
     handle.trim().length > 0 &&
     parseInt(followers, 10) > 0;
 
@@ -173,12 +183,15 @@ export function ConnectPlatformSheet({
             </Label>
             <Input
               id="platform-url"
-              type="url"
+              type="text"
               value={url}
               onChange={(e) => onUrlChange(e.target.value)}
-              placeholder={URL_PATTERNS[platform]}
+              placeholder="@yourhandle"
               autoFocus
             />
+            {normalizedInput.error && (
+              <p className="mt-1 text-[11px] text-red-500">{normalizedInput.error}</p>
+            )}
           </div>
 
           <div>

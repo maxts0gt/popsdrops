@@ -1,8 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,13 +26,13 @@ import {
   brandOnboardingStep1Schema,
   brandOnboardingStep2Schema,
 } from "@/lib/validations";
+import { submitBrandOnboarding } from "@/app/actions";
 
 export default function BrandOnboardingPage() {
   const router = useRouter();
-  const supabase = createClient();
   const { t } = useTranslation("onboarding.brand");
   const [step, setStep] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
 
   // Step 1
   const [companyName, setCompanyName] = useState("");
@@ -65,52 +64,26 @@ export default function BrandOnboardingPage() {
     }
     setFieldErrors({});
 
-    setLoading(true);
+    startTransition(async () => {
+      try {
+        await submitBrandOnboarding({
+          company_name: companyName,
+          industry,
+          primary_market: targetMarket,
+          description: description || undefined,
+          website: website || undefined,
+        });
+        router.push("/pending-approval");
+      } catch (error) {
+        if (error instanceof Error && error.message === "Not authenticated") {
+          toast.error(t("error.sessionExpired"));
+          router.push("/login");
+          return;
+        }
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      toast.error(t("error.sessionExpired"));
-      router.push("/login");
-      return;
-    }
-
-    const { error: profileError } = await supabase.from("profiles").upsert({
-      id: user.id,
-      role: "brand",
-      full_name: user.user_metadata?.full_name ?? companyName,
-      email: user.email!,
-      avatar_url: user.user_metadata?.avatar_url ?? null,
-      status: "pending",
-      onboarding_completed: true,
+        toast.error(t("error.brandFailed"));
+      }
     });
-
-    if (profileError) {
-      toast.error(t("error.profileFailed"));
-      setLoading(false);
-      return;
-    }
-
-    const { error: brandError } = await supabase.from("brand_profiles").insert({
-      profile_id: user.id,
-      company_name: companyName,
-      industry,
-      target_markets: [targetMarket],
-      description: description || null,
-      website: website || null,
-      contact_name: user.user_metadata?.full_name ?? "",
-      contact_email: user.email!,
-    });
-
-    if (brandError) {
-      toast.error(t("error.brandFailed"));
-      setLoading(false);
-      return;
-    }
-
-    router.push("/pending-approval");
   }
 
   return (
@@ -263,10 +236,10 @@ export default function BrandOnboardingPage() {
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={loading}
+              disabled={isPending}
               className="flex-1"
             >
-              {loading ? (
+              {isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 t("action.submit")

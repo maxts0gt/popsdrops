@@ -239,36 +239,6 @@ export default function SelectLanguageScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {model.custom ? (
-            <View className="mt-8">
-              <Text
-                className="px-1 text-[11px] uppercase tracking-[1.6px]"
-                style={{
-                  color: palette.textMuted,
-                  fontFamily: "Inter_600SemiBold",
-                }}
-              >
-                {t("preferences.languageCustom")}
-              </Text>
-              <View
-                className="mt-3 overflow-hidden rounded-2xl"
-                style={{
-                  backgroundColor: palette.surface,
-                  borderWidth: 1,
-                  borderColor: palette.borderSubtle,
-                }}
-              >
-                <LanguageRow
-                  option={model.custom}
-                  active={model.custom.code === locale}
-                  busy={savingCode === model.custom.code}
-                  onPress={() => handleSelect(model.custom!.code)}
-                  palette={palette}
-                />
-              </View>
-            </View>
-          ) : null}
-
           <LanguageSection
             title={t("preferences.languagePinned")}
             options={model.pinned}
