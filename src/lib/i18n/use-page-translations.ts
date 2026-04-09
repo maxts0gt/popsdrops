@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
 import { useI18n } from "./context";
-import { type PageKey, getSourceStrings, DEFAULT_LOCALE } from "./strings";
+import { type PageKey, getSourceStrings } from "./strings";
 
 /**
  * Hook that loads translations for one or more page keys.
@@ -18,12 +17,8 @@ import { type PageKey, getSourceStrings, DEFAULT_LOCALE } from "./strings";
  *   return <h1>{t("greeting", { name: "Fatima" })}</h1>
  */
 export function usePageTranslations(...pageKeys: PageKey[]) {
-  const { t, preload, locale } = useI18n();
-
-  useEffect(() => {
-    if (locale === DEFAULT_LOCALE) return;
-    pageKeys.forEach((key) => preload(key));
-  }, [locale, ...pageKeys]); // eslint-disable-line react-hooks/exhaustive-deps
+  void pageKeys;
+  const { t } = useI18n();
 
   return t;
 }

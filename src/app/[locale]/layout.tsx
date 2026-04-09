@@ -41,7 +41,6 @@ export default async function LocalizedPublicLayout({
       <LocalizedRouteShell
         locale={locale}
         initialTranslations={initialTranslations}
-        runtimeTranslationEnabled={false}
       >
         {children}
       </LocalizedRouteShell>

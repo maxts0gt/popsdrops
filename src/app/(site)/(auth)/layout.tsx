@@ -17,7 +17,6 @@ export default async function AuthLayout({
     <LocalizedRouteShell
       locale={locale}
       initialTranslations={initialTranslations}
-      runtimeTranslationEnabled={false}
     >
       <div className="flex min-h-svh flex-col items-center justify-center bg-background px-4">
         <div className="w-full max-w-md">

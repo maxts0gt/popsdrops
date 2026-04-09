@@ -13,12 +13,10 @@ export function LocaleProvider({
   children,
   locale,
   initialTranslations,
-  runtimeTranslationEnabled = true,
 }: {
   children: ReactNode;
   locale: string;
   initialTranslations?: Partial<Record<PageKey, Record<string, string>>>;
-  runtimeTranslationEnabled?: boolean;
 }) {
   // Set dir and lang on html element
   useEffect(() => {
@@ -30,7 +28,6 @@ export function LocaleProvider({
     <I18nProvider
       initialLocale={locale}
       initialTranslations={initialTranslations}
-      runtimeTranslationEnabled={runtimeTranslationEnabled}
     >
       <TranslationPreparationOverlay />
       {children}

@@ -16,7 +16,6 @@ export default async function AppLayout({
     <LocalizedRouteShell
       locale={locale}
       initialTranslations={initialTranslations}
-      runtimeTranslationEnabled={false}
     >
       {children}
     </LocalizedRouteShell>

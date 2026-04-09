@@ -17,7 +17,6 @@ export default async function MarketingLayout({
     <LocalizedRouteShell
       locale={locale}
       initialTranslations={initialTranslations}
-      runtimeTranslationEnabled={false}
     >
       <MarketingHeader />
       <main>{children}</main>

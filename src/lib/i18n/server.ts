@@ -1,45 +1,9 @@
 import "server-only";
 import { cookies, headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
-import { type PageKey, getSourceStrings, DEFAULT_LOCALE } from "./strings";
-import { chunkPageKeys } from "./runtime";
+import { type PageKey, DEFAULT_LOCALE } from "./strings";
 import { resolvePublicBundleTranslations } from "./public-bundles";
 import { resolvePlatformBundleTranslations } from "./platform-bundles";
-
-type TranslationRecord = {
-  overrides: Record<string, string> | null;
-  page_key: PageKey;
-  strings: Record<string, string>;
-};
-
-function getSourceTranslations(
-  pageKeys: PageKey[],
-): Partial<Record<PageKey, Record<string, string>>> {
-  const results: Partial<Record<PageKey, Record<string, string>>> = {};
-
-  for (const pageKey of pageKeys) {
-    results[pageKey] = getSourceStrings(pageKey);
-  }
-
-  return results;
-}
-
-function mergeCachedRows(
-  pageKeys: PageKey[],
-  cachedRows: TranslationRecord[] | null | undefined,
-): Partial<Record<PageKey, Record<string, string>>> {
-  const results: Partial<Record<PageKey, Record<string, string>>> = {};
-  const cachedMap = new Map((cachedRows || []).map((row) => [row.page_key, row]));
-
-  for (const pageKey of pageKeys) {
-    const cached = cachedMap.get(pageKey);
-    if (cached) {
-      results[pageKey] = { ...cached.strings, ...cached.overrides };
-    }
-  }
-
-  return results;
-}
 
 /** Validate that a string is a plausible ISO 639-1 locale code (2-3 lowercase letters). */
 function isValidLocaleCode(code: string): boolean {
@@ -49,7 +13,7 @@ function isValidLocaleCode(code: string): boolean {
 /**
  * Detect the user's preferred locale on the server.
  * Priority: cookie → user profile → Accept-Language header → English
- * Accepts ANY valid locale code — Gemini translates on demand.
+ * Route shells clamp unsupported locales back to the shipped bundle set.
  */
 export async function getLocale(): Promise<string> {
   const headerStore = await headers();
@@ -136,35 +100,6 @@ export async function getDetectedLocales(): Promise<string[]> {
   return detected;
 }
 
-/**
- * Server-side fetch for translations already cached in the DB.
- * Does not invoke the translate edge function.
- */
-export async function getCachedTranslations(
-  pageKeys: PageKey[],
-  locale?: string,
-): Promise<Partial<Record<PageKey, Record<string, string>>>> {
-  const targetLocale = locale || (await getLocale());
-
-  if (targetLocale === DEFAULT_LOCALE) {
-    return getSourceTranslations(pageKeys);
-  }
-
-  try {
-    const supabase = await createClient();
-    const { data: cachedRows } = await supabase
-      .from("translations")
-      .select("page_key, strings, overrides")
-      .eq("locale", targetLocale)
-      .in("page_key", pageKeys);
-
-    return mergeCachedRows(pageKeys, cachedRows as TranslationRecord[] | null);
-  } catch {
-    // Return whatever cached translations we were able to read.
-    return {};
-  }
-}
-
 export async function getPublicCachedTranslations(
   locale?: string,
 ): Promise<Partial<Record<PageKey, Record<string, string>>>> {
@@ -179,85 +114,4 @@ export async function getPlatformCachedTranslations(
   const targetLocale = locale || (await getLocale());
 
   return resolvePlatformBundleTranslations(targetLocale);
-}
-
-/**
- * Server-side translation fetch for a single page.
- * Delegates to getMultipleTranslations for consistency (always batch mode).
- */
-export async function getTranslations(
-  pageKey: PageKey,
-  locale?: string,
-): Promise<Record<string, string>> {
-  const results = await getMultipleTranslations([pageKey], locale);
-  return results[pageKey];
-}
-
-/**
- * Server-side BATCH translation: fetches multiple pages in bounded chunks.
- * Returns per-page string maps, falling back to English if translation fails.
- */
-export async function getMultipleTranslations(
-  pageKeys: PageKey[],
-  locale?: string,
-): Promise<Record<string, Record<string, string>>> {
-  const targetLocale = locale || (await getLocale());
-  const results = await getCachedTranslations(pageKeys, targetLocale) as Record<
-    string,
-    Record<string, string>
-  >;
-
-  // English — return source strings directly
-  if (targetLocale === DEFAULT_LOCALE) {
-    return results;
-  }
-
-  const uncachedKeys = pageKeys.filter((pageKey) => !results[pageKey]);
-
-  // If everything was cached, return
-  if (uncachedKeys.length === 0) {
-    return results;
-  }
-
-  // Batch fetch uncached pages via edge function in the same safe chunk size
-  // the client uses, to avoid oversized Gemini requests on cold caches.
-  try {
-    const supabase = await createClient();
-    await Promise.all(
-      chunkPageKeys(uncachedKeys).map(async (chunk) => {
-        const pages: Record<string, Record<string, string>> = {};
-        for (const pk of chunk) {
-          pages[pk] = getSourceStrings(pk);
-        }
-
-        const { data, error } = await supabase.functions.invoke("translate", {
-          body: { locale: targetLocale, pages },
-        });
-
-        if (error) {
-          throw error;
-        }
-
-        if (data?.pages) {
-          for (const [pk, pageData] of Object.entries(data.pages)) {
-            const pd = pageData as { strings: Record<string, string> };
-            if (pd.strings) {
-              results[pk] = pd.strings;
-            }
-          }
-        }
-      }),
-    );
-  } catch {
-    // Batch failed — fill remaining with English
-  }
-
-  // Fill any still-missing pages with English fallback
-  for (const pk of pageKeys) {
-    if (!results[pk]) {
-      results[pk] = getSourceStrings(pk);
-    }
-  }
-
-  return results;
 }
