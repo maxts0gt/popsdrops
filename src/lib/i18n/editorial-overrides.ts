@@ -7,9 +7,24 @@ export type WebEditorialOverrides = Partial<
 export const WEB_EDITORIAL_OVERRIDES: Partial<
   Record<string, WebEditorialOverrides>
 > = {
+  de: {
+    "ui.common": {
+      "nav.home": "Start",
+    },
+  },
   el: {
     "ui.common": {
       "language.preparingTitle": "Το PopsDrops αλλάζει σε {language}",
+    },
+  },
+  es: {
+    "brand.home": {
+      "greeting": "Nos alegra verte de nuevo, {name}",
+    },
+  },
+  fr: {
+    "brand.home": {
+      "greeting": "Quel plaisir de vous retrouver, {name}",
     },
   },
   hi: {
@@ -22,6 +37,17 @@ export const WEB_EDITORIAL_OVERRIDES: Partial<
       "language.preparingTitle": "Stiamo passando PopsDrops in {language}",
     },
   },
+  ja: {
+    "ui.common": {
+      "nav.discover": "探す",
+    },
+    "brand.home": {
+      "greeting": "{name}様、お戻りいただきありがとうございます",
+    },
+    "brand.creators": {
+      "title": "クリエイター一覧",
+    },
+  },
   kk: {
     "brand.home": {
       "greeting": "Қайта қош келдіңіз, {name}",
@@ -29,10 +55,14 @@ export const WEB_EDITORIAL_OVERRIDES: Partial<
   },
   ko: {
     "ui.common": {
+      "nav.discover": "둘러보기",
       "language.preparingTitle": "PopsDrops를 {language}로 전환하는 중입니다",
     },
     "brand.home": {
       "greeting": "다시 오신 것을 환영합니다, {name}님",
+    },
+    "brand.creators": {
+      "title": "크리에이터 디렉터리",
     },
   },
   nl: {
@@ -63,6 +93,14 @@ export const WEB_EDITORIAL_OVERRIDES: Partial<
   uz: {
     "brand.home": {
       "greeting": "Yana xush kelibsiz, {name}",
+    },
+  },
+  zh: {
+    "brand.home": {
+      "title": "仪表盘",
+    },
+    "brand.creators": {
+      "title": "创作者名录",
     },
   },
 };

@@ -25,6 +25,7 @@ describe("public translation bundles", () => {
       ko: {
         "ui.common": {
           "language.preparingTitle": "OLD",
+          "nav.discover": "OLD",
         },
       } as Partial<Record<PageKey, Record<string, string>>>,
     });
@@ -32,6 +33,7 @@ describe("public translation bundles", () => {
     expect(bundled["ui.common"]?.["language.preparingTitle"]).toBe(
       "PopsDrops를 {language}로 전환하는 중입니다",
     );
+    expect(bundled["ui.common"]?.["nav.discover"]).toBe("둘러보기");
   });
 
   it("falls back to english source copy when a public locale bundle is missing", () => {

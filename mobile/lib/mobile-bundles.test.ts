@@ -18,18 +18,28 @@ describe("mobile translation bundles", () => {
   });
 
   it("applies editorial overrides for high-visibility mobile copy", () => {
-    const bundled = resolveMobileBundleTranslations("zh", {
+    const chinese = resolveMobileBundleTranslations("zh", {
       zh: {
         "preferences.languageDetail":
           "选择此设备的界面语言。你可以随时切换回 English。",
         "discover.search": "搜索合作…",
+        "campaigns.title": "我的合作",
       },
     });
 
-    expect(bundled["preferences.languageDetail"]).toBe(
+    expect(chinese["preferences.languageDetail"]).toBe(
       "选择此设备的界面语言。你可以随时切换回英语。",
     );
-    expect(bundled["discover.search"]).toBe("搜索营销活动…");
+    expect(chinese["discover.search"]).toBe("搜索营销活动…");
+    expect(chinese["campaigns.title"]).toBe("我的活动");
+
+    const french = resolveMobileBundleTranslations("fr", {
+      fr: {
+        "auth.subtitle": "OLD",
+      },
+    });
+
+    expect(french["auth.subtitle"]).toBe("La plateforme mondiale des créateurs");
   });
 
   it("falls back to english source copy when a mobile locale bundle is missing", () => {

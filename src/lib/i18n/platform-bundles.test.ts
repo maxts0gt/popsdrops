@@ -22,7 +22,7 @@ describe("platform translation bundles", () => {
   });
 
   it("applies editorial overrides for premium signed-in copy", () => {
-    const bundled = resolvePlatformBundleTranslations("ko", {
+    const korean = resolvePlatformBundleTranslations("ko", {
       ko: {
         "brand.home": {
           "greeting": "OLD",
@@ -30,9 +30,19 @@ describe("platform translation bundles", () => {
       } as Partial<Record<PageKey, Record<string, string>>>,
     });
 
-    expect(bundled["brand.home"]?.greeting).toBe(
+    expect(korean["brand.home"]?.greeting).toBe(
       "다시 오신 것을 환영합니다, {name}님",
     );
+
+    const japanese = resolvePlatformBundleTranslations("ja", {
+      ja: {
+        "brand.creators": {
+          "title": "OLD",
+        },
+      } as Partial<Record<PageKey, Record<string, string>>>,
+    });
+
+    expect(japanese["brand.creators"]?.title).toBe("クリエイター一覧");
   });
 
   it("falls back to english source copy when a platform locale bundle is missing", () => {
