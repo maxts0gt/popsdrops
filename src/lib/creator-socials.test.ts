@@ -106,6 +106,7 @@ describe("creator onboarding social accounts", () => {
         150,
       ),
     ).toEqual({
+      facebook: null,
       instagram: {
         followers: 0,
         handle: "@max.tsogt",
@@ -121,10 +122,34 @@ describe("creator onboarding social accounts", () => {
           post: 150,
         },
       },
+      snapchat: null,
       tiktok: {
         followers: 0,
         handle: "@max-tsogt",
         url: "https://tiktok.com/@max-tsogt",
+        verified: false,
+      },
+      youtube: null,
+    });
+  });
+
+  it("clears unselected platforms when rebuilding onboarding socials", () => {
+    expect(
+      buildCreatorOnboardingSocialFields(
+        [{ platform: "youtube", value: "@maxstudio" }],
+        0,
+      ),
+    ).toEqual({
+      facebook: null,
+      instagram: null,
+      platforms: ["youtube"],
+      rate_card: null,
+      snapchat: null,
+      tiktok: null,
+      youtube: {
+        followers: 0,
+        handle: "@maxstudio",
+        url: "https://youtube.com/@maxstudio",
         verified: false,
       },
     });

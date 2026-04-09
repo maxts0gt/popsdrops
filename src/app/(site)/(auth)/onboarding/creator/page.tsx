@@ -13,7 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, ArrowLeft, Plus, X } from "lucide-react";
+import { Loader2, ArrowLeft, Plus, X } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   PLATFORMS,
@@ -24,10 +24,7 @@ import {
   MARKET_LABELS,
   type Platform,
 } from "@/lib/constants";
-import {
-  creatorOnboardingStep1Schema,
-  creatorOnboardingStep2Schema,
-} from "@/lib/validations";
+import { creatorOnboardingSchema } from "@/lib/validations";
 import { submitCreatorOnboarding } from "@/app/actions";
 
 interface SocialAccountInput {
@@ -39,7 +36,6 @@ interface SocialAccountInput {
 export default function CreatorOnboardingPage() {
   const router = useRouter();
   const { t } = useTranslation("onboarding.creator");
-  const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
   const nextSocialId = useRef(1);
 
@@ -140,29 +136,34 @@ export default function CreatorOnboardingPage() {
 
   async function handleSubmit() {
     const profileSlugValue = slug || generateSlug(fullName);
-    const step2Result = creatorOnboardingStep2Schema.safeParse({
+    const result = creatorOnboardingSchema.safeParse({
+      full_name: fullName,
+      primary_market: primaryMarket,
+      social_accounts: getSocialAccountPayload(),
       niches: selectedNiches,
       base_rate: baseRate || 0,
       slug: profileSlugValue,
     });
-    if (!step2Result.success) {
-      const errs = mapIssuesToFieldErrors(step2Result.error.issues);
+
+    if (!result.success) {
+      const errs = mapIssuesToFieldErrors(result.error.issues);
       setFieldErrors(errs);
-      const firstMsg = step2Result.error.issues[0]?.message;
+      const firstMsg = result.error.issues[0]?.message;
       toast.error(firstMsg || t("error.fillAll"));
       return;
     }
+
     setFieldErrors({});
 
     startTransition(async () => {
       try {
         await submitCreatorOnboarding({
-          full_name: fullName,
-          primary_market: primaryMarket,
-          social_accounts: getSocialAccountPayload(),
-          niches: selectedNiches,
-          base_rate: baseRate ? parseInt(baseRate, 10) : 0,
-          slug: profileSlugValue,
+          full_name: result.data.full_name,
+          primary_market: result.data.primary_market,
+          social_accounts: result.data.social_accounts,
+          niches: result.data.niches,
+          base_rate: result.data.base_rate,
+          slug: result.data.slug,
         });
         router.push("/pending-approval");
       } catch (error) {
@@ -184,26 +185,21 @@ export default function CreatorOnboardingPage() {
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm ring-1 ring-ring/[0.03]">
-      {/* Progress */}
       <div className="mb-6 flex gap-2">
-        <div
-          className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-foreground" : "bg-border"}`}
-        />
-        <div
-          className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-foreground" : "bg-border"}`}
-        />
+        <div className="h-1 flex-1 rounded-full bg-foreground" />
+        <div className="h-1 flex-1 rounded-full bg-foreground" />
       </div>
 
-      {step === 1 && (
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {t("step1.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("step1.desc")}
-          </p>
+      <div>
+        <h1 className="text-xl font-bold text-foreground">
+          {t("step1.title")}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("step1.desc")}
+        </p>
 
-          <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-6">
+          <div className="space-y-4">
             <div>
               <Label htmlFor="name">{t("field.displayName")}</Label>
               <Input
@@ -350,41 +346,7 @@ export default function CreatorOnboardingPage() {
             </div>
           </div>
 
-          <Button
-            className="mt-6 w-full"
-            onClick={() => {
-              const result = creatorOnboardingStep1Schema.safeParse({
-                full_name: fullName,
-                primary_market: primaryMarket,
-                social_accounts: getSocialAccountPayload(),
-              });
-              if (!result.success) {
-                const errs = mapIssuesToFieldErrors(result.error.issues);
-                setFieldErrors(errs);
-                const firstMsg = result.error.issues[0]?.message;
-                toast.error(firstMsg || t("error.fillFields"));
-                return;
-              }
-              setFieldErrors({});
-              setStep(2);
-            }}
-          >
-            {t("action.continue")}
-            <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
-          </Button>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {t("step2.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("step2.desc")}
-          </p>
-
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4 border-t border-border pt-6">
             <div>
               <Label>{t("field.niches")}</Label>
               <div className="mt-1.5 flex flex-wrap gap-2">
@@ -428,53 +390,49 @@ export default function CreatorOnboardingPage() {
 
             <div>
               <Label htmlFor="slug">{t("field.profileUrl")}</Label>
-              <div className="mt-1.5 flex items-center gap-0">
-                <span className="rounded-s-lg border border-e-0 border-border bg-muted/50 px-3 py-2.5 text-xs text-muted-foreground">
-                  popsdrops.com/c/
-                </span>
-                <Input
-                  id="slug"
-                  value={slug}
-                  onChange={(e) =>
-                    setSlug(
-                      e.target.value
-                        .toLowerCase()
-                        .replace(/[^a-z0-9-]/g, "")
-                    )
-                  }
-                  className="rounded-s-none"
-                  placeholder={t("field.profileUrl.placeholder")}
-                />
-              </div>
+              <Input
+                id="slug"
+                value={slug}
+                onChange={(e) =>
+                  setSlug(
+                    e.target.value
+                      .toLowerCase()
+                      .replace(/[^a-z0-9-]/g, "")
+                  )
+                }
+                className="mt-1.5"
+                placeholder={t("field.profileUrl.placeholder")}
+              />
               {fieldErrors.slug && (
                 <p className="mt-1 text-xs text-red-500">{fieldErrors.slug}</p>
               )}
             </div>
           </div>
 
-          <div className="mt-6 flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setStep(1)}
-              className="flex-1"
-            >
-              <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
-              {t("action.back")}
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isPending}
-              className="flex-1"
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t("action.submit")
-              )}
-            </Button>
-          </div>
         </div>
-      )}
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/onboarding")}
+            className="flex-1"
+          >
+            <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+            {t("action.back")}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isPending}
+            className="flex-1"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t("action.submit")
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

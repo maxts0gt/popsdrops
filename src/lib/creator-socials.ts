@@ -9,11 +9,11 @@ export interface CreatorSocialAccountInput {
 interface CreatorOnboardingSocialFields {
   platforms: Platform[];
   rate_card: RateCard | null;
-  tiktok?: SocialAccount;
-  instagram?: SocialAccount;
-  snapchat?: SocialAccount;
-  youtube?: SocialAccount;
-  facebook?: SocialAccount;
+  tiktok: SocialAccount | null;
+  instagram: SocialAccount | null;
+  snapchat: SocialAccount | null;
+  youtube: SocialAccount | null;
+  facebook: SocialAccount | null;
 }
 
 interface NormalizedSocialAccount {
@@ -211,6 +211,11 @@ export function buildCreatorOnboardingSocialFields(
   const fields: CreatorOnboardingSocialFields = {
     platforms: [],
     rate_card: baseRate > 0 ? {} : null,
+    tiktok: null,
+    instagram: null,
+    snapchat: null,
+    youtube: null,
+    facebook: null,
   };
 
   for (const account of accounts) {

@@ -495,7 +495,7 @@ export const strings = {
 
   "auth.onboarding": {
     "selectRole.title": "How do you want to use PopsDrops?",
-    "selectRole.subtitle": "Choose your role to get started",
+    "selectRole.subtitle": "Choose your role, then continue.",
     "selectRole.creator": "I'm a Creator",
     "selectRole.creator.desc": "I create content and want to work with brands.",
     "selectRole.brand": "I'm a Brand",
@@ -503,8 +503,8 @@ export const strings = {
   },
 
   "onboarding.creator": {
-    "step1.title": "Let's set up your profile",
-    "step1.desc": "Just the basics — you can add more later.",
+    "step1.title": "Let's set up your creator profile",
+    "step1.desc": "Add the essentials so brands know where you create.",
     "step2.title": "Almost there",
     "step2.desc": "Pick your niches and set your rate.",
     "field.displayName": "Display name",
@@ -512,13 +512,13 @@ export const strings = {
     "field.primaryMarket": "Primary market",
     "field.primaryMarket.placeholder": "Select your market",
     "field.addSocial": "Social accounts",
-    "field.addSocial.hint": "Add every platform you actively post on. Paste a handle or full profile link.",
+    "field.addSocial.hint": "Add every platform you actively post on.",
     "field.platform": "Platform",
     "field.platform.placeholder": "Select platform",
-    "field.socialHandle": "Handle or profile link",
+    "field.socialHandle": "Handle",
     "field.socialHandle.placeholder": "@yourhandle",
-    "field.profileUrl": "Profile URL",
-    "field.profileUrl.placeholder": "your-name",
+    "field.profileUrl": "Profile handle",
+    "field.profileUrl.placeholder": "max-tsogt",
     "field.niches": "Niches (pick 1-5)",
     "field.baseRate": "Base rate (USD per post)",
     "field.baseRate.placeholder": "e.g. 150",
@@ -539,7 +539,7 @@ export const strings = {
 
   "onboarding.brand": {
     "step1.title": "Tell us about your company",
-    "step1.desc": "Just the essentials — you can add more later.",
+    "step1.desc": "Add the essentials so we can review your account.",
     "step2.title": "A bit more about you",
     "step2.desc": "Optional — you can always add this later.",
     "field.companyName": "Company name",
@@ -893,12 +893,12 @@ export const strings = {
     // Connect sheet
     "connectSheet.connectTitle": "Connect {platform}",
     "connectSheet.editTitle": "Edit {platform}",
-    "connectSheet.connectDescription": "Add your handle or profile link and follower count.",
+    "connectSheet.connectDescription": "Add your handle and follower count.",
     "connectSheet.editDescription": "Update your account details.",
     "connectSheet.oauthConnect": "Connect with {platform}",
     "connectSheet.oauthDescription": "Auto-verify your profile and fetch metrics",
     "connectSheet.orManually": "or add manually",
-    "connectSheet.profileUrl": "Handle or profile link",
+    "connectSheet.profileUrl": "Handle",
     "connectSheet.handle": "Handle",
     "connectSheet.followers": "Followers",
     "connectSheet.followersHint": "Enter your current follower count. We'll verify during review.",

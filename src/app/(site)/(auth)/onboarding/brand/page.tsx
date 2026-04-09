@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { Loader2, ArrowRight, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/lib/i18n/context";
 import {
   MARKETS,
@@ -22,16 +22,12 @@ import {
   INDUSTRIES,
   INDUSTRY_LABELS,
 } from "@/lib/constants";
-import {
-  brandOnboardingStep1Schema,
-  brandOnboardingStep2Schema,
-} from "@/lib/validations";
+import { brandOnboardingSchema } from "@/lib/validations";
 import { submitBrandOnboarding } from "@/app/actions";
 
 export default function BrandOnboardingPage() {
   const router = useRouter();
   const { t } = useTranslation("onboarding.brand");
-  const [step, setStep] = useState(1);
   const [isPending, startTransition] = useTransition();
 
   // Step 1
@@ -47,18 +43,22 @@ export default function BrandOnboardingPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
 
   async function handleSubmit() {
-    const step2Result = brandOnboardingStep2Schema.safeParse({
+    const result = brandOnboardingSchema.safeParse({
+      company_name: companyName,
+      industry,
+      primary_market: targetMarket,
       description: description || undefined,
       website: website || undefined,
     });
-    if (!step2Result.success) {
+
+    if (!result.success) {
       const errs: Record<string, string> = {};
-      for (const issue of step2Result.error.issues) {
+      for (const issue of result.error.issues) {
         const key = issue.path[0] as string;
         if (!errs[key]) errs[key] = issue.message;
       }
       setFieldErrors(errs);
-      const firstMsg = step2Result.error.issues[0]?.message;
+      const firstMsg = result.error.issues[0]?.message;
       toast.error(firstMsg || t("error.fillAll"));
       return;
     }
@@ -67,11 +67,11 @@ export default function BrandOnboardingPage() {
     startTransition(async () => {
       try {
         await submitBrandOnboarding({
-          company_name: companyName,
-          industry,
-          primary_market: targetMarket,
-          description: description || undefined,
-          website: website || undefined,
+          company_name: result.data.company_name,
+          industry: result.data.industry,
+          primary_market: result.data.primary_market,
+          description: result.data.description || undefined,
+          website: result.data.website || undefined,
         });
         router.push("/pending-approval");
       } catch (error) {
@@ -88,26 +88,21 @@ export default function BrandOnboardingPage() {
 
   return (
     <div className="rounded-xl border border-border bg-card p-8 shadow-sm ring-1 ring-ring/[0.03]">
-      {/* Progress */}
       <div className="mb-6 flex gap-2">
-        <div
-          className={`h-1 flex-1 rounded-full ${step >= 1 ? "bg-foreground" : "bg-border"}`}
-        />
-        <div
-          className={`h-1 flex-1 rounded-full ${step >= 2 ? "bg-foreground" : "bg-border"}`}
-        />
+        <div className="h-1 flex-1 rounded-full bg-foreground" />
+        <div className="h-1 flex-1 rounded-full bg-foreground" />
       </div>
 
-      {step === 1 && (
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {t("step1.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("step1.desc")}
-          </p>
+      <div>
+        <h1 className="text-xl font-bold text-foreground">
+          {t("step1.title")}
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {t("step1.desc")}
+        </p>
 
-          <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-6">
+          <div className="space-y-4">
             <div>
               <Label htmlFor="company">{t("field.companyName")}</Label>
               <Input
@@ -155,45 +150,7 @@ export default function BrandOnboardingPage() {
             </div>
           </div>
 
-          <Button
-            className="mt-6 w-full"
-            onClick={() => {
-              const result = brandOnboardingStep1Schema.safeParse({
-                company_name: companyName,
-                industry,
-                primary_market: targetMarket,
-              });
-              if (!result.success) {
-                const errs: Record<string, string> = {};
-                for (const issue of result.error.issues) {
-                  const key = issue.path[0] as string;
-                  if (!errs[key]) errs[key] = issue.message;
-                }
-                setFieldErrors(errs);
-                const firstMsg = result.error.issues[0]?.message;
-                toast.error(firstMsg || t("error.fillFields"));
-                return;
-              }
-              setFieldErrors({});
-              setStep(2);
-            }}
-          >
-            {t("action.continue")}
-            <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
-          </Button>
-        </div>
-      )}
-
-      {step === 2 && (
-        <div>
-          <h1 className="text-xl font-bold text-foreground">
-            {t("step2.title")}
-          </h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {t("step2.desc")}
-          </p>
-
-          <div className="mt-6 space-y-4">
+          <div className="space-y-4 border-t border-border pt-6">
             <div>
               <Label htmlFor="description">{t("field.description")}</Label>
               <Textarea
@@ -224,30 +181,30 @@ export default function BrandOnboardingPage() {
               )}
             </div>
           </div>
-
-          <div className="mt-6 flex gap-3">
-            <Button
-              variant="outline"
-              onClick={() => setStep(1)}
-              className="flex-1"
-            >
-              <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
-              {t("action.back")}
-            </Button>
-            <Button
-              onClick={handleSubmit}
-              disabled={isPending}
-              className="flex-1"
-            >
-              {isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                t("action.submit")
-              )}
-            </Button>
-          </div>
         </div>
-      )}
+
+        <div className="mt-6 flex gap-3">
+          <Button
+            variant="outline"
+            onClick={() => router.push("/onboarding")}
+            className="flex-1"
+          >
+            <ArrowLeft className="me-2 h-4 w-4 rtl:rotate-180" />
+            {t("action.back")}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            disabled={isPending}
+            className="flex-1"
+          >
+            {isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              t("action.submit")
+            )}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
