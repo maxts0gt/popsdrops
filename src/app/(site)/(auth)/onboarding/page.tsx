@@ -12,7 +12,6 @@ export default function OnboardingPage() {
   const searchParams = useSearchParams();
   const suggestedRole = searchParams.get("role");
   const { t } = useTranslation("auth.onboarding");
-  const { t: tCreator } = useTranslation("onboarding.creator");
   const [selectedRole, setSelectedRole] = useState<"creator" | "brand" | null>(
     suggestedRole === "creator" || suggestedRole === "brand"
       ? suggestedRole
@@ -92,7 +91,7 @@ export default function OnboardingPage() {
         disabled={!selectedRole}
         onClick={continueToRole}
       >
-        {tCreator("action.continue")}
+        {t("selectRole.continue")}
         <ArrowRight className="ms-2 h-4 w-4 rtl:rotate-180" />
       </Button>
     </div>

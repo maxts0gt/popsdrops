@@ -500,6 +500,7 @@ export const strings = {
     "selectRole.creator.desc": "I create content and want to work with brands.",
     "selectRole.brand": "I'm a Brand",
     "selectRole.brand.desc": "I want to run influencer campaigns in new markets.",
+    "selectRole.continue": "Continue",
   },
 
   "onboarding.creator": {
@@ -898,7 +899,7 @@ export const strings = {
     "connectSheet.oauthConnect": "Connect with {platform}",
     "connectSheet.oauthDescription": "Auto-verify your profile and fetch metrics",
     "connectSheet.orManually": "or add manually",
-    "connectSheet.profileUrl": "Handle",
+    "connectSheet.profileUrl": "Handle or link",
     "connectSheet.handle": "Handle",
     "connectSheet.followers": "Followers",
     "connectSheet.followersHint": "Enter your current follower count. We'll verify during review.",
