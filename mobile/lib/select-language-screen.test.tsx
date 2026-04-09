@@ -70,8 +70,7 @@ vi.mock("./i18n", () => ({
         {
           "action.back": "Back",
           "preferences.languageTitle": "Language",
-          "preferences.languageSearch": "Search languages or enter a code",
-          "preferences.languageCustom": "Use custom language code",
+          "preferences.languageSearch": "Search languages",
           "preferences.languagePinned": "Pinned",
           "preferences.languageSuggested": "Suggested",
           "preferences.languageAll": "All languages",

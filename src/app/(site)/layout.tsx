@@ -1,5 +1,6 @@
 import { DocumentShell } from "@/components/document-shell";
 import { getLocale } from "@/lib/i18n/server";
+import { getSafePlatformLocale } from "@/lib/i18n/platform-bundles";
 import { ROOT_METADATA } from "@/lib/root-metadata";
 import "../globals.css";
 
@@ -10,7 +11,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const locale = await getLocale();
+  const locale = getSafePlatformLocale(await getLocale());
 
   return (
     <DocumentShell locale={locale}>

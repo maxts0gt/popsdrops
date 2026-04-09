@@ -5,11 +5,9 @@ import React, {
   useCallback,
   useEffect,
   useMemo,
-  useRef,
 } from "react";
 import { getLocales } from "expo-localization";
 import { strings } from "./strings";
-import { supabase } from "./supabase";
 import {
   loadProfileLocalePreference,
   readStoredLocalePreference,
@@ -20,6 +18,7 @@ import {
   normalizeLocaleCode,
 } from "./preferences";
 import { buildLocaleBootstrapPlan } from "./i18n-state";
+import { getSafeMobileLocale, resolveMobileBundleTranslations } from "./mobile-bundles";
 
 type I18nContextValue = {
   t: (key: string, vars?: Record<string, string | number>) => string;
@@ -52,16 +51,6 @@ function getDeviceLocales(): string[] {
   );
 }
 
-function getAllSourceStrings(): Record<string, string> {
-  const merged: Record<string, string> = {};
-
-  for (const section of Object.values(strings)) {
-    Object.assign(merged, section);
-  }
-
-  return merged;
-}
-
 function lookupEnglish(key: string): string | undefined {
   for (const section of Object.values(strings)) {
     if (key in section) {
@@ -86,57 +75,12 @@ function interpolate(
   );
 }
 
-async function loadTranslations(locale: string): Promise<Record<string, string>> {
+function loadTranslations(locale: string): Record<string, string> {
   if (locale === "en") {
     return {};
   }
 
-  const sourceStrings = getAllSourceStrings();
-  const sourceKeyCount = Object.keys(sourceStrings).length;
-
-  try {
-    const { data, error } = await supabase
-      .from("translations")
-      .select("page_key, strings")
-      .eq("locale", locale)
-      .eq("page_key", "mobile.app");
-
-    if (!error && data && data.length > 0) {
-      const cached = data[0].strings as Record<string, string>;
-
-      if (cached && typeof cached === "object") {
-        const cachedKeyCount = Object.keys(cached).length;
-
-        if (cachedKeyCount >= sourceKeyCount * 0.9) {
-          return cached;
-        }
-      }
-    }
-
-    const { data: fnData, error: fnError } = await supabase.functions.invoke(
-      "translate",
-      {
-        body: {
-          locale,
-          pages: { "mobile.app": sourceStrings },
-        },
-      },
-    );
-
-    if (fnError || !fnData) {
-      return {};
-    }
-
-    const translated = fnData?.pages?.["mobile.app"]?.strings;
-
-    if (translated && typeof translated === "object") {
-      return translated as Record<string, string>;
-    }
-
-    return {};
-  } catch {
-    return {};
-  }
+  return resolveMobileBundleTranslations(locale);
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
@@ -147,29 +91,30 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   >({});
   const [ready, setReady] = useState(false);
   const [isLoadingLocale, setIsLoadingLocale] = useState(false);
-  const translationsRef = useRef<Record<string, Record<string, string>>>({});
   const isRTL = isRTLLocale(locale);
 
-  useEffect(() => {
-    translationsRef.current = translationsByLocale;
-  }, [translationsByLocale]);
-
   const ensureLocaleLoaded = useCallback(
-    async (targetLocale: string) => {
-      if (targetLocale === "en" || translationsRef.current[targetLocale]) {
+    (targetLocale: string) => {
+      const safeLocale = getSafeMobileLocale(targetLocale);
+
+      if (safeLocale === "en") {
         return;
       }
 
-      const translated = await loadTranslations(targetLocale);
+      if (translationsByLocale[safeLocale]) {
+        return;
+      }
+
+      const translated = loadTranslations(safeLocale);
 
       if (Object.keys(translated).length > 0) {
         setTranslationsByLocale((current) => ({
           ...current,
-          [targetLocale]: translated,
+          [safeLocale]: translated,
         }));
       }
     },
-    [],
+    [translationsByLocale],
   );
 
   useEffect(() => {
@@ -188,17 +133,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      setLocaleState(bootstrapPlan.locale);
-      setReady(bootstrapPlan.isReadyImmediately);
-      setIsLoadingLocale(bootstrapPlan.shouldLoadTranslations);
-
-      if (!bootstrapPlan.shouldLoadTranslations) {
-        return;
+      const safeLocale = getSafeMobileLocale(bootstrapPlan.locale);
+      if (bootstrapPlan.shouldLoadTranslations) {
+        ensureLocaleLoaded(safeLocale);
       }
 
-      await ensureLocaleLoaded(bootstrapPlan.locale);
-
       if (!cancelled) {
+        setLocaleState(safeLocale);
+        setReady(bootstrapPlan.isReadyImmediately);
         setIsLoadingLocale(false);
       }
     })();
@@ -210,26 +152,16 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
 
   const setLocale = useCallback(
     (nextLocale: string) => {
-      const normalized = normalizeLocaleCode(nextLocale) ?? "en";
+      const normalized = getSafeMobileLocale(normalizeLocaleCode(nextLocale));
 
       if (normalized === locale) {
         return;
       }
 
+      ensureLocaleLoaded(normalized);
       setLocaleState(normalized);
       void writeStoredLocalePreference(normalized);
-
-      if (normalized === "en" || translationsRef.current[normalized]) {
-        setIsLoadingLocale(false);
-        return;
-      }
-
-      setIsLoadingLocale(true);
-
-      void (async () => {
-        await ensureLocaleLoaded(normalized);
-        setIsLoadingLocale(false);
-      })();
+      setIsLoadingLocale(false);
     },
     [ensureLocaleLoaded, locale],
   );

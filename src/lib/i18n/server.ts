@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { type PageKey, getSourceStrings, DEFAULT_LOCALE } from "./strings";
 import { chunkPageKeys } from "./runtime";
 import { resolvePublicBundleTranslations } from "./public-bundles";
+import { resolvePlatformBundleTranslations } from "./platform-bundles";
 
 type TranslationRecord = {
   overrides: Record<string, string> | null;
@@ -170,6 +171,14 @@ export async function getPublicCachedTranslations(
   const targetLocale = locale || (await getLocale());
 
   return resolvePublicBundleTranslations(targetLocale);
+}
+
+export async function getPlatformCachedTranslations(
+  locale?: string,
+): Promise<Partial<Record<PageKey, Record<string, string>>>> {
+  const targetLocale = locale || (await getLocale());
+
+  return resolvePlatformBundleTranslations(targetLocale);
 }
 
 /**

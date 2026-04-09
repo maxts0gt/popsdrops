@@ -10,7 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:mobile": "vitest run mobile/**/*.test.ts mobile/**/*.test.tsx",
-    "generate:public-i18n": "node scripts/generate-public-translation-bundles.mjs"
+    "generate:public-i18n": "node scripts/generate-public-translation-bundles.mjs",
+    "generate:platform-i18n": "node scripts/generate-platform-translation-bundles.mjs",
+    "generate:mobile-i18n": "node scripts/generate-mobile-translation-bundles.mjs",
+    "generate:i18n": "npm run generate:public-i18n && npm run generate:platform-i18n && npm run generate:mobile-i18n"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.53",

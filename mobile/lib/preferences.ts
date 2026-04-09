@@ -1,3 +1,5 @@
+import { MOBILE_TRANSLATION_LOCALES } from "./generated/mobile-translation-locales";
+
 const RTL_LOCALES = new Set([
   "ar",
   "he",
@@ -12,81 +14,10 @@ const RTL_LOCALES = new Set([
   "ug",
 ]);
 
-const CURATED_LOCALE_CODES = [
-  "en",
-  "ar",
-  "bn",
-  "de",
-  "el",
-  "es",
-  "fa",
-  "fr",
-  "he",
-  "hi",
-  "id",
-  "it",
-  "ja",
-  "kk",
-  "ko",
-  "ms",
-  "nl",
-  "pl",
-  "pt",
-  "ro",
-  "ru",
-  "sv",
-  "sw",
-  "th",
-  "tl",
-  "tr",
-  "uk",
-  "uz",
-  "vi",
-  "zh",
+const SUPPORTED_MOBILE_LOCALE_CODES = [
+  ...MOBILE_TRANSLATION_LOCALES,
 ] as const;
-
-const EXTENDED_LOCALE_CODES = [
-  ...CURATED_LOCALE_CODES,
-  "am",
-  "az",
-  "bg",
-  "cs",
-  "da",
-  "et",
-  "fi",
-  "fil",
-  "gu",
-  "hr",
-  "hu",
-  "hy",
-  "ka",
-  "km",
-  "kn",
-  "ky",
-  "lo",
-  "lt",
-  "lv",
-  "mk",
-  "ml",
-  "mn",
-  "mr",
-  "my",
-  "ne",
-  "no",
-  "om",
-  "pa",
-  "si",
-  "sk",
-  "sl",
-  "so",
-  "sq",
-  "sr",
-  "ta",
-  "te",
-  "tg",
-  "tk",
-  "yo",
-] as const;
+const SUPPORTED_MOBILE_LOCALE_SET = new Set<string>(SUPPORTED_MOBILE_LOCALE_CODES);
 
 export type LanguageOption = {
   code: string;
@@ -239,16 +170,18 @@ export function resolvePreferredLocale(input: {
   deviceLocales: string[];
 }) {
   const storedLocale = normalizeLocaleCode(input.storedLocale);
-  if (storedLocale) {
+  if (storedLocale && SUPPORTED_MOBILE_LOCALE_SET.has(storedLocale)) {
     return storedLocale;
   }
 
   const profileLocale = normalizeLocaleCode(input.profileLocale);
-  if (profileLocale) {
+  if (profileLocale && SUPPORTED_MOBILE_LOCALE_SET.has(profileLocale)) {
     return profileLocale;
   }
 
-  const firstDeviceLocale = dedupe(input.deviceLocales)[0];
+  const firstDeviceLocale = dedupe(input.deviceLocales).find((code) =>
+    SUPPORTED_MOBILE_LOCALE_SET.has(code),
+  );
   return firstDeviceLocale ?? "en";
 }
 
@@ -261,9 +194,11 @@ export function buildLanguagePickerModel(input: {
   const query = input.query.trim().toLowerCase();
   const pinnedCodes = dedupe([currentLocale, "en"]);
   const suggestedCodes = dedupe(input.deviceLocales).filter(
-    (code) => !pinnedCodes.includes(code),
+    (code) =>
+      SUPPORTED_MOBILE_LOCALE_SET.has(code) &&
+      !pinnedCodes.includes(code),
   );
-  const restCodes = dedupe([...EXTENDED_LOCALE_CODES]).filter(
+  const restCodes = dedupe([...SUPPORTED_MOBILE_LOCALE_CODES]).filter(
     (code) => !pinnedCodes.includes(code) && !suggestedCodes.includes(code),
   );
 
@@ -277,17 +212,9 @@ export function buildLanguagePickerModel(input: {
     .filter((option) => matchesQuery(option, query))
     .sort(byNativeLabel);
 
-  const normalizedQuery = normalizeLocaleCode(query);
-  const custom =
-    normalizedQuery &&
-    ![...pinnedCodes, ...suggestedCodes, ...restCodes].includes(normalizedQuery)
-      ? buildLanguageOption(normalizedQuery)
-      : null;
-
   return {
     pinned,
     suggested,
     rest,
-    custom,
   };
 }

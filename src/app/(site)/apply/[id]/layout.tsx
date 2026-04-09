@@ -1,6 +1,6 @@
 import { LocalizedRouteShell } from "@/components/localized-route-shell";
-import { getCachedTranslations, getLocale } from "@/lib/i18n/server";
-import { strings, type PageKey } from "@/lib/i18n/strings";
+import { getLocale, getPlatformCachedTranslations } from "@/lib/i18n/server";
+import { getSafePlatformLocale } from "@/lib/i18n/platform-bundles";
 
 export default async function PublicApplyLayout({
   children,
@@ -10,14 +10,17 @@ export default async function PublicApplyLayout({
   params: Promise<Record<string, string | string[] | undefined>>;
 }) {
   void params;
-  const locale = await getLocale();
-  const allPageKeys = Object.keys(strings) as PageKey[];
+  const locale = getSafePlatformLocale(await getLocale());
   const initialTranslations = locale !== "en"
-    ? await getCachedTranslations(allPageKeys, locale)
+    ? await getPlatformCachedTranslations(locale)
     : undefined;
 
   return (
-    <LocalizedRouteShell locale={locale} initialTranslations={initialTranslations}>
+    <LocalizedRouteShell
+      locale={locale}
+      initialTranslations={initialTranslations}
+      runtimeTranslationEnabled={false}
+    >
       {children}
     </LocalizedRouteShell>
   );
