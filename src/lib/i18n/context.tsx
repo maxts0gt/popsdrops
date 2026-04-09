@@ -30,8 +30,8 @@ import {
   isLocaleFetchInFlight,
 } from "./fetch-state";
 import {
+  buildSeededTranslationCache,
   getSessionFetchState,
-  getSessionTranslationCache,
   hasFetchedLocaleInSession,
   hydrateLocaleSession,
   markFetchedLocaleInSession,
@@ -77,12 +77,8 @@ export function I18nProvider({
     ALL_PAGE_KEYS,
     initialTranslations,
   );
-  hydrateLocaleSession(
-    initialLocale,
-    initialTranslations,
-    initialLocaleReadyFromProps,
-  );
-  const initialLocaleReady = hasFetchedLocaleInSession(initialLocale);
+  const initialLocaleReady =
+    hasFetchedLocaleInSession(initialLocale) || initialLocaleReadyFromProps;
   const [locale, setLocaleState] = useState(initialLocale);
   const [isLoading, setIsLoading] = useState(
     runtimeTranslationEnabled &&
@@ -93,14 +89,25 @@ export function I18nProvider({
 
   // Nested cache: { "ko": { "marketing.landing": { "headline": "..." } } }
   // English strings are always available from source, never fetched.
-  const cache = useRef<TranslationCache>(getSessionTranslationCache());
+  const cache = useRef<TranslationCache>(
+    buildSeededTranslationCache(initialLocale, initialTranslations),
+  );
 
   const isRTL = isRTLLocale(locale);
   const dir = isRTL ? "rtl" as const : "ltr" as const;
   const isLocaleReady =
     !runtimeTranslationEnabled ||
     locale === DEFAULT_LOCALE ||
-    hasFetchedLocaleInSession(locale);
+    hasFetchedLocaleInSession(locale) ||
+    (locale === initialLocale && initialLocaleReadyFromProps);
+
+  useEffect(() => {
+    hydrateLocaleSession(
+      initialLocale,
+      initialTranslations,
+      initialLocaleReadyFromProps,
+    );
+  }, [initialLocale, initialLocaleReadyFromProps, initialTranslations]);
 
   const setLocale = useCallback((newLocale: string) => {
     setLocaleState(newLocale);
@@ -117,6 +124,7 @@ export function I18nProvider({
   useEffect(() => {
     if (!runtimeTranslationEnabled) return;
     if (locale === DEFAULT_LOCALE) return;
+    if (locale === initialLocale && initialLocaleReadyFromProps) return;
     if (hasFetchedLocaleInSession(locale)) return;
 
     const activeFetchState = getSessionFetchState();
@@ -153,6 +161,7 @@ export function I18nProvider({
           ) as Partial<Record<PageKey, Record<string, string>>>;
 
           mergeTranslationsIntoCache(cache.current, locale, chunkTranslations);
+          hydrateLocaleSession(locale, chunkTranslations);
         }
       }),
     )
@@ -174,7 +183,7 @@ export function I18nProvider({
           setIsLoading(false);
         }
       });
-  }, [locale, runtimeTranslationEnabled]);
+  }, [initialLocale, initialLocaleReadyFromProps, locale, runtimeTranslationEnabled]);
 
   /**
    * Preload is now a no-op — the provider fetches ALL keys on locale change.

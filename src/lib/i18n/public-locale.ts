@@ -23,7 +23,7 @@ export const ROOT_PUBLIC_PATHS = new Set([
 // We still recognize any known locale prefix in a public URL so stale links
 // can be redirected safely, but only bundled locales are offered publicly.
 const KNOWN_MARKETING_LOCALES = new Set(SUPPORTED_LOCALES);
-export const SUPPORTED_MARKETING_LOCALES = new Set(PUBLIC_TRANSLATION_LOCALES);
+export const SUPPORTED_MARKETING_LOCALES = new Set<string>(PUBLIC_TRANSLATION_LOCALES);
 const PUBLIC_PATH_PREFIXES = ["/auth/", "/c/", "/apply/"] as const;
 
 export type PublicLocaleRoutingDecision =
@@ -118,6 +118,10 @@ export function resolvePublicLocaleRouting(
   const safeLocale = getSafePublicLocale(locale);
 
   if (prefixedLocale) {
+    if (SUPPORTED_MARKETING_LOCALES.has(prefixedLocale)) {
+      return null;
+    }
+
     const unprefixedPath = stripMarketingLocalePrefix(normalized);
     const currentTarget = `${normalized}${search}`;
     const localizedTarget = buildLocalizedMarketingPath(

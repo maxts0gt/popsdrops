@@ -4,6 +4,7 @@ import { DocumentShell } from "@/components/document-shell";
 import { LocalizedRouteShell } from "@/components/localized-route-shell";
 import { getPublicCachedTranslations } from "@/lib/i18n/server";
 import {
+  DEFAULT_MARKETING_LOCALE,
   SUPPORTED_MARKETING_LOCALES,
 } from "@/lib/i18n/public-locale";
 import { PUBLIC_TRANSLATION_LOCALES } from "@/lib/i18n/generated/public-translation-locales";

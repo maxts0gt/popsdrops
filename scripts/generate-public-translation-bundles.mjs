@@ -134,36 +134,105 @@ ${glossaryText ? `Glossary:\n${glossaryText}\n` : ""}JSON TO LOCALIZE:
 ${JSON.stringify(bundle, null, 2)}`;
 }
 
+function validateBundleShape(bundle, candidate) {
+  if (!candidate || typeof candidate !== "object" || Array.isArray(candidate)) {
+    throw new Error("Generated bundle is not a JSON object");
+  }
+
+  const expectedPageKeys = Object.keys(bundle).sort();
+  const actualPageKeys = Object.keys(candidate).sort();
+
+  if (
+    expectedPageKeys.length !== actualPageKeys.length ||
+    expectedPageKeys.some((pageKey, index) => pageKey !== actualPageKeys[index])
+  ) {
+    throw new Error("Generated bundle page keys do not match the source bundle");
+  }
+
+  for (const pageKey of expectedPageKeys) {
+    const expectedStrings = bundle[pageKey];
+    const actualStrings = candidate[pageKey];
+
+    if (!actualStrings || typeof actualStrings !== "object" || Array.isArray(actualStrings)) {
+      throw new Error(`Generated page "${pageKey}" is not an object`);
+    }
+
+    const expectedKeys = Object.keys(expectedStrings).sort();
+    const actualKeys = Object.keys(actualStrings).sort();
+
+    if (
+      expectedKeys.length !== actualKeys.length ||
+      expectedKeys.some((key, index) => key !== actualKeys[index])
+    ) {
+      throw new Error(`Generated page "${pageKey}" keys do not match the source page`);
+    }
+
+    for (const key of actualKeys) {
+      if (typeof actualStrings[key] !== "string") {
+        throw new Error(`Generated value for "${pageKey}.${key}" is not a string`);
+      }
+    }
+  }
+}
+
 async function translateBundle({ apiKey, model, locale, localeName, glossary, bundle }) {
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: buildPrompt(localeName, glossary, bundle) }] }],
-        generationConfig: {
-          temperature: 0.1,
-          responseMimeType: "application/json",
+  let lastError = null;
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: buildPrompt(localeName, glossary, bundle) }] }],
+            generationConfig: {
+              temperature: 0,
+              responseMimeType: "application/json",
+            },
+          }),
         },
-      }),
-    },
-  );
+      );
 
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Gemini API error for ${locale}: ${response.status} ${error}`);
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Gemini API error for ${locale}: ${response.status} ${error}`);
+      }
+
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!text) {
+        throw new Error(`Empty Gemini response for ${locale}`);
+      }
+
+      try {
+        const parsed = JSON.parse(text);
+        validateBundleShape(bundle, parsed);
+        return parsed;
+      } catch (parseError) {
+        const jsonStart = text.indexOf("{");
+        const jsonEnd = text.lastIndexOf("}");
+        if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
+          const parsed = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+          validateBundleShape(bundle, parsed);
+          return parsed;
+        }
+        throw parseError;
+      }
+    } catch (error) {
+      lastError = error;
+      console.warn(
+        `Gemini bundle generation attempt ${attempt} failed for ${locale}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      );
+    }
   }
 
-  const data = await response.json();
-  const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    throw new Error(`Empty Gemini response for ${locale}`);
-  }
-
-  return JSON.parse(text);
+  throw lastError;
 }
 
 function writeBundleJson(locale, bundle) {

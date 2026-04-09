@@ -12,8 +12,37 @@ const sessionTranslationCache: TranslationCache = {};
 const sessionFetchedLocales = new Set<string>();
 let sessionFetchState: LocaleFetchState = createLocaleFetchState();
 
+function cloneTranslationCache(cache: TranslationCache): TranslationCache {
+  const clone: TranslationCache = {};
+
+  for (const [locale, pages] of Object.entries(cache)) {
+    clone[locale] = {};
+
+    for (const [pageKey, strings] of Object.entries(
+      pages as Record<string, Record<string, string>>,
+    )) {
+      clone[locale][pageKey as PageKey] = { ...strings };
+    }
+  }
+
+  return clone;
+}
+
 export function getSessionTranslationCache(): TranslationCache {
   return sessionTranslationCache;
+}
+
+export function buildSeededTranslationCache(
+  locale: string,
+  translations?: Partial<Record<PageKey, Record<string, string>>>,
+): TranslationCache {
+  const seeded = cloneTranslationCache(sessionTranslationCache);
+
+  if (translations && Object.keys(translations).length > 0) {
+    mergeTranslationsIntoCache(seeded, locale, translations);
+  }
+
+  return seeded;
 }
 
 export function hasFetchedLocaleInSession(locale: string): boolean {
