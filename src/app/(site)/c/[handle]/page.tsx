@@ -196,11 +196,14 @@ export async function generateMetadata({
   return {
     title: `${name} — Media Kit`,
     description,
+    alternates: {
+      canonical: `https://www.popsdrops.com/c/${creator.slug}`,
+    },
     openGraph: {
       title: `${name} — Creator Media Kit`,
       description,
       type: "profile",
-      url: `https://popsdrops.com/c/${creator.slug}`,
+      url: `https://www.popsdrops.com/c/${creator.slug}`,
     },
     twitter: {
       card: "summary",
@@ -499,14 +502,14 @@ export default async function CreatorMediaKitPage({
             "@context": "https://schema.org",
             "@type": "ProfilePage",
             mainEntity: {
-              "@type": "Person",
-              name,
-              description: creator.bio || "",
-              url: `https://popsdrops.com/c/${creator.slug}`,
-              knowsAbout: niches.map((n) => NICHE_LABELS[n] || n),
-            },
-          }),
-        }}
+            "@type": "Person",
+            name,
+            description: creator.bio || "",
+            url: `https://www.popsdrops.com/c/${creator.slug}`,
+            knowsAbout: niches.map((n) => NICHE_LABELS[n] || n),
+          },
+        }),
+      }}
       />
     </div>
   );

@@ -7,7 +7,7 @@ export const ROOT_METADATA: Metadata = {
   },
   description:
     "Global cross-border influencer marketing. Run creator campaigns in any market. Translated briefs. Curated matching. Per-platform analytics.",
-  metadataBase: new URL("https://popsdrops.com"),
+  metadataBase: new URL("https://www.popsdrops.com"),
   openGraph: {
     title: "PopsDrops — Creator Campaigns Without Borders",
     description:
