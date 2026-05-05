@@ -17,6 +17,7 @@ This design adds the missing product spine:
 
 ## Product Principles
 
+- Every product choice must be intentional. If a field, status, tab, chart, upload, or line of copy does not serve a downstream job, remove it.
 - Do not fake analytics. If daily data was not submitted or fetched, show the gap.
 - Default to final-only reporting because it is easiest for brands and creators.
 - Make daily or weekly reporting available when the campaign needs it.
@@ -24,6 +25,34 @@ This design adds the missing product spine:
 - Keep private brand materials private. Applicants do not receive internal assets.
 - Label metric trust level clearly: creator-submitted, screenshot-verified, or platform-verified later.
 - Keep brand workflow self-running. PopsDrops should not manually approve routine creator work.
+
+## Intentionality Gate
+
+Before implementation, every proposed item must answer all required questions below.
+
+Required questions:
+
+1. What user job does this serve?
+2. Which user sees or edits it?
+3. What downstream output uses it?
+4. Does it help matching, instruction, scheduling, evidence, reporting, pricing, compliance, or trust?
+5. What happens if it is missing, late, wrong, or rejected?
+
+Removal rules:
+
+- If it does not change creator behavior, brand decisions, campaign operations, report quality, pricing clarity, or access control, remove it.
+- If it only explains the interface but the interface can be made clearer, remove the text and improve the interface.
+- If it creates data that is never used in matching, workflow, reporting, audit, or permissions, remove the field.
+- If it adds a new status without a user action, system action, or report consequence, remove the status.
+- If it creates a tab with fewer than two real jobs, merge it into another tab.
+- If it creates a chart that cannot be trusted or explained, do not ship the chart.
+- If it requires manual PopsDrops intervention for routine work, redesign it so the platform can run itself.
+
+Implementation requirement:
+
+- Each new field or table column must include a short downstream-use note in the implementation plan.
+- Each new UI section must include a primary job and empty-state behavior.
+- Each new report element must state its data source and what missing data means.
 
 ## Campaign Builder Shape
 
@@ -635,6 +664,15 @@ Reports may:
 - Late submission changes missed task to `submitted_late`.
 - Report aggregation labels data source and verification status correctly.
 
+### Intentionality review
+
+- Every campaign builder field has a documented downstream use.
+- Every campaign workspace tab has a primary job and at least two real user tasks.
+- Every report status has a user-visible consequence.
+- Every empty state has one next action or no action when the correct state is completion.
+- No helper copy repeats what the component already makes obvious.
+- No chart ships without data-source labeling and missing-data behavior.
+
 ### Browser smoke tests
 
 - Brand creates campaign with Creative Kit and final-only reporting.
@@ -662,6 +700,7 @@ Reports may:
 
 This slice is done only when:
 
+- The intentionality review passes with no orphan fields, decorative sections, or unsupported charts.
 - Schema and RLS are applied and verified.
 - Buckets are private and policy-protected.
 - Uploads work for the right users and fail for the wrong users.
