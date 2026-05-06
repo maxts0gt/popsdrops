@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import { createPrivilegedNotification } from "@/lib/supabase/privileged";
+import {
+  createPrivilegedNotification,
+  createPrivilegedReportTaskForSubmission,
+  markPrivilegedReportTaskSubmitted,
+} from "@/lib/supabase/privileged";
 import { getUser } from "./auth";
 import { submitContentSchema, submitPerformanceSchema } from "@/lib/validations";
 import { sendNotificationEmail } from "@/lib/email/notify";
@@ -264,11 +268,18 @@ export async function publishContent(
 
   if (error) throw new Error(error.message);
 
+  await createPrivilegedReportTaskForSubmission({
+    submissionId,
+    campaignId: member.campaign_id,
+    campaignMemberId: submission.campaign_member_id,
+  });
+
   revalidatePath(`/i/campaigns/${member.campaign_id}`);
 }
 
 export async function submitPerformance(input: {
   submission_id: string;
+  report_task_id?: string;
   measurement_type: "initial_48h" | "final_7d" | "extended_30d";
   views?: number;
   reach?: number;
@@ -292,12 +303,54 @@ export async function submitPerformance(input: {
   const user = await getUser();
   const supabase = await createClient();
 
-  const { submission_id, ...metrics } = input;
+  const { submission_id, report_task_id, ...metrics } = input;
+
+  const { data: submission } = await supabase
+    .from("content_submissions")
+    .select("id, campaign_member_id, campaign_members(campaign_id, creator_id)")
+    .eq("id", submission_id)
+    .single();
+
+  if (!submission) throw new Error("Submission not found");
+
+  const memberRelation = Array.isArray(submission.campaign_members)
+    ? submission.campaign_members[0]
+    : submission.campaign_members;
+  const member = memberRelation
+    ? { id: submission.campaign_member_id, ...memberRelation }
+    : null;
+
+  if (!member || member.creator_id !== user.id) {
+    throw new Error("Not authorized");
+  }
+
+  let reportTaskId: string | null = null;
+  if (report_task_id) {
+    const { data: reportTask } = await supabase
+      .from("campaign_report_tasks")
+      .select("id, campaign_id, campaign_member_id, due_at, status")
+      .eq("id", report_task_id)
+      .single();
+
+    if (!reportTask) throw new Error("Report task not found");
+    if (
+      reportTask.campaign_member_id !== member.id ||
+      reportTask.campaign_id !== member.campaign_id
+    ) {
+      throw new Error("Not authorized");
+    }
+
+    reportTaskId = reportTask.id;
+  }
+
+  const submittedAt = new Date().toISOString();
 
   const { data, error } = await supabase
     .from("content_performance")
     .insert({
       submission_id,
+      report_task_id: reportTaskId,
+      reported_at: submittedAt,
       ...metrics,
     })
     .select("id")
@@ -305,8 +358,16 @@ export async function submitPerformance(input: {
 
   if (error) throw new Error(error.message);
 
+  if (reportTaskId) {
+    await markPrivilegedReportTaskSubmitted(reportTaskId, submittedAt);
+  }
+
   // Recalculate creator performance aggregates
   await recalculateCreatorPerformance(supabase, user.id);
+
+  revalidatePath(`/i/campaigns/${member.campaign_id}`);
+  revalidatePath(`/b/campaigns/${member.campaign_id}`);
+  revalidatePath(`/b/campaigns/${member.campaign_id}/report`);
 
   return { id: data.id };
 }

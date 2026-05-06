@@ -1,5 +1,5 @@
 // =============================================================================
-// Database Type Definitions — maps to Supabase Postgres schema
+// Database Type Definitions - maps to Supabase Postgres schema
 // =============================================================================
 
 // -----------------------------------------------------------------------------
@@ -19,6 +19,8 @@ export type CampaignStatus =
   | 'completed'
   | 'paused'
   | 'cancelled';
+
+export type CampaignModeType = 'private' | 'sourced';
 
 export type ApplicationStatus =
   | 'pending'
@@ -82,6 +84,107 @@ export type SocialConnectionStatus = 'active' | 'expired' | 'revoked' | 'error';
 
 export type MetricDataSource = 'manual' | 'api' | 'api_partial';
 
+export type CampaignBriefBlockType =
+  | 'product_notes'
+  | 'brand_vibe'
+  | 'talking_points'
+  | 'avoid_claims'
+  | 'cta'
+  | 'hashtags'
+  | 'examples'
+  | 'custom';
+
+export type CampaignBriefVisibility = 'public' | 'member' | 'brand';
+
+export type CampaignAssetType =
+  | 'product_image'
+  | 'brand_guideline'
+  | 'reference_video'
+  | 'sell_sheet'
+  | 'logo'
+  | 'document'
+  | 'other';
+
+export type CampaignAssetVisibility = 'member' | 'brand';
+
+export type CampaignAssetStatus = 'uploading' | 'ready' | 'archived';
+
+export type CampaignReportingCadence =
+  | 'final_only'
+  | 'weekly'
+  | 'daily_launch_window'
+  | 'custom'
+  | 'per_post';
+
+export type CampaignReportTaskStatus =
+  | 'pending'
+  | 'submitted'
+  | 'submitted_late'
+  | 'verified'
+  | 'needs_revision'
+  | 'missed'
+  | 'excused';
+
+export type PerformanceVerificationStatus =
+  | 'submitted'
+  | 'screenshot_verified'
+  | 'brand_verified'
+  | 'rejected';
+
+export type PerformanceEvidenceType =
+  | 'screenshot'
+  | 'csv'
+  | 'analytics_export'
+  | 'document'
+  | 'other';
+
+export type PerformanceEvidenceVerificationStatus =
+  | 'submitted'
+  | 'verified'
+  | 'rejected';
+
+export type ReportingPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'youtube'
+  | 'facebook'
+  | 'snapchat'
+  | 'x'
+  | 'generic';
+
+export type ReportingFieldType =
+  | 'integer'
+  | 'decimal'
+  | 'percentage'
+  | 'duration_seconds'
+  | 'currency'
+  | 'text';
+
+export type ReportingEvidenceScope =
+  | 'public'
+  | 'native_insights'
+  | 'brand_defined';
+
+export type ReportingAccountRequirement =
+  | 'public_post_ok'
+  | 'native_insights_required'
+  | 'business_or_creator_account_required'
+  | 'brand_defined';
+
+export type ReportingMetricSourceType =
+  | 'creator_manual'
+  | 'ai_extracted'
+  | 'creator_confirmed'
+  | 'brand_verified'
+  | 'platform_api';
+
+export type PerformanceAiExtractionStatus =
+  | 'pending_confirmation'
+  | 'accepted_by_creator'
+  | 'edited_by_creator'
+  | 'rejected_by_creator'
+  | 'superseded';
+
 // -----------------------------------------------------------------------------
 // JSONB field types
 // -----------------------------------------------------------------------------
@@ -117,7 +220,7 @@ export type BriefTranslation = Record<
 >;
 
 // -----------------------------------------------------------------------------
-// Table types — Supabase generated-types pattern
+// Table types - Supabase generated-types pattern
 // -----------------------------------------------------------------------------
 
 export interface Database {
@@ -365,6 +468,7 @@ export interface Database {
           id: string;
           brand_id: string;
           playbook_id: string | null;
+          campaign_mode: CampaignModeType;
           title: string;
           brief_description: string | null;
           brief_requirements: string | null;
@@ -378,9 +482,15 @@ export interface Database {
           budget_max: number | null;
           budget_currency: string;
           max_creators: number | null;
+          creator_sourcing_required: boolean;
+          service_fee_cents: number;
+          service_fee_currency: string;
+          service_fee_status: PaymentStatusType;
+          service_package_snapshot: Record<string, unknown>;
           status: CampaignStatus;
           application_deadline: string | null;
           content_due_date: string | null;
+          performance_due_date: string | null;
           posting_window_start: string | null;
           posting_window_end: string | null;
           monitoring_end_date: string | null;
@@ -401,6 +511,7 @@ export interface Database {
           id?: string;
           brand_id: string;
           playbook_id?: string | null;
+          campaign_mode?: CampaignModeType;
           title: string;
           brief_description?: string | null;
           brief_requirements?: string | null;
@@ -414,9 +525,15 @@ export interface Database {
           budget_max?: number | null;
           budget_currency?: string;
           max_creators?: number | null;
+          creator_sourcing_required?: boolean;
+          service_fee_cents?: number;
+          service_fee_currency?: string;
+          service_fee_status?: PaymentStatusType;
+          service_package_snapshot?: Record<string, unknown>;
           status?: CampaignStatus;
           application_deadline?: string | null;
           content_due_date?: string | null;
+          performance_due_date?: string | null;
           posting_window_start?: string | null;
           posting_window_end?: string | null;
           monitoring_end_date?: string | null;
@@ -437,6 +554,7 @@ export interface Database {
           id?: string;
           brand_id?: string;
           playbook_id?: string | null;
+          campaign_mode?: CampaignModeType;
           title?: string;
           brief_description?: string | null;
           brief_requirements?: string | null;
@@ -450,9 +568,15 @@ export interface Database {
           budget_max?: number | null;
           budget_currency?: string;
           max_creators?: number | null;
+          creator_sourcing_required?: boolean;
+          service_fee_cents?: number;
+          service_fee_currency?: string;
+          service_fee_status?: PaymentStatusType;
+          service_package_snapshot?: Record<string, unknown>;
           status?: CampaignStatus;
           application_deadline?: string | null;
           content_due_date?: string | null;
+          performance_due_date?: string | null;
           posting_window_start?: string | null;
           posting_window_end?: string | null;
           monitoring_end_date?: string | null;
@@ -570,6 +694,327 @@ export interface Database {
         };
       };
 
+      campaign_brief_blocks: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          block_type: CampaignBriefBlockType;
+          title: string;
+          body: string | null;
+          items: unknown[];
+          visibility: CampaignBriefVisibility;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          block_type: CampaignBriefBlockType;
+          title: string;
+          body?: string | null;
+          items?: unknown[];
+          visibility?: CampaignBriefVisibility;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          block_type?: CampaignBriefBlockType;
+          title?: string;
+          body?: string | null;
+          items?: unknown[];
+          visibility?: CampaignBriefVisibility;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_assets: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          uploaded_by: string;
+          title: string;
+          description: string | null;
+          asset_type: CampaignAssetType;
+          bucket_id: 'campaign-assets';
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          visibility: CampaignAssetVisibility;
+          status: CampaignAssetStatus;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          uploaded_by: string;
+          title: string;
+          description?: string | null;
+          asset_type: CampaignAssetType;
+          bucket_id?: 'campaign-assets';
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          visibility?: CampaignAssetVisibility;
+          status?: CampaignAssetStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          uploaded_by?: string;
+          title?: string;
+          description?: string | null;
+          asset_type?: CampaignAssetType;
+          bucket_id?: 'campaign-assets';
+          storage_path?: string;
+          file_name?: string;
+          mime_type?: string;
+          size_bytes?: number;
+          visibility?: CampaignAssetVisibility;
+          status?: CampaignAssetStatus;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      reporting_metric_definitions: {
+        Row: {
+          id: string;
+          platform: ReportingPlatform;
+          metric_key: string;
+          label: string;
+          field_type: ReportingFieldType;
+          evidence_scope: ReportingEvidenceScope;
+          is_default: boolean;
+          is_private_metric: boolean;
+          sort_order: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          platform: ReportingPlatform;
+          metric_key: string;
+          label: string;
+          field_type: ReportingFieldType;
+          evidence_scope: ReportingEvidenceScope;
+          is_default?: boolean;
+          is_private_metric?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          platform?: ReportingPlatform;
+          metric_key?: string;
+          label?: string;
+          field_type?: ReportingFieldType;
+          evidence_scope?: ReportingEvidenceScope;
+          is_default?: boolean;
+          is_private_metric?: boolean;
+          sort_order?: number;
+          created_at?: string;
+        };
+      };
+
+      campaign_reporting_requirements: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          platform: ReportingPlatform;
+          platform_label: string | null;
+          content_format: string;
+          account_requirement: ReportingAccountRequirement;
+          evidence_types: string[];
+          required_metric_keys: string[];
+          ai_extraction_allowed: boolean;
+          creator_confirmation_required: boolean;
+          sort_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          platform: ReportingPlatform;
+          platform_label?: string | null;
+          content_format: string;
+          account_requirement?: ReportingAccountRequirement;
+          evidence_types?: string[];
+          required_metric_keys?: string[];
+          ai_extraction_allowed?: boolean;
+          creator_confirmation_required?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          platform?: ReportingPlatform;
+          platform_label?: string | null;
+          content_format?: string;
+          account_requirement?: ReportingAccountRequirement;
+          evidence_types?: string[];
+          required_metric_keys?: string[];
+          ai_extraction_allowed?: boolean;
+          creator_confirmation_required?: boolean;
+          sort_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_reporting_plans: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          cadence: CampaignReportingCadence;
+          required_evidence: string[];
+          required_metrics: Record<string, unknown>;
+          grace_period_hours: number;
+          starts_at: string | null;
+          ends_at: string | null;
+          custom_due_dates: string[];
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          cadence?: CampaignReportingCadence;
+          required_evidence?: string[];
+          required_metrics?: Record<string, unknown>;
+          grace_period_hours?: number;
+          starts_at?: string | null;
+          ends_at?: string | null;
+          custom_due_dates?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          cadence?: CampaignReportingCadence;
+          required_evidence?: string[];
+          required_metrics?: Record<string, unknown>;
+          grace_period_hours?: number;
+          starts_at?: string | null;
+          ends_at?: string | null;
+          custom_due_dates?: string[];
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_report_share_links: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          created_by: string;
+          token_hash: string;
+          token_prefix: string;
+          label: string;
+          expires_at: string | null;
+          revoked_at: string | null;
+          last_viewed_at: string | null;
+          view_count: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          created_by: string;
+          token_hash: string;
+          token_prefix: string;
+          label?: string;
+          expires_at?: string | null;
+          revoked_at?: string | null;
+          last_viewed_at?: string | null;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          created_by?: string;
+          token_hash?: string;
+          token_prefix?: string;
+          label?: string;
+          expires_at?: string | null;
+          revoked_at?: string | null;
+          last_viewed_at?: string | null;
+          view_count?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_report_tasks: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          campaign_member_id: string;
+          task_key: string;
+          period_start: string | null;
+          period_end: string | null;
+          due_at: string;
+          status: CampaignReportTaskStatus;
+          submitted_at: string | null;
+          verified_at: string | null;
+          missed_at: string | null;
+          excused_at: string | null;
+          review_note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          campaign_member_id: string;
+          task_key: string;
+          period_start?: string | null;
+          period_end?: string | null;
+          due_at: string;
+          status?: CampaignReportTaskStatus;
+          submitted_at?: string | null;
+          verified_at?: string | null;
+          missed_at?: string | null;
+          excused_at?: string | null;
+          review_note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          campaign_member_id?: string;
+          task_key?: string;
+          period_start?: string | null;
+          period_end?: string | null;
+          due_at?: string;
+          status?: CampaignReportTaskStatus;
+          submitted_at?: string | null;
+          verified_at?: string | null;
+          missed_at?: string | null;
+          excused_at?: string | null;
+          review_note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
       content_submissions: {
         Row: {
           id: string;
@@ -653,6 +1098,10 @@ export interface Database {
           subscriber_gains: number | null;
           screenshot_url: string | null;
           data_source: MetricDataSource;
+          report_task_id: string | null;
+          verification_status: PerformanceVerificationStatus;
+          verified_at: string | null;
+          verified_by: string | null;
           reported_at: string;
           created_at: string;
         };
@@ -677,6 +1126,10 @@ export interface Database {
           subscriber_gains?: number | null;
           screenshot_url?: string | null;
           data_source?: MetricDataSource;
+          report_task_id?: string | null;
+          verification_status?: PerformanceVerificationStatus;
+          verified_at?: string | null;
+          verified_by?: string | null;
           reported_at: string;
           created_at?: string;
         };
@@ -701,7 +1154,161 @@ export interface Database {
           subscriber_gains?: number | null;
           screenshot_url?: string | null;
           data_source?: MetricDataSource;
+          report_task_id?: string | null;
+          verification_status?: PerformanceVerificationStatus;
+          verified_at?: string | null;
+          verified_by?: string | null;
           reported_at?: string;
+          created_at?: string;
+        };
+      };
+
+      content_performance_metric_values: {
+        Row: {
+          id: string;
+          performance_id: string;
+          report_task_id: string | null;
+          platform: ReportingPlatform;
+          metric_key: string;
+          metric_label: string;
+          metric_value: number | null;
+          metric_text: string | null;
+          source_type: ReportingMetricSourceType;
+          extraction_confidence: number | null;
+          confirmed_by_creator: boolean;
+          confirmed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          performance_id: string;
+          report_task_id?: string | null;
+          platform: ReportingPlatform;
+          metric_key: string;
+          metric_label: string;
+          metric_value?: number | null;
+          metric_text?: string | null;
+          source_type?: ReportingMetricSourceType;
+          extraction_confidence?: number | null;
+          confirmed_by_creator?: boolean;
+          confirmed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          performance_id?: string;
+          report_task_id?: string | null;
+          platform?: ReportingPlatform;
+          metric_key?: string;
+          metric_label?: string;
+          metric_value?: number | null;
+          metric_text?: string | null;
+          source_type?: ReportingMetricSourceType;
+          extraction_confidence?: number | null;
+          confirmed_by_creator?: boolean;
+          confirmed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      content_performance_evidence: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          campaign_member_id: string;
+          report_task_id: string;
+          submission_id: string | null;
+          performance_id: string | null;
+          uploaded_by: string;
+          evidence_type: PerformanceEvidenceType;
+          bucket_id: 'campaign-evidence';
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          verification_status: PerformanceEvidenceVerificationStatus;
+          review_note: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          campaign_member_id: string;
+          report_task_id: string;
+          submission_id?: string | null;
+          performance_id?: string | null;
+          uploaded_by: string;
+          evidence_type: PerformanceEvidenceType;
+          bucket_id?: 'campaign-evidence';
+          storage_path: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          verification_status?: PerformanceEvidenceVerificationStatus;
+          review_note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          campaign_member_id?: string;
+          report_task_id?: string;
+          submission_id?: string | null;
+          performance_id?: string | null;
+          uploaded_by?: string;
+          evidence_type?: PerformanceEvidenceType;
+          bucket_id?: 'campaign-evidence';
+          storage_path?: string;
+          file_name?: string;
+          mime_type?: string;
+          size_bytes?: number;
+          verification_status?: PerformanceEvidenceVerificationStatus;
+          review_note?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      content_performance_ai_extractions: {
+        Row: {
+          id: string;
+          evidence_id: string;
+          report_task_id: string;
+          platform: ReportingPlatform;
+          model: string;
+          input_sha256: string;
+          extracted_metrics: Record<string, unknown>;
+          confidence_summary: Record<string, unknown>;
+          status: PerformanceAiExtractionStatus;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          evidence_id: string;
+          report_task_id: string;
+          platform: ReportingPlatform;
+          model: string;
+          input_sha256: string;
+          extracted_metrics: Record<string, unknown>;
+          confidence_summary?: Record<string, unknown>;
+          status?: PerformanceAiExtractionStatus;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          evidence_id?: string;
+          report_task_id?: string;
+          platform?: ReportingPlatform;
+          model?: string;
+          input_sha256?: string;
+          extracted_metrics?: Record<string, unknown>;
+          confidence_summary?: Record<string, unknown>;
+          status?: PerformanceAiExtractionStatus;
           created_at?: string;
         };
       };
@@ -1113,6 +1720,7 @@ export interface Database {
       user_role: UserRole;
       user_status: UserStatus;
       campaign_status: CampaignStatus;
+      campaign_mode_type: CampaignModeType;
       application_status: ApplicationStatus;
       submission_status: SubmissionStatus;
       platform_type: PlatformType;
@@ -1127,7 +1735,7 @@ export interface Database {
 }
 
 // -----------------------------------------------------------------------------
-// Convenience aliases — Row types
+// Convenience aliases - Row types
 // -----------------------------------------------------------------------------
 
 export type Profile = Database['public']['Tables']['profiles']['Row'];
@@ -1151,7 +1759,7 @@ export type FunctionExecutionLog = Database['public']['Tables']['function_execut
 export type Waitlist = Database['public']['Tables']['waitlist']['Row'];
 
 // -----------------------------------------------------------------------------
-// Convenience aliases — Insert types
+// Convenience aliases - Insert types
 // -----------------------------------------------------------------------------
 
 export type ProfileInsert = Database['public']['Tables']['profiles']['Insert'];
@@ -1175,7 +1783,7 @@ export type FunctionExecutionLogInsert = Database['public']['Tables']['function_
 export type WaitlistInsert = Database['public']['Tables']['waitlist']['Insert'];
 
 // -----------------------------------------------------------------------------
-// Convenience aliases — Update types
+// Convenience aliases - Update types
 // -----------------------------------------------------------------------------
 
 export type ProfileUpdate = Database['public']['Tables']['profiles']['Update'];
