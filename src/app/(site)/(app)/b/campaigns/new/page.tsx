@@ -266,6 +266,7 @@ export default function CreateCampaignPage() {
       usage_rights_paid_ads: usageRights === "paid_ads" || usageRights === "full_rights",
       max_revisions: Number(maxRevisions) || 2,
       playbook_id: selectedPlaybook || undefined,
+      reporting_cadence: "final_only" as const,
       deliverables: deliverables.map((d) => ({
         platform: platforms[0] || "tiktok",
         content_type: d.format,

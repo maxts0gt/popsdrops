@@ -12,6 +12,7 @@ import {
   hasDuplicatePlatforms,
   normalizeCreatorSocialAccount,
 } from "./creator-socials";
+import { REPORTING_PLATFORMS } from "./reporting/platform-templates";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -23,6 +24,21 @@ const marketEnum = z.enum(MARKETS);
 const industryEnum = z.enum(INDUSTRIES);
 const languageEnum = z.enum(LANGUAGES);
 const contentFormatEnum = z.enum(CONTENT_FORMATS);
+const reportingPlatformEnum = z.enum(REPORTING_PLATFORMS);
+const reportingEvidenceTypeEnum = z.enum([
+  "public_url",
+  "manual_metrics",
+  "screenshot",
+  "analytics_export",
+  "csv",
+  "document",
+]);
+const reportingAccountRequirementEnum = z.enum([
+  "public_post_ok",
+  "native_insights_required",
+  "business_or_creator_account_required",
+  "brand_defined",
+]);
 
 const slugRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 
@@ -151,6 +167,33 @@ const deliverableSchema = z.object({
   notes: z.string().max(500).optional(),
 });
 
+export const campaignReportingRequirementSchema = z.object({
+  platform: reportingPlatformEnum,
+  platformLabel: z.string().trim().max(80).nullable(),
+  contentFormat: z.string().trim().min(1).max(80),
+  accountRequirement: reportingAccountRequirementEnum,
+  evidenceTypes: z.array(reportingEvidenceTypeEnum).min(1).max(6),
+  requiredMetricKeys: z.array(z.string().trim().min(1).max(80)).min(1).max(20),
+  aiExtractionAllowed: z.boolean().default(true),
+  creatorConfirmationRequired: z.boolean().default(true),
+});
+
+export const performanceMetricValueSchema = z
+  .object({
+    platform: reportingPlatformEnum,
+    metricKey: z.string().trim().min(1).max(80),
+    metricLabel: z.string().trim().min(1).max(120),
+    metricValue: z.coerce.number().nonnegative().optional(),
+    metricText: z.string().trim().max(500).optional(),
+  })
+  .refine(
+    (value) => value.metricValue != null || Boolean(value.metricText),
+    {
+      message: "Enter a metric value",
+      path: ["metricValue"],
+    },
+  );
+
 export const createCampaignSchema = z
   .object({
     title: z
@@ -178,6 +221,7 @@ export const createCampaignSchema = z
     max_creators: z.coerce.number().int().min(1).max(50),
     application_deadline: z.string().date("Enter a valid date (YYYY-MM-DD)"),
     content_due_date: z.string().date("Enter a valid date (YYYY-MM-DD)"),
+    performance_due_date: z.string().date("Enter a valid date (YYYY-MM-DD)").optional(),
     posting_window_start: z.string().date().optional(),
     posting_window_end: z.string().date().optional(),
     usage_rights_duration: z.string().optional(),
@@ -186,6 +230,13 @@ export const createCampaignSchema = z
     max_revisions: z.coerce.number().int().min(1).max(10).default(3),
     playbook_id: uuidLike.optional(),
     deliverables: z.array(deliverableSchema).min(1, "Add at least 1 deliverable"),
+    reporting_requirements: z
+      .array(campaignReportingRequirementSchema)
+      .max(30)
+      .optional(),
+    reporting_cadence: z
+      .enum(["final_only", "weekly", "daily_launch_window", "custom", "per_post"])
+      .default("final_only"),
   })
   .refine((data) => data.budget_max >= data.budget_min, {
     message: "Maximum budget must be greater than or equal to minimum budget",
@@ -254,6 +305,7 @@ export type ContentFeedbackInput = z.infer<typeof contentFeedbackSchema>;
 
 export const submitPerformanceSchema = z.object({
   submission_id: uuidLike,
+  report_task_id: uuidLike.optional(),
   measurement_type: z.enum(["initial_48h", "final_7d", "extended_30d"]),
   views: z.coerce.number().int().nonnegative().optional(),
   reach: z.coerce.number().int().nonnegative().optional(),
@@ -270,6 +322,7 @@ export const submitPerformanceSchema = z.object({
   avg_watch_time_seconds: z.coerce.number().nonnegative().optional(),
   subscriber_gains: z.coerce.number().int().nonnegative().optional(),
   screenshot_url: z.string().url().optional().or(z.literal("")),
+  metric_values: z.array(performanceMetricValueSchema).max(40).optional(),
 });
 
 export type SubmitPerformanceInput = z.infer<typeof submitPerformanceSchema>;
