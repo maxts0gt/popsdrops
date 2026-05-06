@@ -165,6 +165,26 @@ alter table public.campaign_reporting_requirements enable row level security;
 alter table public.content_performance_metric_values enable row level security;
 alter table public.content_performance_ai_extractions enable row level security;
 
+grant select on table public.reporting_metric_definitions
+  to anon, authenticated, service_role;
+grant insert, update, delete on table public.reporting_metric_definitions
+  to service_role;
+
+grant select on table public.campaign_reporting_requirements
+  to anon, authenticated, service_role;
+grant insert, update, delete on table public.campaign_reporting_requirements
+  to authenticated, service_role;
+
+grant select, insert, update on table public.content_performance_metric_values
+  to authenticated, service_role;
+grant delete on table public.content_performance_metric_values
+  to service_role;
+
+grant select, update on table public.content_performance_ai_extractions
+  to authenticated, service_role;
+grant insert, delete on table public.content_performance_ai_extractions
+  to service_role;
+
 drop policy if exists reporting_metric_definitions_read_all
   on public.reporting_metric_definitions;
 create policy reporting_metric_definitions_read_all

@@ -76,4 +76,19 @@ describe("reporting evidence templates migration", () => {
       "content_performance_ai_extractions_select_access",
     );
   });
+
+  it("explicitly exposes reporting tables through the Supabase Data API", () => {
+    expect(migration).toContain(
+      "grant select on table public.reporting_metric_definitions",
+    );
+    expect(migration).toContain(
+      "grant select on table public.campaign_reporting_requirements",
+    );
+    expect(migration).toContain(
+      "grant select, insert, update on table public.content_performance_metric_values",
+    );
+    expect(migration).toContain(
+      "grant select, update on table public.content_performance_ai_extractions",
+    );
+  });
 });
