@@ -19,6 +19,9 @@ import { submitPerformance } from "@/app/actions/content";
 
 interface PerformanceFormProps {
   submissionId: string;
+  reportTaskId?: string;
+  reportTaskDueAt?: string | null;
+  reportTaskStatus?: string | null;
   platform: Platform;
   measurementType: "initial_48h" | "final_7d" | "extended_30d";
   onSuccess?: () => void;
@@ -30,12 +33,29 @@ const MEASUREMENT_LABELS: Record<string, string> = {
   extended_30d: "30-Day Report",
 };
 
+const SUBMITTED_REPORT_STATUSES = new Set([
+  "submitted",
+  "submitted_late",
+  "verified",
+]);
+
+function formatDueDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return new Intl.DateTimeFormat("en", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
 
 export function PerformanceForm({
   submissionId,
+  reportTaskId,
+  reportTaskDueAt,
+  reportTaskStatus,
   platform,
   measurementType,
   onSuccess,
@@ -49,6 +69,9 @@ export function PerformanceForm({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const dueDate = formatDueDate(reportTaskDueAt);
+  const alreadySubmitted =
+    reportTaskStatus != null && SUBMITTED_REPORT_STATUSES.has(reportTaskStatus);
 
   function updateValue(key: string, val: string) {
     setValues((prev) => ({ ...prev, [key]: val }));
@@ -85,6 +108,7 @@ export function PerformanceForm({
     // Build the payload
     const payload: Record<string, unknown> = {
       submission_id: submissionId,
+      report_task_id: reportTaskId,
       measurement_type: measurementType,
       screenshot_url: screenshotUrl.trim(),
     };
@@ -95,6 +119,19 @@ export function PerformanceForm({
         payload[field.key] = val;
       }
     }
+
+    payload.metric_values = metrics
+      .map((field) => {
+        const val = parseMetricValue(field, values[field.key] || "");
+        if (val === undefined) return null;
+        return {
+          platform,
+          metricKey: field.key,
+          metricLabel: field.label,
+          metricValue: val,
+        };
+      })
+      .filter(Boolean);
 
     startTransition(async () => {
       try {
@@ -107,7 +144,7 @@ export function PerformanceForm({
     });
   }
 
-  if (success) {
+  if (success || alreadySubmitted) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
@@ -132,10 +169,12 @@ export function PerformanceForm({
         </div>
         <div>
           <p className="text-sm font-semibold text-foreground">
-            {PLATFORM_LABELS[platform]} — {MEASUREMENT_LABELS[measurementType]}
+            {PLATFORM_LABELS[platform]} - {MEASUREMENT_LABELS[measurementType]}
           </p>
           <p className="text-xs text-muted-foreground">
-            Enter metrics from your {PLATFORM_LABELS[platform]} analytics
+            {dueDate
+              ? `Report due ${dueDate}`
+              : `Enter metrics from your ${PLATFORM_LABELS[platform]} analytics`}
           </p>
         </div>
       </div>

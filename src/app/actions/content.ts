@@ -7,6 +7,10 @@ import {
   createPrivilegedReportTaskForSubmission,
   markPrivilegedReportTaskSubmitted,
 } from "@/lib/supabase/privileged";
+import {
+  buildMetricValueRows,
+  mapMetricValuesToLegacyPerformanceColumns,
+} from "@/lib/reporting/metric-values";
 import { getUser } from "./auth";
 import { submitContentSchema, submitPerformanceSchema } from "@/lib/validations";
 import { sendNotificationEmail } from "@/lib/email/notify";
@@ -296,6 +300,13 @@ export async function submitPerformance(input: {
   avg_watch_time_seconds?: number;
   subscriber_gains?: number;
   screenshot_url?: string;
+  metric_values?: Array<{
+    platform: "instagram" | "tiktok" | "youtube" | "facebook" | "snapchat" | "x" | "generic";
+    metricKey: string;
+    metricLabel: string;
+    metricValue?: number;
+    metricText?: string;
+  }>;
 }) {
   const parsed = submitPerformanceSchema.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
@@ -303,11 +314,11 @@ export async function submitPerformance(input: {
   const user = await getUser();
   const supabase = await createClient();
 
-  const { submission_id, report_task_id, ...metrics } = input;
+  const { submission_id, report_task_id, metric_values, ...metrics } = input;
 
   const { data: submission } = await supabase
     .from("content_submissions")
-    .select("id, campaign_member_id, campaign_members(campaign_id, creator_id)")
+    .select("id, platform, campaign_member_id, campaign_members(campaign_id, creator_id)")
     .eq("id", submission_id)
     .single();
 
@@ -344,6 +355,9 @@ export async function submitPerformance(input: {
   }
 
   const submittedAt = new Date().toISOString();
+  const sparseMetricColumns = metric_values?.length
+    ? mapMetricValuesToLegacyPerformanceColumns(metric_values)
+    : {};
 
   const { data, error } = await supabase
     .from("content_performance")
@@ -352,11 +366,34 @@ export async function submitPerformance(input: {
       report_task_id: reportTaskId,
       reported_at: submittedAt,
       ...metrics,
+      ...sparseMetricColumns,
     })
     .select("id")
     .single();
 
   if (error) throw new Error(error.message);
+
+  if (metric_values?.length) {
+    const rows = buildMetricValueRows({
+      performanceId: data.id,
+      reportTaskId,
+      platform: (submission.platform ?? "generic") as never,
+      metricValues: metric_values.map((metric) => ({
+        metricKey: metric.metricKey,
+        metricLabel: metric.metricLabel,
+        metricValue: metric.metricValue,
+        metricText: metric.metricText,
+      })),
+      sourceType: "creator_manual",
+      confirmedByCreator: false,
+    });
+
+    const { error: metricValueError } = await supabase
+      .from("content_performance_metric_values")
+      .insert(rows);
+
+    if (metricValueError) throw new Error(metricValueError.message);
+  }
 
   if (reportTaskId) {
     await markPrivilegedReportTaskSubmitted(reportTaskId, submittedAt);

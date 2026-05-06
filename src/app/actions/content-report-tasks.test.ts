@@ -26,7 +26,7 @@ describe("content performance report task loop", () => {
 
   it("verifies creator ownership before inserting performance metrics", () => {
     expect(contentActionsSource).toContain(
-      ".select(\"id, campaign_member_id, campaign_members(campaign_id, creator_id)\")",
+      ".select(\"id, platform, campaign_member_id, campaign_members(campaign_id, creator_id)\")",
     );
     expect(contentActionsSource).toContain("member.creator_id !== user.id");
     expect(contentActionsSource).toContain("throw new Error(\"Not authorized\")");
