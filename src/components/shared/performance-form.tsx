@@ -22,6 +22,7 @@ interface PerformanceFormProps {
   reportTaskId?: string;
   reportTaskDueAt?: string | null;
   reportTaskStatus?: string | null;
+  isSubmitted?: boolean;
   platform: Platform;
   measurementType: "initial_48h" | "final_7d" | "extended_30d";
   onSuccess?: () => void;
@@ -56,6 +57,7 @@ export function PerformanceForm({
   reportTaskId,
   reportTaskDueAt,
   reportTaskStatus,
+  isSubmitted = false,
   platform,
   measurementType,
   onSuccess,
@@ -71,7 +73,8 @@ export function PerformanceForm({
   const [isPending, startTransition] = useTransition();
   const dueDate = formatDueDate(reportTaskDueAt);
   const alreadySubmitted =
-    reportTaskStatus != null && SUBMITTED_REPORT_STATUSES.has(reportTaskStatus);
+    isSubmitted ||
+    (reportTaskStatus != null && SUBMITTED_REPORT_STATUSES.has(reportTaskStatus));
 
   function updateValue(key: string, val: string) {
     setValues((prev) => ({ ...prev, [key]: val }));

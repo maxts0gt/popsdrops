@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import {
@@ -30,6 +30,7 @@ import { ReviewDialog } from "@/components/shared/review-dialog";
 import { ContentSubmitForm } from "@/components/shared/content-submit-form";
 import { PerformanceForm } from "@/components/shared/performance-form";
 import { getSingleRelation } from "@/lib/supabase/relations";
+import { publishContent } from "@/app/actions/content";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,6 +81,18 @@ interface Submission {
   submitted_at: string | null;
   reviewed_at: string | null;
   published_url: string | null;
+  content_performance?:
+    | { report_task_id: string | null }[]
+    | { report_task_id: string | null }
+    | null;
+}
+
+interface ReportTask {
+  id: string;
+  task_key: string;
+  due_at: string;
+  status: string;
+  submitted_at: string | null;
 }
 
 interface BrandProfileRecord {
@@ -133,7 +146,7 @@ function formatCurrency(amount: number, locale = "en"): string {
 }
 
 function formatDate(dateStr: string | null, locale = "en"): string {
-  if (!dateStr) return "—";
+  if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
@@ -180,6 +193,70 @@ const submissionStatusKeys: Record<string, string> = {
   published: "status.published",
 };
 
+function PublishUrlForm({
+  submissionId,
+  labels,
+  onSuccess,
+}: {
+  submissionId: string;
+  labels: {
+    label: string;
+    placeholder: string;
+    submit: string;
+    submitting: string;
+    required: string;
+  };
+  onSuccess: () => void;
+}) {
+  const [publishedUrl, setPublishedUrl] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSubmit() {
+    setError(null);
+
+    if (!publishedUrl.trim()) {
+      setError(labels.required);
+      return;
+    }
+
+    startTransition(async () => {
+      try {
+        await publishContent(submissionId, publishedUrl.trim());
+        onSuccess();
+      } catch (e) {
+        setError(e instanceof Error ? e.message : labels.required);
+      }
+    });
+  }
+
+  return (
+    <div className="mt-3 space-y-2">
+      <label className="text-xs font-medium text-foreground">
+        {labels.label}
+      </label>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <input
+          type="url"
+          value={publishedUrl}
+          onChange={(e) => setPublishedUrl(e.target.value)}
+          placeholder={labels.placeholder}
+          className="min-w-0 flex-1 rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/60 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
+        />
+        <Button
+          type="button"
+          onClick={handleSubmit}
+          disabled={isPending}
+          className="sm:w-auto"
+        >
+          {isPending ? labels.submitting : labels.submit}
+        </Button>
+      </div>
+      {error && <p className="text-xs text-red-600">{error}</p>}
+    </div>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -194,6 +271,7 @@ export default function CampaignRoomPage() {
   const [room, setRoom] = useState<CampaignRoom | null>(null);
   const [deliverables, setDeliverables] = useState<Deliverable[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [reportTasks, setReportTasks] = useState<ReportTask[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -275,11 +353,19 @@ export default function CampaignRoomPage() {
       if (member) {
         const { data: subData } = await supabase
           .from("content_submissions")
-          .select("*")
+          .select("*, content_performance ( report_task_id )")
           .eq("campaign_member_id", member.id)
           .order("created_at", { ascending: false });
 
         if (subData) setSubmissions(subData as Submission[]);
+
+        const { data: taskData } = await supabase
+          .from("campaign_report_tasks")
+          .select("id, task_key, due_at, status, submitted_at")
+          .eq("campaign_member_id", member.id)
+          .order("due_at", { ascending: true });
+
+        if (taskData) setReportTasks(taskData as ReportTask[]);
       }
 
       setLoading(false);
@@ -287,7 +373,7 @@ export default function CampaignRoomPage() {
     load();
   }, [campaignId]);
 
-  // Loading skeleton — content-shaped to match page layout
+  // Loading skeleton - content-shaped to match page layout
   if (loading) {
     return (
       <div className="mx-auto max-w-2xl space-y-4 p-4 lg:p-6">
@@ -366,6 +452,28 @@ export default function CampaignRoomPage() {
   const allApproved =
     submissions.length > 0 && submissions.every((s) => s.status === "approved" || s.status === "published");
   const hasSubmissions = submissions.length > 0;
+  const reportSubmittedStatuses = new Set([
+    "submitted",
+    "submitted_late",
+    "verified",
+  ]);
+  const activeReportTask =
+    reportTasks.find((task) => !reportSubmittedStatuses.has(task.status)) ??
+    reportTasks.at(-1) ??
+    null;
+  const hasSubmissionReportForTask = (
+    submission: Submission,
+    reportTaskId: string | undefined,
+  ) => {
+    if (!reportTaskId) return false;
+    const performanceRows = Array.isArray(submission.content_performance)
+      ? submission.content_performance
+      : submission.content_performance
+        ? [submission.content_performance]
+        : [];
+
+    return performanceRows.some((row) => row.report_task_id === reportTaskId);
+  };
 
   // Build task checklist from campaign state
   const tasks = [
@@ -382,6 +490,12 @@ export default function CampaignRoomPage() {
     {
       label: t("task.publishContent"),
       done: submissions.some((s) => s.status === "published"),
+    },
+    {
+      label: t("task.reportPerformance"),
+      done:
+        reportTasks.length > 0 &&
+        reportTasks.every((task) => reportSubmittedStatuses.has(task.status)),
     },
   ];
 
@@ -691,7 +805,7 @@ export default function CampaignRoomPage() {
                           {s.platform
                             ? PLATFORM_LABELS[s.platform]
                             : t("label.content")}{" "}
-                          — v{s.version}
+                          - v{s.version}
                         </span>
                       </div>
                       <span
@@ -715,9 +829,22 @@ export default function CampaignRoomPage() {
                       </div>
                     )}
                     {s.status === "approved" && !s.published_url && (
-                      <p className="mt-2 text-xs text-emerald-600">
-                        ✓ {t("room.approvedPublish")}
-                      </p>
+                      <>
+                        <p className="mt-2 text-xs text-emerald-600">
+                          ✓ {t("room.approvedPublish")}
+                        </p>
+                        <PublishUrlForm
+                          submissionId={s.id}
+                          labels={{
+                            label: t("submit.publishedUrl"),
+                            placeholder: t("submit.publishedUrlPlaceholder"),
+                            submit: t("submit.publishUrl"),
+                            submitting: t("submit.publishingUrl"),
+                            required: t("submit.publishedUrlRequired"),
+                          }}
+                          onSuccess={() => window.location.reload()}
+                        />
+                      </>
                     )}
                     {s.published_url && (
                       <a
@@ -749,7 +876,7 @@ export default function CampaignRoomPage() {
               </CardContent>
             </Card>
 
-            {/* Performance reporting — only show for published submissions */}
+            {/* Performance reporting - only show for published submissions */}
             {submissions.some((s) => s.status === "published") && (
               <Card>
                 <CardContent>
@@ -765,8 +892,16 @@ export default function CampaignRoomPage() {
                       <PerformanceForm
                         key={s.id}
                         submissionId={s.id}
+                        reportTaskId={activeReportTask?.id}
+                        reportTaskDueAt={activeReportTask?.due_at}
+                        reportTaskStatus={activeReportTask?.status}
+                        isSubmitted={hasSubmissionReportForTask(
+                          s,
+                          activeReportTask?.id,
+                        )}
                         platform={s.platform!}
-                        measurementType="initial_48h"
+                        measurementType="final_7d"
+                        onSuccess={() => window.location.reload()}
                       />
                     ))}
                 </CardContent>

@@ -32,13 +32,23 @@ describe("content performance report task loop", () => {
     expect(contentActionsSource).toContain("throw new Error(\"Not authorized\")");
   });
 
-  it("links submitted metrics to the report task and marks that task submitted", () => {
+  it("uses the parsed performance payload so platform-only metrics stay in metric values", () => {
+    expect(contentActionsSource).toContain(
+      "const { submission_id, report_task_id, metric_values, ...metrics } =\n    parsed.data",
+    );
+  });
+
+  it("links submitted metrics to the report task and completes that task only when reporting is complete", () => {
     expect(contentActionsSource).toContain("report_task_id");
-    expect(contentActionsSource).toContain("markPrivilegedReportTaskSubmitted");
+    expect(contentActionsSource).toContain(
+      "markPrivilegedReportTaskSubmittedIfComplete",
+    );
     expect(contentActionsSource).toContain("reportTask.campaign_member_id !== member.id");
     expect(privilegedSource).toContain(
-      "export async function markPrivilegedReportTaskSubmitted",
+      "export async function markPrivilegedReportTaskSubmittedIfComplete",
     );
+    expect(privilegedSource).toContain('status", "published"');
+    expect(privilegedSource).toContain("reportedSubmissionCount");
     expect(privilegedSource).toContain("submitted_late");
     expect(privilegedSource).toContain("submitted_at");
   });

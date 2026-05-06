@@ -50,6 +50,7 @@ describe("public locale routing", () => {
     expect(isPublicPath("/auth/callback")).toBe(true);
     expect(isPublicPath("/c/jane-doe")).toBe(true);
     expect(isPublicPath("/apply/campaign-1")).toBe(true);
+    expect(isPublicPath("/reports/share/pd_rpt_test")).toBe(true);
     expect(isPublicPath("/b/home")).toBe(false);
   });
 

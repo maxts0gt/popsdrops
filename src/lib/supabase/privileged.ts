@@ -133,6 +133,61 @@ export async function markPrivilegedReportTaskSubmitted(
   return { id: reportTaskId, status };
 }
 
+export async function markPrivilegedReportTaskSubmittedIfComplete(input: {
+  reportTaskId: string;
+  submittedAt: string;
+}) {
+  const admin = createAdminClient();
+
+  const { data: reportTask, error: reportTaskError } = await admin
+    .from("campaign_report_tasks")
+    .select("id, campaign_member_id, due_at, status")
+    .eq("id", input.reportTaskId)
+    .single();
+
+  if (reportTaskError) throw new Error(reportTaskError.message);
+  if (!reportTask) throw new Error("Report task not found");
+
+  const { count: publishedSubmissionCount, error: submissionCountError } =
+    await admin
+      .from("content_submissions")
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_member_id", reportTask.campaign_member_id)
+      .eq("status", "published");
+
+  if (submissionCountError) throw new Error(submissionCountError.message);
+
+  const { data: performanceRows, error: performanceError } = await admin
+    .from("content_performance")
+    .select("submission_id")
+    .eq("report_task_id", input.reportTaskId);
+
+  if (performanceError) throw new Error(performanceError.message);
+
+  const reportedSubmissionCount = new Set(
+    (performanceRows ?? []).map((row) => row.submission_id),
+  ).size;
+  const requiredSubmissionCount = publishedSubmissionCount ?? 0;
+
+  if (
+    requiredSubmissionCount > 0 &&
+    reportedSubmissionCount < requiredSubmissionCount
+  ) {
+    return {
+      id: input.reportTaskId,
+      status: reportTask.status,
+      completed: false,
+    };
+  }
+
+  const submitted = await markPrivilegedReportTaskSubmitted(
+    input.reportTaskId,
+    input.submittedAt,
+  );
+
+  return { ...submitted, completed: true };
+}
+
 export async function createPrivilegedReportTaskForSubmission(input: {
   submissionId: string;
   campaignId: string;

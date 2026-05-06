@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import {
   createPrivilegedNotification,
   createPrivilegedReportTaskForSubmission,
-  markPrivilegedReportTaskSubmitted,
+  markPrivilegedReportTaskSubmittedIfComplete,
 } from "@/lib/supabase/privileged";
 import {
   buildMetricValueRows,
@@ -314,7 +314,8 @@ export async function submitPerformance(input: {
   const user = await getUser();
   const supabase = await createClient();
 
-  const { submission_id, report_task_id, metric_values, ...metrics } = input;
+  const { submission_id, report_task_id, metric_values, ...metrics } =
+    parsed.data;
 
   const { data: submission } = await supabase
     .from("content_submissions")
@@ -396,7 +397,10 @@ export async function submitPerformance(input: {
   }
 
   if (reportTaskId) {
-    await markPrivilegedReportTaskSubmitted(reportTaskId, submittedAt);
+    await markPrivilegedReportTaskSubmittedIfComplete({
+      reportTaskId,
+      submittedAt,
+    });
   }
 
   // Recalculate creator performance aggregates

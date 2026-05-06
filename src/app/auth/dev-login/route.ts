@@ -1,10 +1,16 @@
-// DEV ONLY — admin-generated session for dev users. No password auth needed.
+// DEV ONLY - admin-generated session for dev users. No password auth needed.
 // Uses service role key to create user + generate magic link + verify server-side.
 // Blocked in production.
 
 import { NextResponse } from "next/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 import { createServerClient } from "@supabase/ssr";
+import {
+  getDevDisplayName,
+  getDevCreatorSlug,
+  getDevLoginRole,
+  getDevUserEmail,
+} from "@/lib/dev-users";
 
 export async function GET(request: Request) {
   if (process.env.NODE_ENV === "production") {
@@ -12,12 +18,12 @@ export async function GET(request: Request) {
   }
 
   const { searchParams, origin } = new URL(request.url);
-  const role = searchParams.get("role") ?? "creator";
+  const role = getDevLoginRole(searchParams.get("role"));
   const debug = searchParams.has("debug");
 
-  const targetEmail = `dev-${role}@popsdrops.test`;
-  const profileRole = role === "admin" ? "admin" : role === "brand" ? "brand" : "creator";
-  const displayName = `Dev ${role.charAt(0).toUpperCase() + role.slice(1)}`;
+  const targetEmail = getDevUserEmail(role);
+  const profileRole = role;
+  const displayName = getDevDisplayName(role);
 
   const admin = createAdminClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -31,7 +37,7 @@ export async function GET(request: Request) {
     email_confirm: true,
     user_metadata: { full_name: displayName },
   });
-  // If creation fails (user already exists), that's fine — generateLink will find them.
+  // If creation fails (user already exists), that's fine - generateLink will find them.
 
   // --- Step 2: Generate magic link (this works even when listUsers is broken) ---
   const { data: linkData, error: linkError } =
@@ -51,7 +57,7 @@ export async function GET(request: Request) {
   }
 
   // --- Step 3: Ensure profile exists ---
-  await admin.from("profiles").upsert(
+  const { error: profileError } = await admin.from("profiles").upsert(
     {
       id: userId,
       email: targetEmail,
@@ -63,11 +69,18 @@ export async function GET(request: Request) {
     { onConflict: "id" }
   );
 
+  if (profileError) {
+    return NextResponse.json(
+      { error: `Profile failed: ${profileError.message}` },
+      { status: 500 }
+    );
+  }
+
   if (profileRole === "creator") {
-    await admin.from("creator_profiles").upsert(
+    const { error: creatorProfileError } = await admin.from("creator_profiles").upsert(
       {
         profile_id: userId,
-        slug: "dev-creator",
+        slug: getDevCreatorSlug(userId),
         bio: "Dev test creator for local testing.",
         primary_market: "us",
         platforms: ["tiktok", "instagram"],
@@ -82,8 +95,14 @@ export async function GET(request: Request) {
       },
       { onConflict: "profile_id" }
     );
+    if (creatorProfileError) {
+      return NextResponse.json(
+        { error: `Creator profile failed: ${creatorProfileError.message}` },
+        { status: 500 }
+      );
+    }
   } else if (profileRole === "brand") {
-    await admin.from("brand_profiles").upsert(
+    const { error: brandProfileError } = await admin.from("brand_profiles").upsert(
       {
         profile_id: userId,
         company_name: "Dev Brand Co.",
@@ -93,6 +112,12 @@ export async function GET(request: Request) {
       },
       { onConflict: "profile_id" }
     );
+    if (brandProfileError) {
+      return NextResponse.json(
+        { error: `Brand profile failed: ${brandProfileError.message}` },
+        { status: 500 }
+      );
+    }
   }
 
   // --- Step 4: Verify OTP to create session, collecting cookies ---

@@ -24,7 +24,7 @@ export const ROOT_PUBLIC_PATHS = new Set([
 // can be redirected safely, but only bundled locales are offered publicly.
 const KNOWN_MARKETING_LOCALES = new Set(SUPPORTED_LOCALES);
 export const SUPPORTED_MARKETING_LOCALES = new Set<string>(PUBLIC_TRANSLATION_LOCALES);
-const PUBLIC_PATH_PREFIXES = ["/auth/", "/c/", "/apply/"] as const;
+const PUBLIC_PATH_PREFIXES = ["/auth/", "/c/", "/apply/", "/reports/share/"] as const;
 
 export type PublicLocaleRoutingDecision =
   | {
