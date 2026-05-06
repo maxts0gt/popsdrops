@@ -7,7 +7,6 @@ import {
   ArrowLeft,
   CheckCircle2,
   Clock,
-  DollarSign,
   ExternalLink,
   Globe,
   MapPin,
@@ -24,11 +23,21 @@ import {
   PLATFORM_LABELS,
   FORMAT_KEYS,
   getMarketLabel,
-  formatBudgetRange,
+  formatBudgetPerCreatorRange,
   type Platform,
   type ContentFormat,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
+import {
+  getCreatorReportingEligibility,
+  type EligibilityRequirement,
+} from "@/lib/reporting/eligibility";
+import {
+  getReportingPlatformLabel,
+  type ReportingAccountRequirement,
+  type ReportingEvidenceType,
+  type ReportingPlatform,
+} from "@/lib/reporting/platform-templates";
 import { createClient } from "@/lib/supabase/client";
 
 // ---------------------------------------------------------------------------
@@ -52,6 +61,7 @@ interface CampaignPublic {
   max_creators: number | null;
   application_deadline: string | null;
   campaign_deliverables: { platform: string; content_type: string; quantity: number }[];
+  reporting_requirements: CampaignReportingRequirement[];
   brand: {
     company_name: string;
     website: string | null;
@@ -59,6 +69,15 @@ interface CampaignPublic {
     review_count: number;
   };
 }
+
+type CampaignReportingRequirement = {
+  platform: ReportingPlatform;
+  platform_label: string | null;
+  content_format: string;
+  account_requirement: ReportingAccountRequirement;
+  evidence_types: ReportingEvidenceType[];
+  required_metric_keys: string[];
+};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -69,7 +88,7 @@ function splitLines(text: string): string[] {
 }
 
 function formatDate(dateStr: string | null, locale: string): string {
-  if (!dateStr) return "—";
+  if (!dateStr) return "-";
   return new Date(dateStr).toLocaleDateString(locale, {
     month: "short",
     day: "numeric",
@@ -92,6 +111,7 @@ export default function PublicApplyPage() {
   const [notFound, setNotFound] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [hasApplied, setHasApplied] = useState(false);
+  const [creatorPlatforms, setCreatorPlatforms] = useState<string[]>([]);
 
   useEffect(() => {
     async function load() {
@@ -121,6 +141,27 @@ export default function PublicApplyPage() {
           .eq("id", user.id)
           .single();
         if (profileData) setUserRole(profileData.role);
+
+        if (profileData?.role === "creator") {
+          const { data: creatorProfile } = await supabase
+            .from("creator_profiles")
+            .select("tiktok, instagram, snapchat, youtube, facebook")
+            .eq("profile_id", user.id)
+            .maybeSingle();
+
+          if (creatorProfile) {
+            const platforms = [
+              "tiktok",
+              "instagram",
+              "snapchat",
+              "youtube",
+              "facebook",
+            ].filter((platform) =>
+              Boolean(creatorProfile[platform as keyof typeof creatorProfile]),
+            );
+            setCreatorPlatforms(platforms);
+          }
+        }
 
         // Check existing application
         const { data: appData } = await supabase
@@ -193,6 +234,32 @@ export default function PublicApplyPage() {
   const dontsItems = campaign.brief_donts
     ? splitLines(campaign.brief_donts)
     : [];
+  const headerHref =
+    userRole === "creator"
+      ? "/i/home"
+      : userRole === "brand"
+        ? "/b/home"
+        : userRole === "admin"
+          ? "/admin"
+          : "/login";
+  const headerLabel = userRole
+    ? tGlobal("ui.common", "nav.home")
+    : tGlobal("ui.common", "nav.login");
+  const reportingRequirements = campaign.reporting_requirements ?? [];
+  const reportingEligibility = getCreatorReportingEligibility({
+    creatorPlatforms,
+    requirements: reportingRequirements.map((requirement) => ({
+      platform: requirement.platform,
+      platformLabel: requirement.platform_label,
+      contentFormat: requirement.content_format,
+      accountRequirement: requirement.account_requirement,
+      evidenceTypes: requirement.evidence_types,
+      requiredMetricKeys: requirement.required_metric_keys,
+    })) satisfies EligibilityRequirement[],
+  });
+  const missingReportingPlatform = reportingEligibility.missingPlatforms[0];
+  const isReportingBlocked =
+    userRole === "creator" && reportingEligibility.status === "not_eligible";
 
   return (
     <div className="min-h-svh bg-background">
@@ -203,10 +270,10 @@ export default function PublicApplyPage() {
             PopsDrops
           </Link>
           <Link
-            href="/login"
+            href={headerHref}
             className="text-sm font-medium text-muted-foreground hover:text-foreground"
           >
-            {tGlobal("ui.common", "nav.login")}
+            {headerLabel}
           </Link>
         </div>
       </header>
@@ -257,12 +324,12 @@ export default function PublicApplyPage() {
 
         {/* Key stats */}
         <div className="mt-6 flex flex-wrap items-center gap-6 text-sm">
-          <div className="flex items-center gap-1.5">
-            <DollarSign className="size-4 text-muted-foreground" />
+          <div className="flex items-baseline gap-1.5">
             <span className="font-semibold text-foreground">
-              {formatBudgetRange(
+              {formatBudgetPerCreatorRange(
                 campaign.budget_min,
                 campaign.budget_max,
+                campaign.max_creators,
                 locale,
                 campaign.budget_currency || "USD"
               )}
@@ -350,6 +417,36 @@ export default function PublicApplyPage() {
           </div>
         )}
 
+        {reportingRequirements.length > 0 && (
+          <Card className="mb-8 rounded-xl border-border shadow-sm">
+            <CardContent className="space-y-3 p-4">
+              <p className="text-sm font-semibold text-foreground">
+                {t("reportingRequirements")}
+              </p>
+              <div className="space-y-2">
+                {reportingRequirements.map((requirement) => (
+                  <div
+                    key={`${requirement.platform}:${requirement.content_format}`}
+                    className="rounded-lg border border-border px-3 py-2"
+                  >
+                    <p className="text-sm font-medium text-foreground">
+                      {requirement.platform === "generic"
+                        ? requirement.platform_label || t("reportingCustomProof")
+                        : getReportingPlatformLabel(requirement.platform)}{" "}
+                      {requirement.content_format}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {requirement.evidence_types.includes("screenshot")
+                        ? t("reportingScreenshotRequired")
+                        : t("reportingPublicRequired")}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Do's / Don'ts */}
         {(dosItems.length > 0 || dontsItems.length > 0) && (
           <div className="mb-8 grid gap-4 sm:grid-cols-2">
@@ -435,6 +532,12 @@ export default function PublicApplyPage() {
               <CheckCircle2 className="size-4" />
               {t("alreadyApplied")}
             </div>
+          ) : isReportingBlocked && missingReportingPlatform ? (
+            <Button size="lg" className="w-full" disabled>
+              {t("reportingAccountMissing", {
+                platform: getReportingPlatformLabel(missingReportingPlatform),
+              })}
+            </Button>
           ) : userRole === "creator" ? (
             <Link href={`/i/discover/${campaign.id}`}>
               <Button size="lg" className="w-full">

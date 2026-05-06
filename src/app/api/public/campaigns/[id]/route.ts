@@ -17,6 +17,17 @@ export async function GET(
        budget_min, budget_max, budget_currency, max_creators,
        application_deadline,
        campaign_deliverables (platform, content_type, quantity),
+       campaign_reporting_requirements (
+         platform,
+         platform_label,
+         content_format,
+         account_requirement,
+         evidence_types,
+         required_metric_keys,
+         ai_extraction_allowed,
+         creator_confirmation_required,
+         sort_order
+       ),
        profiles!campaigns_brand_id_fkey (
          full_name,
          brand_profiles (
@@ -44,9 +55,18 @@ export async function GET(
       | Record<string, unknown>[]
       | null,
   );
+  const reportingRequirements = Array.isArray(
+    (campaignData as Record<string, unknown>).campaign_reporting_requirements,
+  )
+    ? (
+        (campaignData as Record<string, unknown>)
+          .campaign_reporting_requirements as Array<Record<string, unknown>>
+      ).toSorted((a, b) => Number(a.sort_order ?? 0) - Number(b.sort_order ?? 0))
+    : [];
 
   const payload = {
     ...campaignData,
+    reporting_requirements: reportingRequirements,
     brand: brandProfile
       ? {
           company_name: brandProfile.company_name,
