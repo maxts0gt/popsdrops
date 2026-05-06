@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createPrivilegedNotifications } from "@/lib/supabase/privileged";
 import { getUser } from "./auth";
-import { createCampaignSchema } from "@/lib/validations";
+import {
+  buildDefaultCampaignReportingRequirements,
+  validateRequirementMetricKeys,
+} from "@/lib/reporting/requirements";
+import { createCampaignSchema, type CreateCampaignInput } from "@/lib/validations";
 
 // ---------------------------------------------------------------------------
 // Brief Translation (Gemini API)
@@ -109,34 +113,7 @@ ${JSON.stringify(briefFields, null, 2)}`;
   }
 }
 
-export async function createCampaign(input: {
-  title: string;
-  brief_description: string;
-  brief_requirements?: string;
-  brief_dos?: string;
-  brief_donts?: string;
-  platforms: string[];
-  markets: string[];
-  niches: string[];
-  budget_min: number;
-  budget_max: number;
-  max_creators: number;
-  application_deadline: string;
-  content_due_date: string;
-  posting_window_start?: string;
-  posting_window_end?: string;
-  usage_rights_duration?: string;
-  usage_rights_territory?: string;
-  usage_rights_paid_ads: boolean;
-  max_revisions: number;
-  playbook_id?: string;
-  deliverables: Array<{
-    platform: string;
-    content_type: string;
-    quantity: number;
-    notes?: string;
-  }>;
-}) {
+export async function createCampaign(input: CreateCampaignInput) {
   const parsed = createCampaignSchema.safeParse(input);
   if (!parsed.success) throw new Error(parsed.error.issues[0].message);
 
@@ -152,7 +129,12 @@ export async function createCampaign(input: {
 
   if (profile?.role !== "brand") throw new Error("Only brands can create campaigns");
 
-  const { deliverables, ...campaignData } = input;
+  const {
+    deliverables,
+    reporting_requirements,
+    reporting_cadence,
+    ...campaignData
+  } = parsed.data;
 
   // Insert campaign
   const { data: campaign, error: campaignError } = await supabase
@@ -183,6 +165,61 @@ export async function createCampaign(input: {
 
     if (delError) throw new Error(delError.message);
   }
+
+  const reportingRequirements =
+    reporting_requirements?.length
+      ? reporting_requirements
+      : buildDefaultCampaignReportingRequirements(deliverables);
+
+  if (reportingRequirements.length > 0) {
+    const invalidRequirement = reportingRequirements.find((requirement) =>
+      validateRequirementMetricKeys({
+        platform: requirement.platform,
+        platformLabel: requirement.platformLabel,
+        requiredMetricKeys: requirement.requiredMetricKeys,
+      }).length > 0,
+    );
+
+    if (invalidRequirement) {
+      throw new Error("Reporting requirement contains unsupported metrics.");
+    }
+
+    const { error: requirementError } = await supabase
+      .from("campaign_reporting_requirements")
+      .insert(
+        reportingRequirements.map((requirement, index) => ({
+          campaign_id: campaign.id,
+          platform: requirement.platform,
+          platform_label: requirement.platformLabel,
+          content_format: requirement.contentFormat,
+          account_requirement: requirement.accountRequirement,
+          evidence_types: requirement.evidenceTypes,
+          required_metric_keys: requirement.requiredMetricKeys,
+          ai_extraction_allowed: requirement.aiExtractionAllowed,
+          creator_confirmation_required: requirement.creatorConfirmationRequired,
+          sort_order:
+            "sortOrder" in requirement && typeof requirement.sortOrder === "number"
+              ? requirement.sortOrder
+              : index,
+        })),
+      );
+
+    if (requirementError) throw new Error(requirementError.message);
+  }
+
+  const { error: planError } = await supabase
+    .from("campaign_reporting_plans")
+    .upsert({
+      campaign_id: campaign.id,
+      cadence: reporting_cadence ?? "final_only",
+      required_evidence: ["public_url", "manual_metrics", "screenshot"],
+      required_metrics: {},
+      grace_period_hours: 24,
+      starts_at: campaignData.posting_window_start ?? null,
+      ends_at: campaignData.performance_due_date ?? null,
+    });
+
+  if (planError) throw new Error(planError.message);
 
   revalidatePath("/b/campaigns");
   return { id: campaign.id };
@@ -243,8 +280,6 @@ export async function completeCampaign(campaignId: string) {
     .eq("brand_id", user.id);
 
   if (error) throw new Error(error.message);
-
-  // TODO: trigger generate-report Edge Function
 
   // Notify all campaign members
   const { data: members } = await supabase

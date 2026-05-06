@@ -42,6 +42,7 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
 import { createCampaign, publishCampaign } from "@/app/actions/campaigns";
+import { buildDefaultCampaignReportingRequirements } from "@/lib/reporting/requirements";
 import { toast } from "sonner";
 import type { Platform, Niche, ContentFormat, Market } from "@/lib/constants";
 
@@ -245,6 +246,12 @@ export default function CreateCampaignPage() {
   }
 
   function buildCampaignInput() {
+    const mappedDeliverables = deliverables.map((d) => ({
+      platform: platforms[0] || "tiktok",
+      content_type: d.format as ContentFormat,
+      quantity: d.quantity,
+    }));
+
     return {
       title: title.trim(),
       brief_description: description.trim(),
@@ -267,11 +274,9 @@ export default function CreateCampaignPage() {
       max_revisions: Number(maxRevisions) || 2,
       playbook_id: selectedPlaybook || undefined,
       reporting_cadence: "final_only" as const,
-      deliverables: deliverables.map((d) => ({
-        platform: platforms[0] || "tiktok",
-        content_type: d.format,
-        quantity: d.quantity,
-      })),
+      reporting_requirements:
+        buildDefaultCampaignReportingRequirements(mappedDeliverables),
+      deliverables: mappedDeliverables,
     };
   }
 
