@@ -9,6 +9,19 @@ PopsDrops reporting must feel like a premium campaign operations system, not a l
 
 This design refines the existing Creative Kit and Reporting Architecture with a platform-template layer for Instagram, TikTok, YouTube, Facebook, Snapchat, X, and Generic evidence. It does not create separate platform flows. It creates one reporting evidence engine with platform-specific metric definitions.
 
+## Client and Talent Bar
+
+This system is designed for the quality bar of a Hermes or Chanel campaign manager and talent as visible as Lisa from BLACKPINK or Lionel Messi. That does not mean PopsDrops claims those brands or people as current clients. It means every reporting requirement, evidence upload, status label, permission boundary, and export must be credible at that level.
+
+Product consequences:
+
+- No casual claims about proof, verification, or performance.
+- No hidden missing data.
+- No unclear creator obligations.
+- No cross-creator evidence exposure.
+- No clutter that makes executive review feel amateur.
+- No AI value becomes report truth until a human confirms it.
+
 ## Research Basis
 
 Official platform documentation supports a template-based approach because each platform exposes different creator metrics and account requirements.
@@ -688,4 +701,3 @@ This slice is done only when:
 - Final reports label data source quality.
 - RLS prevents cross-brand and cross-creator access.
 - Browser smoke proves the brand to creator to report loop.
-
