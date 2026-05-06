@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   createPrivilegedNotification,
   createPrivilegedReportTaskForSubmission,
@@ -11,6 +12,7 @@ import {
   buildMetricValueRows,
   mapMetricValuesToLegacyPerformanceColumns,
 } from "@/lib/reporting/metric-values";
+import { getEvidenceStorageUri } from "@/lib/reporting/evidence-upload";
 import { getUser } from "./auth";
 import { submitContentSchema, submitPerformanceSchema } from "@/lib/validations";
 import { sendNotificationEmail } from "@/lib/email/notify";
@@ -300,6 +302,7 @@ export async function submitPerformance(input: {
   avg_watch_time_seconds?: number;
   subscriber_gains?: number;
   screenshot_url?: string;
+  evidence_id?: string;
   metric_values?: Array<{
     platform: "instagram" | "tiktok" | "youtube" | "facebook" | "snapchat" | "x" | "generic";
     metricKey: string;
@@ -314,7 +317,14 @@ export async function submitPerformance(input: {
   const user = await getUser();
   const supabase = await createClient();
 
-  const { submission_id, report_task_id, metric_values, ...metrics } =
+  const {
+    submission_id,
+    report_task_id,
+    evidence_id,
+    metric_values,
+    screenshot_url,
+    ...metrics
+  } =
     parsed.data;
 
   const { data: submission } = await supabase
@@ -355,10 +365,44 @@ export async function submitPerformance(input: {
     reportTaskId = reportTask.id;
   }
 
+  let evidenceStorageUri: string | null = null;
+  if (evidence_id) {
+    if (!reportTaskId) {
+      throw new Error("Evidence uploads require a report task");
+    }
+
+    const { data: evidence } = await supabase
+      .from("content_performance_evidence")
+      .select(
+        "id, campaign_id, campaign_member_id, report_task_id, submission_id, performance_id, storage_path",
+      )
+      .eq("id", evidence_id)
+      .single();
+
+    if (!evidence) throw new Error("Evidence not found");
+    if (evidence.performance_id) {
+      throw new Error("Evidence has already been linked");
+    }
+    if (
+      evidence.report_task_id !== reportTaskId ||
+      evidence.campaign_member_id !== member.id ||
+      evidence.campaign_id !== member.campaign_id ||
+      (evidence.submission_id != null && evidence.submission_id !== submission_id)
+    ) {
+      throw new Error("Not authorized");
+    }
+
+    evidenceStorageUri = getEvidenceStorageUri(evidence.storage_path);
+  }
+
   const submittedAt = new Date().toISOString();
   const sparseMetricColumns = metric_values?.length
     ? mapMetricValuesToLegacyPerformanceColumns(metric_values)
     : {};
+  const screenshotUrl =
+    screenshot_url && screenshot_url.trim() !== ""
+      ? screenshot_url.trim()
+      : evidenceStorageUri;
 
   const { data, error } = await supabase
     .from("content_performance")
@@ -366,6 +410,7 @@ export async function submitPerformance(input: {
       submission_id,
       report_task_id: reportTaskId,
       reported_at: submittedAt,
+      screenshot_url: screenshotUrl,
       ...metrics,
       ...sparseMetricColumns,
     })
@@ -373,6 +418,19 @@ export async function submitPerformance(input: {
     .single();
 
   if (error) throw new Error(error.message);
+
+  if (evidence_id) {
+    const admin = createAdminClient();
+    const { error: evidenceUpdateError } = await admin
+      .from("content_performance_evidence")
+      .update({
+        performance_id: data.id,
+        updated_at: submittedAt,
+      })
+      .eq("id", evidence_id);
+
+    if (evidenceUpdateError) throw new Error(evidenceUpdateError.message);
+  }
 
   if (metric_values?.length) {
     const rows = buildMetricValueRows({

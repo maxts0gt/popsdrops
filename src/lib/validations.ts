@@ -306,6 +306,7 @@ export type ContentFeedbackInput = z.infer<typeof contentFeedbackSchema>;
 export const submitPerformanceSchema = z.object({
   submission_id: uuidLike,
   report_task_id: uuidLike.optional(),
+  evidence_id: uuidLike.optional(),
   measurement_type: z.enum(["initial_48h", "final_7d", "extended_30d"]),
   views: z.coerce.number().int().nonnegative().optional(),
   reach: z.coerce.number().int().nonnegative().optional(),
@@ -321,7 +322,16 @@ export const submitPerformanceSchema = z.object({
   completion_rate: z.coerce.number().min(0).max(100).optional(),
   avg_watch_time_seconds: z.coerce.number().nonnegative().optional(),
   subscriber_gains: z.coerce.number().int().nonnegative().optional(),
-  screenshot_url: z.string().url().optional().or(z.literal("")),
+  screenshot_url: z
+    .string()
+    .refine(
+      (value) =>
+        value === "" ||
+        value.startsWith("campaign-evidence/") ||
+        z.string().url().safeParse(value).success,
+      "Enter a valid evidence URL",
+    )
+    .optional(),
   metric_values: z.array(performanceMetricValueSchema).max(40).optional(),
 });
 

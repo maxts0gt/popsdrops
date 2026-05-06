@@ -24,6 +24,14 @@ describe("content performance report task loop", () => {
     expect(sharedValidationsSource).toContain("report_task_id: uuidLike.optional()");
   });
 
+  it("accepts evidence ids and links uploaded evidence to the created performance row", () => {
+    expect(validationsSource).toContain("evidence_id: uuidLike.optional()");
+    expect(sharedValidationsSource).toContain("evidence_id: uuidLike.optional()");
+    expect(contentActionsSource).toContain("evidence_id");
+    expect(contentActionsSource).toContain(".from(\"content_performance_evidence\")");
+    expect(contentActionsSource).toContain("performance_id: data.id");
+  });
+
   it("verifies creator ownership before inserting performance metrics", () => {
     expect(contentActionsSource).toContain(
       ".select(\"id, platform, campaign_member_id, campaign_members(campaign_id, creator_id)\")",
@@ -33,9 +41,9 @@ describe("content performance report task loop", () => {
   });
 
   it("uses the parsed performance payload so platform-only metrics stay in metric values", () => {
-    expect(contentActionsSource).toContain(
-      "const { submission_id, report_task_id, metric_values, ...metrics } =\n    parsed.data",
-    );
+    expect(contentActionsSource).toContain("parsed.data");
+    expect(contentActionsSource).toContain("metric_values");
+    expect(contentActionsSource).toContain("...metrics");
   });
 
   it("links submitted metrics to the report task and completes that task only when reporting is complete", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Info, CheckCircle2, AlertCircle } from "lucide-react";
+import { Info, CheckCircle2, AlertCircle, Upload, FileCheck2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PlatformIcon } from "@/components/platform-icons";
@@ -12,6 +12,12 @@ import {
 } from "@/lib/platform-metrics";
 import { PLATFORM_LABELS, type Platform } from "@/lib/constants";
 import { submitPerformance } from "@/app/actions/content";
+import {
+  analyzePerformanceEvidence,
+  createPerformanceEvidenceUpload,
+} from "@/app/actions/reporting-evidence";
+import { createClient } from "@/lib/supabase/client";
+import { getEvidenceFileValidationError } from "@/lib/reporting/evidence-upload";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -67,7 +73,14 @@ export function PerformanceForm({
   const Icon = PlatformIcon[platform];
 
   const [values, setValues] = useState<Record<string, string>>({});
-  const [screenshotUrl, setScreenshotUrl] = useState("");
+  const [evidenceUpload, setEvidenceUpload] = useState<Awaited<
+    ReturnType<typeof createPerformanceEvidenceUpload>
+  > | null>(null);
+  const [evidenceFileName, setEvidenceFileName] = useState("");
+  const [evidenceStatus, setEvidenceStatus] = useState<
+    "idle" | "uploading" | "analyzing" | "ready"
+  >("idle");
+  const [evidenceNote, setEvidenceNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -89,6 +102,90 @@ export function PerformanceForm({
     return Math.max(0, n);
   }
 
+  async function handleEvidenceFile(file: File | null) {
+    setError(null);
+    setEvidenceUpload(null);
+    setEvidenceNote(null);
+    setEvidenceFileName(file?.name ?? "");
+    setEvidenceStatus("idle");
+
+    if (!file) return;
+
+    if (!reportTaskId) {
+      setError("This report is not ready for evidence upload.");
+      return;
+    }
+
+    const validationError = getEvidenceFileValidationError({
+      mimeType: file.type,
+      sizeBytes: file.size,
+    });
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    try {
+      setEvidenceStatus("uploading");
+      const evidenceUpload = await createPerformanceEvidenceUpload({
+        reportTaskId,
+        submissionId,
+        fileName: file.name,
+        mimeType: file.type,
+        sizeBytes: file.size,
+      });
+      const supabase = createClient();
+      const { error: uploadError } = await supabase.storage.from(evidenceUpload.bucket)
+        .upload(evidenceUpload.storagePath, file, {
+          contentType: file.type,
+          upsert: false,
+        });
+
+      if (uploadError) throw new Error(uploadError.message);
+
+      setEvidenceUpload(evidenceUpload);
+      setEvidenceStatus("analyzing");
+
+      try {
+        const extraction = await analyzePerformanceEvidence({
+          evidenceId: evidenceUpload.id,
+          reportTaskId,
+          platform,
+          expectedMetrics: metrics.map((metric) => ({
+            metricKey: metric.key,
+            metricLabel: metric.label,
+          })),
+        });
+
+        if (extraction.status === "pending_confirmation") {
+          setValues((previous) => {
+            const next = { ...previous };
+
+            for (const metric of extraction.metricValues) {
+              if (metric.metricValue == null) continue;
+              if (!metrics.some((field) => field.key === metric.metricKey)) continue;
+              if (next[metric.metricKey]?.trim()) continue;
+              next[metric.metricKey] = String(metric.metricValue);
+            }
+
+            return next;
+          });
+          setEvidenceNote("Evidence read. Review the numbers before submitting.");
+        } else {
+          setEvidenceNote("Evidence uploaded. Enter the numbers manually.");
+        }
+      } catch {
+        setEvidenceNote("Evidence uploaded. Enter the numbers manually.");
+      }
+
+      setEvidenceStatus("ready");
+    } catch (e) {
+      setEvidenceStatus("idle");
+      setError(e instanceof Error ? e.message : "Evidence upload failed");
+    }
+  }
+
   function handleSubmit() {
     setError(null);
 
@@ -102,9 +199,8 @@ export function PerformanceForm({
       return;
     }
 
-    // Validate screenshot proof
-    if (!screenshotUrl.trim()) {
-      setError("Screenshot proof of analytics is required");
+    if (!evidenceUpload) {
+      setError("Upload analytics evidence first");
       return;
     }
 
@@ -112,8 +208,8 @@ export function PerformanceForm({
     const payload: Record<string, unknown> = {
       submission_id: submissionId,
       report_task_id: reportTaskId,
+      evidence_id: evidenceUpload.id,
       measurement_type: measurementType,
-      screenshot_url: screenshotUrl.trim(),
     };
 
     for (const field of metrics) {
@@ -218,26 +314,46 @@ export function PerformanceForm({
         ))}
       </div>
 
-      {/* Screenshot proof */}
+      {/* Evidence proof */}
       <div>
         <label className="mb-1 flex items-center gap-1 text-sm font-medium text-foreground">
-          Analytics Screenshot
+          Analytics Evidence
           <span className="text-xs text-red-400">*</span>
         </label>
-        <p className="mb-2 text-xs text-muted-foreground">
-          Paste a link to a screenshot of your {PLATFORM_LABELS[platform]} analytics dashboard
-          showing these metrics. This verifies your reported numbers.
-        </p>
-        <input
-          type="url"
-          placeholder="https://..."
-          value={screenshotUrl}
-          onChange={(e) => setScreenshotUrl(e.target.value)}
-          className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
-        />
-        <p className="mt-1 text-[11px] text-muted-foreground/70">
-          Upload your screenshot to any image host and paste the URL. Supabase Storage upload coming soon.
-        </p>
+        <label className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2.5 text-sm text-foreground transition hover:border-slate-300">
+          <span className="flex min-w-0 items-center gap-2">
+            {evidenceUpload ? (
+              <FileCheck2 className="size-4 shrink-0 text-emerald-600" />
+            ) : (
+              <Upload className="size-4 shrink-0 text-muted-foreground" />
+            )}
+            <span className="truncate">
+              {evidenceFileName || "Choose analytics file"}
+            </span>
+          </span>
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {evidenceStatus === "uploading"
+              ? "Uploading"
+              : evidenceStatus === "analyzing"
+                ? "Reading"
+                : evidenceUpload
+                  ? "Ready"
+                  : "PNG, JPG, WEBP, PDF, CSV"}
+          </span>
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,application/pdf,text/csv"
+            className="sr-only"
+            onChange={(event) => {
+              void handleEvidenceFile(event.target.files?.[0] ?? null);
+            }}
+          />
+        </label>
+        {evidenceNote && (
+          <p className="mt-1 text-[11px] text-muted-foreground/70">
+            {evidenceNote}
+          </p>
+        )}
       </div>
 
       {/* Error */}
@@ -251,7 +367,11 @@ export function PerformanceForm({
       {/* Submit */}
       <Button
         onClick={handleSubmit}
-        disabled={isPending}
+        disabled={
+          isPending ||
+          evidenceStatus === "uploading" ||
+          evidenceStatus === "analyzing"
+        }
         className="w-full"
       >
         {isPending ? "Submitting..." : `Submit ${MEASUREMENT_LABELS[measurementType]}`}

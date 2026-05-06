@@ -33,4 +33,14 @@ describe("creator campaign report task flow", () => {
     expect(performanceFormSource).toContain("isSubmitted?: boolean");
     expect(performanceFormSource).toContain("report_task_id: reportTaskId");
   });
+
+  it("uses direct evidence upload instead of asking creators for image-host URLs", () => {
+    expect(performanceFormSource).toContain("createPerformanceEvidenceUpload");
+    expect(performanceFormSource).toContain("analyzePerformanceEvidence");
+    expect(performanceFormSource).toContain(".storage.from(evidenceUpload.bucket)");
+    expect(performanceFormSource).toContain(".upload(evidenceUpload.storagePath");
+    expect(performanceFormSource).toContain("type=\"file\"");
+    expect(performanceFormSource).not.toContain("type=\"url\"");
+    expect(performanceFormSource).not.toContain("paste the URL");
+  });
 });
