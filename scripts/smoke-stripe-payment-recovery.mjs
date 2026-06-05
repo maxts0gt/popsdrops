@@ -71,6 +71,8 @@ export function validateStripePaymentRecoverySmoke({
   adminDetailClearsExceptionAfterRecovery,
   adminDetailShowsExceptionBeforeRecovery,
   adminCampaignsShowsExceptionBeforeRecovery,
+  adminCampaignsShowsLaunchBlockerBeforeRecovery,
+  adminCampaignsClearsLaunchBlockerAfterRecovery,
   adminCampaignsShowsPaidState,
   adminRevenueShowsRecoveredTrace,
   brandReceiptVisible,
@@ -98,6 +100,10 @@ export function validateStripePaymentRecoverySmoke({
 
   if (!adminCampaignsShowsExceptionBeforeRecovery) {
     throw new Error("Expected admin exception before payment recovery.");
+  }
+
+  if (!adminCampaignsShowsLaunchBlockerBeforeRecovery) {
+    throw new Error("Expected admin launch blocker before payment recovery.");
   }
 
   if (!adminDetailShowsExceptionBeforeRecovery) {
@@ -171,6 +177,10 @@ export function validateStripePaymentRecoverySmoke({
 
   if (!adminCampaignsShowsPaidState) {
     throw new Error("Expected admin campaigns to show paid state after recovery.");
+  }
+
+  if (!adminCampaignsClearsLaunchBlockerAfterRecovery) {
+    throw new Error("Expected admin launch blocker to clear after recovery.");
   }
 
   if (!adminDetailClearsExceptionAfterRecovery) {
@@ -337,7 +347,9 @@ async function runStripePaymentRecoverySmoke() {
   let client;
   let adminDetailClearsExceptionAfterRecovery = false;
   let adminDetailShowsExceptionBeforeRecovery = false;
+  let adminCampaignsClearsLaunchBlockerAfterRecovery = false;
   let adminCampaignsShowsExceptionBeforeRecovery = false;
+  let adminCampaignsShowsLaunchBlockerBeforeRecovery = false;
   let adminCampaignsShowsPaidState = false;
   let adminRevenueShowsRecoveredTrace = false;
   let brandReceiptVisible = false;
@@ -390,16 +402,31 @@ async function runStripePaymentRecoverySmoke() {
         const links = [...document.querySelectorAll("a")]
           .filter((node) => (node.getAttribute("href") || "").includes(${JSON.stringify(targets.campaignId)}));
         const tableRow = links.map((node) => node.closest("tr")).find(Boolean);
-        const attentionRow = links
+        const attentionRows = links
           .map((node) => node.closest('[data-testid="admin-campaign-attention-row"]'))
-          .find(Boolean);
+          .filter(Boolean);
         return Boolean(
           tableRow?.innerText.includes(${JSON.stringify(SMOKE_CAMPAIGN_TITLE)}) &&
           tableRow?.innerText.includes("Failed") &&
-          attentionRow?.innerText.includes("Payment exception")
+          attentionRows.some((row) => (row.innerText || "").includes("Payment exception"))
         );
       })()`,
       "admin campaigns failed service-fee exception",
+      90000,
+    );
+    adminCampaignsShowsLaunchBlockerBeforeRecovery = await waitForExpression(
+      client,
+      `(() => {
+        const launchRows = [...document.querySelectorAll('[data-testid="admin-campaign-attention-row"]')]
+          .filter((row) => (row.innerText || "").includes("Launch blocker"));
+        return launchRows.some((row) => {
+          const link = row.querySelector('a[href*="${targets.campaignId}"][href*="focus=launch"][href*="admin-launch-readiness"]');
+          return Boolean(link) &&
+            (row.innerText || "").includes(${JSON.stringify(SMOKE_CAMPAIGN_TITLE)}) &&
+            (row.innerText || "").includes("blocks invite links and launch actions");
+        });
+      })()`,
+      "admin campaigns launch blocker before payment recovery",
       90000,
     );
     await navigate(client, targets.adminCampaignDetailUrl);
@@ -605,11 +632,23 @@ async function runStripePaymentRecoverySmoke() {
       "admin campaigns recovered paid state",
       90000,
     );
+    adminCampaignsClearsLaunchBlockerAfterRecovery = await waitForExpression(
+      client,
+      `(() => {
+        const rows = [...document.querySelectorAll('[data-testid="admin-campaign-attention-row"]')]
+          .filter((row) => (row.innerText || "").includes(${JSON.stringify(SMOKE_CAMPAIGN_TITLE)}));
+        return !rows.some((row) => (row.innerText || "").includes("Launch blocker"));
+      })()`,
+      "admin campaigns clears launch blocker after recovery",
+      90000,
+    );
 
     validateStripePaymentRecoverySmoke({
       adminDetailClearsExceptionAfterRecovery,
       adminDetailShowsExceptionBeforeRecovery,
+      adminCampaignsClearsLaunchBlockerAfterRecovery,
       adminCampaignsShowsExceptionBeforeRecovery,
+      adminCampaignsShowsLaunchBlockerBeforeRecovery,
       adminCampaignsShowsPaidState,
       adminRevenueShowsRecoveredTrace,
       brandReceiptVisible,
@@ -634,7 +673,9 @@ async function runStripePaymentRecoverySmoke() {
       ok: true,
       adminDetailClearsExceptionAfterRecovery,
       adminDetailShowsExceptionBeforeRecovery,
+      adminCampaignsClearsLaunchBlockerAfterRecovery,
       adminCampaignsShowsExceptionBeforeRecovery,
+      adminCampaignsShowsLaunchBlockerBeforeRecovery,
       adminCampaignsShowsPaidState,
       adminRevenueShowsRecoveredTrace,
       baseUrl: targets.baseUrl,

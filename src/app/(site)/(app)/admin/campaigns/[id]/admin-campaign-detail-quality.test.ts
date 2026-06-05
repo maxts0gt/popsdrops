@@ -14,6 +14,13 @@ const campaignsSource = readFileSync(
   "utf8",
 );
 
+const campaignAttentionSource = readFileSync(
+  fileURLToPath(
+    new URL("../../../../../../lib/admin/campaign-attention.ts", import.meta.url),
+  ),
+  "utf8",
+);
+
 const revenueSource = readFileSync(
   fileURLToPath(new URL("../../revenue/page.tsx", import.meta.url)),
   "utf8",
@@ -66,7 +73,11 @@ describe("admin campaign detail quality contract", () => {
   });
 
   it("opens admin queue drill-ins on the exact blocker instead of a generic detail page", () => {
-    expect(campaignsSource).toContain("?focus=reporting#admin-reporting-exceptions");
+    expect(campaignsSource).toContain("getAdminCampaignAttentionItems");
+    expect(campaignAttentionSource).toContain("?focus=reporting#admin-reporting-exceptions");
+    expect(campaignAttentionSource).toContain("?focus=launch#admin-launch-readiness");
+    expect(campaignAttentionSource).toContain('label: "Launch blocker"');
+    expect(campaignAttentionSource).toContain("isServiceFeeBlockingLaunch");
     expect(revenueSource).toContain("#service-fees");
 
     expect(detailSource).toContain('type AdminCampaignFocus = "finance" | "launch" | "reporting" | null;');

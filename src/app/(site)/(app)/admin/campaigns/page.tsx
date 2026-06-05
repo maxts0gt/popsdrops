@@ -42,6 +42,11 @@ import { getSingleRelation } from "@/lib/supabase/relations";
 import { pauseCampaign, cancelCampaign, resumeCampaign } from "@/app/actions/admin";
 import type { PaymentStatusType } from "@/types/database";
 import { toast } from "sonner";
+import {
+  getAdminCampaignAttentionItems,
+  serviceFeeLabel,
+  type CampaignAttentionKind,
+} from "@/lib/admin/campaign-attention";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -56,8 +61,8 @@ type CampaignSortKey =
   | "member_count"
   | "created_at";
 type SortDir = "asc" | "desc";
-type AttentionFilter = "all" | "payment" | "launch" | "reporting";
-type AttentionKind = Exclude<AttentionFilter, "all">;
+type AttentionFilter = "all" | CampaignAttentionKind;
+type AttentionKind = CampaignAttentionKind;
 
 interface CampaignRow {
   id: string;
@@ -87,30 +92,12 @@ type ReportTaskExceptionRow = {
   status: string;
 };
 
-type CampaignAttentionItem = {
-  actionLabel: string;
-  campaignId: string;
-  detail: string;
-  href: string;
-  id: string;
-  kind: AttentionKind;
-  label: string;
-  title: string;
-};
-
 const attentionFilters: Array<{ key: AttentionFilter; label: string }> = [
   { key: "all", label: "All" },
   { key: "payment", label: "Payment" },
   { key: "launch", label: "Launch" },
   { key: "reporting", label: "Reporting" },
 ];
-
-const paymentExceptionStatuses = new Set<PaymentStatusType>([
-  "failed",
-  "refunded",
-  "disputed",
-  "overdue",
-]);
 
 async function fetchCampaignRows(): Promise<CampaignRow[]> {
   const supabase = createClient();
@@ -196,56 +183,10 @@ function serviceFeeTone(status: PaymentStatusType) {
   return "border-slate-200 bg-white text-muted-foreground";
 }
 
-function serviceFeeLabel(status: PaymentStatusType) {
-  return status[0].toUpperCase() + status.slice(1);
-}
-
 function attentionTone(kind: AttentionKind) {
   if (kind === "payment") return "border-red-200 bg-red-50 text-red-700";
   if (kind === "reporting") return "border-amber-200 bg-amber-50 text-amber-900";
   return "border-slate-200 bg-slate-50 text-slate-700";
-}
-
-function getCampaignAttentionItems(campaign: CampaignRow): CampaignAttentionItem[] {
-  const items: CampaignAttentionItem[] = [];
-
-  if (paymentExceptionStatuses.has(campaign.service_fee_status)) {
-    items.push({
-      actionLabel: "Open finance",
-      campaignId: campaign.id,
-      detail: `${serviceFeeLabel(campaign.service_fee_status)} service fee needs finance review.`,
-      href: `/admin/campaigns/${campaign.id}?focus=finance#admin-finance-exception`,
-      id: `${campaign.id}:payment`,
-      kind: "payment",
-      label: "Payment exception",
-      title: campaign.title,
-    });
-  }
-
-  const reportExceptionCount =
-    campaign.report_correction_count + campaign.report_missed_count;
-  if (reportExceptionCount > 0) {
-    const parts = [
-      campaign.report_missed_count > 0
-        ? `${campaign.report_missed_count} missed`
-        : null,
-      campaign.report_correction_count > 0
-        ? `${campaign.report_correction_count} correction`
-        : null,
-    ].filter(Boolean);
-    items.push({
-      actionLabel: "Open campaign",
-      campaignId: campaign.id,
-      detail: `${parts.join(", ")} report task${reportExceptionCount === 1 ? " needs" : "s need"} review.`,
-      href: `/admin/campaigns/${campaign.id}?focus=reporting#admin-reporting-exceptions`,
-      id: `${campaign.id}:reporting`,
-      kind: "reporting",
-      label: "Reporting exception",
-      title: campaign.title,
-    });
-  }
-
-  return items;
 }
 
 // ---------------------------------------------------------------------------
@@ -443,7 +384,7 @@ export default function AdminCampaignsPage() {
   ];
 
   const maxCount = Math.max(1, ...funnelStages.map((s) => statusCounts[s.status] ?? 0));
-  const attentionItems = campaigns.flatMap(getCampaignAttentionItems);
+  const attentionItems = campaigns.flatMap(getAdminCampaignAttentionItems);
   const attentionCounts = attentionFilters.reduce(
     (counts, filter) => {
       counts[filter.key] =
