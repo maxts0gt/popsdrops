@@ -24,6 +24,7 @@ import {
   loginForSmoke,
   navigate,
   waitForExpression,
+  waitForFunction,
 } from "./smoke-campaign-detail.mjs";
 import { waitForCampaignServiceFeeStatus } from "./smoke-stripe-checkout-webhook.mjs";
 
@@ -493,9 +494,13 @@ async function runStripeNegativeStateSmoke() {
       'document.querySelectorAll(".animate-pulse").length === 0',
       "creator discovery skeletons",
     );
-    creatorDiscoverHidden = await waitForExpression(
+    creatorDiscoverHidden = await waitForFunction(
       client,
-      `![...document.querySelectorAll('[data-testid="creator-discover-card"]')].some((node) => (node.getAttribute("href") || "").includes(${JSON.stringify(targets.campaignId)}))`,
+      `function (campaignId) {
+        return ![...document.querySelectorAll('[data-testid="creator-discover-card"]')]
+          .some((node) => (node.getAttribute("href") || "").includes(campaignId));
+      }`,
+      [targets.campaignId],
       "creator discovery hides unsafe campaign",
       90000,
     );

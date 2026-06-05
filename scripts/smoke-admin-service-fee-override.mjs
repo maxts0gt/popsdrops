@@ -24,6 +24,7 @@ import {
   loginForSmoke,
   navigate,
   waitForExpression,
+  waitForFunction,
 } from "./smoke-campaign-detail.mjs";
 import { buildStripeNegativeStateEvent } from "./smoke-stripe-negative-states.mjs";
 import { waitForCampaignServiceFeeStatus } from "./smoke-stripe-checkout-webhook.mjs";
@@ -422,9 +423,14 @@ async function runAdminServiceFeeOverrideSmoke() {
       'document.querySelectorAll(".animate-pulse").length === 0',
       "creator discovery skeletons",
     );
-    creatorDiscoverVisible = await waitForExpression(
+    creatorDiscoverVisible = await waitForFunction(
       client,
-      `document.body.innerText.includes(${JSON.stringify(SMOKE_CAMPAIGN_TITLE)}) && [...document.querySelectorAll('[data-testid="creator-discover-card"]')].some((node) => (node.getAttribute("href") || "").includes(${JSON.stringify(targets.campaignId)}))`,
+      `function (title, campaignId) {
+        return document.body.innerText.includes(title) &&
+          [...document.querySelectorAll('[data-testid="creator-discover-card"]')]
+            .some((node) => (node.getAttribute("href") || "").includes(campaignId));
+      }`,
+      [SMOKE_CAMPAIGN_TITLE, targets.campaignId],
       "creator discovery shows manually paid campaign",
       90000,
     );

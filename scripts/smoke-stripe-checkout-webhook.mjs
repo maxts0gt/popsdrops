@@ -25,6 +25,7 @@ import {
   loginForSmoke,
   navigate,
   waitForExpression,
+  waitForFunction,
 } from "./smoke-campaign-detail.mjs";
 
 export const DEFAULT_STRIPE_CHECKOUT_WEBHOOK_CAMPAIGN_ID =
@@ -743,9 +744,14 @@ async function runStripeCheckoutWebhookSmoke() {
       'document.querySelectorAll(".animate-pulse").length === 0',
       "creator discovery skeletons",
     );
-    creatorDiscoverVisible = await waitForExpression(
+    creatorDiscoverVisible = await waitForFunction(
       client,
-      `document.body.innerText.includes(${JSON.stringify(getSmokeCampaignTitle())}) && [...document.querySelectorAll('[data-testid="creator-discover-card"]')].some((node) => node.textContent.includes(${JSON.stringify(getSmokeCampaignTitle())}))`,
+      `function (title) {
+        return document.body.innerText.includes(title) &&
+          [...document.querySelectorAll('[data-testid="creator-discover-card"]')]
+            .some((node) => node.textContent.includes(title));
+      }`,
+      [getSmokeCampaignTitle()],
       "creator discovery paid launched campaign",
       90000,
     );

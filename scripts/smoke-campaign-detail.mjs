@@ -436,6 +436,52 @@ export async function evaluate(client, expression) {
   return result.result?.value;
 }
 
+function getRuntimeExceptionDescription(result) {
+  return (
+    result.exceptionDetails?.exception?.description ||
+    result.exceptionDetails?.text ||
+    "Evaluation failed"
+  );
+}
+
+function toCallFunctionArgument(value) {
+  if (value === undefined) {
+    return { unserializableValue: "undefined" };
+  }
+  return { value };
+}
+
+export async function evaluateFunction(client, functionDeclaration, args = []) {
+  const globalObject = await client.send("Runtime.evaluate", {
+    expression: "globalThis",
+    returnByValue: false,
+  });
+  if (globalObject.exceptionDetails || !globalObject.result?.objectId) {
+    throw new Error(getRuntimeExceptionDescription(globalObject));
+  }
+
+  try {
+    const result = await client.send("Runtime.callFunctionOn", {
+      objectId: globalObject.result.objectId,
+      functionDeclaration,
+      arguments: args.map(toCallFunctionArgument),
+      awaitPromise: true,
+      returnByValue: true,
+      userGesture: true,
+    });
+
+    if (result.exceptionDetails) {
+      throw new Error(getRuntimeExceptionDescription(result));
+    }
+
+    return result.result?.value;
+  } finally {
+    await client
+      .send("Runtime.releaseObject", { objectId: globalObject.result.objectId })
+      .catch(() => {});
+  }
+}
+
 export async function waitForExpression(client, expression, description, timeoutMs = 90000) {
   const startedAt = Date.now();
   let lastError;
@@ -443,6 +489,31 @@ export async function waitForExpression(client, expression, description, timeout
   while (Date.now() - startedAt < timeoutMs) {
     try {
       const value = await evaluate(client, expression);
+      if (value) {
+        return value;
+      }
+    } catch (error) {
+      lastError = error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 300));
+  }
+
+  throw new Error(`Timed out waiting for ${description}: ${lastError?.message ?? "not ready"}`);
+}
+
+export async function waitForFunction(
+  client,
+  functionDeclaration,
+  args,
+  description,
+  timeoutMs = 90000,
+) {
+  const startedAt = Date.now();
+  let lastError;
+
+  while (Date.now() - startedAt < timeoutMs) {
+    try {
+      const value = await evaluateFunction(client, functionDeclaration, args);
       if (value) {
         return value;
       }

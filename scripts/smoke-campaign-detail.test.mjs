@@ -5,6 +5,7 @@ import {
   DEFAULT_CAMPAIGN_ID,
   buildSmokeDevServerCommand,
   buildSmokeTargets,
+  evaluateFunction,
   isRecoverableNavigationState,
   validateCampaignDetailSmoke,
 } from "./smoke-campaign-detail.mjs";
@@ -200,6 +201,39 @@ describe("campaign detail smoke script contract", () => {
     expect(cdpClientSource).toContain("this.pending.delete(id)");
     expect(cdpClientSource).toContain("Timed out waiting for Chrome DevTools");
     expect(cdpClientSource).toContain("clearTimeout(timeout)");
+  });
+
+  it("passes dynamic smoke values to Chrome as CDP call arguments", async () => {
+    const calls = [];
+    const client = {
+      async send(method, params) {
+        calls.push({ method, params });
+        if (method === "Runtime.evaluate") {
+          return { result: { objectId: "global-object" } };
+        }
+        if (method === "Runtime.callFunctionOn") {
+          return { result: { value: true } };
+        }
+        return {};
+      },
+    };
+
+    await expect(
+      evaluateFunction(client, "function (campaignId) { return campaignId.length > 0; }", [
+        "campaign-123",
+      ]),
+    ).resolves.toBe(true);
+
+    expect(calls[1]).toMatchObject({
+      method: "Runtime.callFunctionOn",
+      params: {
+        objectId: "global-object",
+        arguments: [{ value: "campaign-123" }],
+        awaitPromise: true,
+        returnByValue: true,
+      },
+    });
+    expect(calls[1].params.functionDeclaration).not.toContain("campaign-123");
   });
 
   it("does not treat missing app routes as a ready dev server", () => {

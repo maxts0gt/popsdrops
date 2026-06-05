@@ -37,6 +37,20 @@ describe("SMTP MIME message builder", () => {
     ).toBe("PopsDrops\n\nCampaign completed.\n\nOpen campaign");
   });
 
+  it("strips script, style, and head blocks with spaced closing tags", () => {
+    expect(
+      htmlToPlainText(
+        "<html><head><title>Hidden</title></head ><style>p{color:red}</style ><script>alert('x')</script ><body><p>Visible</p></body></html>",
+      ),
+    ).toBe("Visible");
+  });
+
+  it("decodes supported entities once when deriving plain text", () => {
+    expect(
+      htmlToPlainText("<p>One&nbsp;&amp;&nbsp;two &amp;lt;not a tag&amp;gt;</p>"),
+    ).toBe("One & two &lt;not a tag&gt;");
+  });
+
   it("rejects header injection and invalid recipient addresses", () => {
     expect(() =>
       buildSmtpMimeMessage({

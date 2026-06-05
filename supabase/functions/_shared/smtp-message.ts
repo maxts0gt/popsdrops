@@ -1,4 +1,12 @@
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PLAIN_TEXT_ENTITIES: Record<string, string> = {
+  "#39": "'",
+  amp: "&",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: "\"",
+};
 
 export type SmtpMimeMessageInput = {
   fromAddress: string;
@@ -49,19 +57,16 @@ export function sanitizeSubject(subject: string) {
 
 export function htmlToPlainText(html: string) {
   return html
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<head[\s\S]*?<\/head>/gi, " ")
+    .replace(/<style\b[^>]*>[\s\S]*?<\/style\s*>/gi, " ")
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi, " ")
+    .replace(/<head\b[^>]*>[\s\S]*?<\/head\s*>/gi, " ")
     .replace(/<\/(p|div|section|article|h[1-6]|tr)>/gi, "\n\n")
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/li>/gi, "\n")
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, "\"")
-    .replace(/&#39;/g, "'")
+    .replace(/&(#39|amp|gt|lt|nbsp|quot);/g, (_, entity: string) => {
+      return PLAIN_TEXT_ENTITIES[entity] ?? `&${entity};`;
+    })
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n[ \t]+/g, "\n")
     .replace(/[ \t]{2,}/g, " ")
