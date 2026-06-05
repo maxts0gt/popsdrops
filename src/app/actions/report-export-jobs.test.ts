@@ -65,6 +65,7 @@ describe("report export jobs", () => {
     expect(actionSource).toContain("/functions/v1/generate-report");
     expect(contractVersion).toBeTruthy();
     expect(edgeContractVersion).toBe(contractVersion);
+    expect(contractVersion).toBe("report-export-proof-ops-basis-v9-2026-06-05");
     expect(actionSource).toContain("assertReportExportServiceReady()");
     expect(serviceSource).toContain('method: "GET"');
     expect(serviceSource).toContain("STALE_REPORT_EXPORT_SERVICE_ERROR");
@@ -123,6 +124,8 @@ describe("report export jobs", () => {
     expect(edgeExportHelperSource).toContain("block.executivePurpose ?? \"\"");
     expect(edgeExportHelperSource).toContain("Executive purpose");
     expect(edgeExportHelperSource).toContain("buildHtmlPrimaryReportStory");
+    expect(edgeExportHelperSource).toContain('class="proof-operations-basis"');
+    expect(edgeExportHelperSource).toContain('data-proof-basis-key="${escapeHtml(item.key)}"');
     expect(edgeExportHelperSource).toContain("report-story--trend");
     expect(edgeExportHelperSource).toContain("report-story--comparison");
     expect(edgeExportHelperSource).toContain("report-story--proof");
