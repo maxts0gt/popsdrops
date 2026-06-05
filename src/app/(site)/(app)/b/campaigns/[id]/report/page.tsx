@@ -31,6 +31,7 @@ import {
 } from "lucide-react";
 import {
   reviewPerformanceEvidence,
+  reviewPerformanceProofLink,
   type PerformanceEvidenceReviewDecision,
 } from "@/app/actions/reporting-evidence";
 import { getBrandTeamSettings } from "@/app/actions/brand-team";
@@ -140,7 +141,11 @@ import {
   formatReportCompactDate,
   formatReportCompactDateRange,
 } from "@/lib/reporting/report-date-format";
-import { parseEvidenceStorageReference } from "@/lib/reporting/evidence-upload";
+import {
+  getExternalEvidenceUrl,
+  hasEvidenceProofReference,
+  parseEvidenceStorageReference,
+} from "@/lib/reporting/evidence-upload";
 import { hasBrandWorkspacePermission } from "@/lib/brand-permissions";
 import {
   mapCampaignAssetRow,
@@ -654,7 +659,7 @@ function getEvidenceStatusMeta(
   read: EvidenceReportRead,
   t: ReportTranslation,
 ): EvidenceStatusMeta {
-  const hasProof = Boolean(parseEvidenceStorageReference(read.screenshotUrl));
+  const hasProof = hasEvidenceProofReference(read.screenshotUrl);
   const submittedTime = read.reportTaskSubmittedAt
     ? new Date(read.reportTaskSubmittedAt).getTime()
     : new Date(read.reportedAt).getTime();
@@ -763,7 +768,7 @@ function getEvidenceImpactMeta(
   read: EvidenceReportRead,
   t: ReportTranslation,
 ): EvidenceImpactMeta {
-  const hasProof = Boolean(parseEvidenceStorageReference(read.screenshotUrl));
+  const hasProof = hasEvidenceProofReference(read.screenshotUrl);
 
   if (!hasProof) {
     return {
@@ -811,7 +816,7 @@ function getEvidenceReviewProvenance(
   t: ReportTranslation,
   locale: string,
 ): EvidenceReviewProvenanceMeta {
-  const hasProof = Boolean(parseEvidenceStorageReference(read.screenshotUrl));
+  const hasProof = hasEvidenceProofReference(read.screenshotUrl);
   const hasDecision =
     read.evidenceVerificationStatus === "verified" ||
     read.evidenceVerificationStatus === "rejected" ||
@@ -850,7 +855,7 @@ function getEvidenceReviewProvenance(
 function buildEvidenceTrailSummary(reads: EvidenceReportRead[]): ProofImpactSummary {
   return reads.reduce<ProofImpactSummary>(
     (summary, read) => {
-      const hasProof = Boolean(parseEvidenceStorageReference(read.screenshotUrl));
+      const hasProof = hasEvidenceProofReference(read.screenshotUrl);
 
       if (!hasProof) {
         summary.missingProof += 1;
@@ -928,9 +933,21 @@ function buildEvidenceReviewCommand({
 }
 
 function canReviewEvidence(read: EvidenceReportRead): boolean {
-  return Boolean(read.evidenceId) &&
+  return Boolean(getEvidenceReviewTargetId(read)) &&
     read.evidenceVerificationStatus !== "verified" &&
-    read.evidenceVerificationStatus !== "rejected";
+    read.evidenceVerificationStatus !== "rejected" &&
+    read.verificationStatus !== "brand_verified" &&
+    read.verificationStatus !== "screenshot_verified" &&
+    read.verificationStatus !== "rejected";
+}
+
+function getEvidenceReviewTargetId(read: EvidenceReportRead): string | null {
+  if (read.evidenceId) return read.evidenceId;
+  if (read.performanceId && getExternalEvidenceUrl(read.screenshotUrl)) {
+    return read.performanceId;
+  }
+
+  return null;
 }
 
 function getEvidenceSortValue(
@@ -948,7 +965,7 @@ function getEvidenceSortValue(
   if (key === "source") return sourceLabel;
   if (key === "impact") return impactLabel;
   if (key === "proof") {
-    return parseEvidenceStorageReference(read.screenshotUrl) ? 1 : 0;
+    return hasEvidenceProofReference(read.screenshotUrl) ? 1 : 0;
   }
 
   return read.evidenceVerificationStatus || read.verificationStatus || "";
@@ -3279,9 +3296,9 @@ function EvidenceProofAction({
   read: EvidenceReportRead;
   t: ReportTranslation;
 }) {
-  const evidenceReference = parseEvidenceStorageReference(read.screenshotUrl);
+  const reviewTargetId = getEvidenceReviewTargetId(read);
 
-  if (!evidenceReference) {
+  if (!hasEvidenceProofReference(read.screenshotUrl)) {
     return (
       <span className="inline-flex h-8 items-center text-xs text-muted-foreground">
         {t("evidence.noProof")}
@@ -3293,7 +3310,7 @@ function EvidenceProofAction({
     <button
       type="button"
       data-testid="report-evidence-open"
-      data-evidence-id={read.evidenceId ?? undefined}
+      data-evidence-id={reviewTargetId ?? undefined}
       onClick={() => void onOpenEvidence(read)}
       className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-border bg-white px-2.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
     >
@@ -3322,6 +3339,7 @@ function EvidenceReviewActions({
   t: ReportTranslation;
 }) {
   const canReview = canReviewEvidence(read);
+  const reviewTargetId = getEvidenceReviewTargetId(read);
 
   if (!canReviewReportEvidence) {
     return (
@@ -3337,8 +3355,8 @@ function EvidenceReviewActions({
         <button
           type="button"
           data-testid="report-evidence-verify"
-          data-evidence-id={read.evidenceId}
-          disabled={reviewingId === read.evidenceId}
+          data-evidence-id={reviewTargetId ?? undefined}
+          disabled={reviewingId === reviewTargetId}
           onClick={() => void onReviewEvidence(read, "verified")}
           className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2.5 text-[11px] font-medium text-foreground transition hover:bg-muted disabled:opacity-60"
         >
@@ -3350,8 +3368,8 @@ function EvidenceReviewActions({
         <button
           type="button"
           data-testid="report-evidence-correction"
-          data-evidence-id={read.evidenceId}
-          disabled={reviewingId === read.evidenceId}
+          data-evidence-id={reviewTargetId ?? undefined}
+          disabled={reviewingId === reviewTargetId}
           onClick={() => onRequestCorrection(read)}
           className="inline-flex h-7 items-center justify-center gap-1 rounded-lg border border-border bg-white px-2.5 text-[11px] font-medium text-muted-foreground transition hover:bg-muted disabled:opacity-60"
         >
@@ -3359,7 +3377,7 @@ function EvidenceReviewActions({
           {t("evidence.requestCorrection")}
         </button>
       )}
-      {!read.evidenceId && (
+      {!reviewTargetId && (
         <span className="inline-flex h-8 items-center text-xs text-muted-foreground">
           -
         </span>
@@ -5139,22 +5157,28 @@ export default function CampaignReportPage() {
       setEvidenceOpenError(null);
 
       const reference = parseEvidenceStorageReference(read.screenshotUrl);
-      if (!reference) {
+      if (reference) {
+        const supabase = createClient();
+        const { data, error } = await supabase.storage
+          .from(reference.bucket)
+          .createSignedUrl(reference.path, 300);
+
+        if (error || !data?.signedUrl) {
+          setEvidenceOpenError(evidenceOpenErrorMessage);
+          return;
+        }
+
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+
+      const externalUrl = getExternalEvidenceUrl(read.screenshotUrl);
+      if (!externalUrl) {
         setEvidenceOpenError(evidenceOpenErrorMessage);
         return;
       }
 
-      const supabase = createClient();
-      const { data, error } = await supabase.storage
-        .from(reference.bucket)
-        .createSignedUrl(reference.path, 300);
-
-      if (error || !data?.signedUrl) {
-        setEvidenceOpenError(evidenceOpenErrorMessage);
-        return;
-      }
-
-      window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+      window.open(externalUrl, "_blank", "noopener,noreferrer");
     },
     [evidenceOpenErrorMessage],
   );
@@ -5166,17 +5190,29 @@ export default function CampaignReportPage() {
       correctionNote?: string,
     ): Promise<boolean> => {
       if (!canReviewReportEvidence) return false;
-      if (!read.evidenceId) return false;
+      const reviewTargetId = getEvidenceReviewTargetId(read);
+      if (!reviewTargetId) return false;
 
-      setEvidenceReviewingId(read.evidenceId);
+      setEvidenceReviewingId(reviewTargetId);
       setEvidenceReviewError(null);
 
       try {
-        await reviewPerformanceEvidence({
-          evidenceId: read.evidenceId,
-          decision,
-          correctionNote,
-        });
+        if (read.evidenceId) {
+          await reviewPerformanceEvidence({
+            evidenceId: read.evidenceId,
+            decision,
+            correctionNote,
+          });
+        } else if (read.performanceId && getExternalEvidenceUrl(read.screenshotUrl)) {
+          await reviewPerformanceProofLink({
+            performanceId: read.performanceId,
+            decision,
+            correctionNote,
+          });
+        } else {
+          return false;
+        }
+
         setReportReloadKey((current) => current + 1);
         return true;
       } catch {
@@ -5200,7 +5236,10 @@ export default function CampaignReportPage() {
   const handleCorrectionDialogOpenChange = useCallback(
     (open: boolean) => {
       if (open) return;
-      if (correctionTarget?.evidenceId && evidenceReviewingId === correctionTarget.evidenceId) {
+      const correctionTargetId = correctionTarget
+        ? getEvidenceReviewTargetId(correctionTarget)
+        : null;
+      if (correctionTargetId && evidenceReviewingId === correctionTargetId) {
         return;
       }
 
@@ -6063,8 +6102,8 @@ export default function CampaignReportPage() {
         onSubmit={handleSubmitCorrection}
         open={correctionTarget !== null}
         saving={
-          correctionTarget?.evidenceId
-            ? evidenceReviewingId === correctionTarget.evidenceId
+          correctionTarget
+            ? evidenceReviewingId === getEvidenceReviewTargetId(correctionTarget)
             : false
         }
         t={t}

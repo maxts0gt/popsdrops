@@ -1,4 +1,4 @@
-import { parseEvidenceStorageReference } from "./evidence-upload";
+import { hasEvidenceProofReference } from "./evidence-upload";
 
 const REPORT_PLATFORM_ORDER = [
   "tiktok",
@@ -473,7 +473,7 @@ function isCorrectionRead(read: CampaignReportRead): boolean {
 }
 
 function hasOpenableEvidence(read: CampaignReportRead): boolean {
-  return Boolean(parseEvidenceStorageReference(read.screenshotUrl));
+  return hasEvidenceProofReference(read.screenshotUrl);
 }
 
 function sourceLabel(read: CampaignReportRead): string {

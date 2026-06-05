@@ -1066,7 +1066,9 @@ describe("campaign report live data flow", () => {
     );
     expect(reportPageSource).toContain("data-testid=\"report-evidence-proof-cell\"");
     expect(reportPageSource).toContain("data-testid=\"report-evidence-review-cell\"");
-    expect(reportPageSource).toContain("const evidenceReference = parseEvidenceStorageReference");
+    expect(reportPageSource).toContain("hasEvidenceProofReference(read.screenshotUrl)");
+    expect(reportPageSource).toContain("getExternalEvidenceUrl(read.screenshotUrl)");
+    expect(reportPageSource).toContain("reviewPerformanceProofLink");
     expect(reportPageSource).toContain("t(\"evidence.noProof\")");
     expect(reportPageSource).toContain('sortKey="source"');
     expect(reportPageSource).toContain('sortKey="proof"');
