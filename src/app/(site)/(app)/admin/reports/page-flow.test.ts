@@ -27,7 +27,7 @@ describe("admin reports command center", () => {
     expect(source).toContain('.from("report_export_jobs")');
     expect(source).toContain('.from("campaigns")');
     expect(source).toContain('["submitted", "missed", "needs_revision"]');
-    expect(source).toContain('["submitted", "rejected"]');
+    expect(source).toContain('["submitted", "rejected", "verified"]');
     expect(source).toContain('.eq("status", "failed")');
     expect(source).toContain("buildReportCommandCenter({");
     expect(modelSource).toContain("isReportCommandReviewSlaBreached");
@@ -38,6 +38,7 @@ describe("admin reports command center", () => {
     expect(source).toContain("Report command center");
     expect(source).toContain("Proof room exceptions");
     expect(source).toContain("Needs brand review");
+    expect(source).toContain("Missing proof");
     expect(source).toContain("Missed reports");
     expect(source).toContain("Correction requests");
     expect(source).toContain("SLA breaches");
@@ -46,7 +47,9 @@ describe("admin reports command center", () => {
     expect(source).toContain("Export failures");
     expect(modelSource).toContain('if (kind === "review_sla") return 5;');
     expect(modelSource).toContain('if (kind === "export_failure") return 4;');
-    expect(modelSource).toContain('if (kind === "missed") return 3;');
+    expect(modelSource).toContain(
+      'if (kind === "missed" || kind === "missing_evidence") return 3;',
+    );
     expect(source).toContain("Priority intervention");
     expect(source).toContain('data-testid="admin-report-priority-rail"');
     expect(source).toContain('data-testid="admin-report-priority-kind"');
@@ -83,6 +86,7 @@ describe("admin reports command center", () => {
     expect(source).toContain("campaignReadiness");
     expect(source).toContain("campaignHoldCount");
     expect(source).toContain("admin-report-sla-breach-count");
+    expect(source).toContain("missingEvidenceCount");
     expect(source).toContain('data-testid="admin-report-exception-row"');
     expect(source).toContain('data-testid="admin-report-exception-decision-grid"');
     expect(source).toContain('data-testid="admin-report-exception-impact"');
@@ -107,13 +111,17 @@ describe("admin reports command center", () => {
     expect(modelSource).toContain("formatReportCommandWaitingAge");
     expect(source).toContain("Leadership share gate");
     expect(modelSource).toContain("Leadership hold until brand verifies submitted proof.");
+    expect(modelSource).toContain("Leadership hold until the submitted task has evidence attached.");
     expect(modelSource).toContain("Leadership hold until replacement artifact is generated.");
     expect(modelSource).toContain("Leadership hold unless the missed read is excused with audit trail.");
     expect(modelSource).toContain("Leadership hold until creator returns usable proof.");
     expect(modelSource).toContain("Leadership hold until corrected proof is reviewed.");
     expect(modelSource).toContain("Blocks report confidence until brand confirms proof.");
+    expect(modelSource).toContain("Blocks report confidence because submitted metrics have no proof source.");
     expect(modelSource).toContain("Open the campaign and push brand proof review.");
+    expect(modelSource).toContain("Open the campaign and ask the creator to attach proof before review.");
     expect(modelSource).toContain("Brand reviews or requests correction on submitted proof.");
+    expect(modelSource).toContain("Creator attaches evidence or admin returns the report task with an audit note.");
     expect(modelSource).toContain("Blocks board-ready artifact delivery.");
     expect(modelSource).toContain("Open the campaign and retry or inspect the failed export.");
     expect(modelSource).toContain("Replacement export completes and old failure is traced.");

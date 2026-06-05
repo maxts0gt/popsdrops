@@ -90,6 +90,7 @@ async function seedAdminReportCommandCenterRows(
   const memberId = randomUUID();
   const missedTaskId = randomUUID();
   const submittedTaskId = randomUUID();
+  const missingEvidenceTaskId = randomUUID();
   const revisionTaskId = randomUUID();
   const returnedTaskId = randomUUID();
   const submittedEvidenceId = randomUUID();
@@ -127,6 +128,15 @@ async function seedAdminReportCommandCenterRows(
         campaign_id: campaignId,
         campaign_member_id: memberId,
         task_key: "admin-report-command-center:submitted-proof",
+        due_at: nowIso,
+        status: "submitted",
+        submitted_at: nowIso,
+      },
+      {
+        id: missingEvidenceTaskId,
+        campaign_id: campaignId,
+        campaign_member_id: memberId,
+        task_key: "admin-report-command-center:missing-proof",
         due_at: nowIso,
         status: "submitted",
         submitted_at: nowIso,
@@ -239,6 +249,7 @@ async function seedAdminReportCommandCenterRows(
     exportJobId,
     memberId,
     missedTaskId,
+    missingEvidenceTaskId,
     rejectedEvidenceId,
     revisionTaskId,
     returnedRejectedEvidenceId,
@@ -306,6 +317,7 @@ function validateAdminReportCommandCenterSmoke({
     "Report command center",
     "Proof room exceptions",
     "Needs brand review",
+    "Missing proof",
     "SLA breaches",
     "Missed reports",
     "Correction requests",
@@ -334,6 +346,12 @@ function validateAdminReportCommandCenterSmoke({
     "Leadership hold until replacement artifact is generated.",
     "Open the campaign and retry or inspect the failed export.",
     "Replacement export completes and old failure is traced.",
+    "Missing proof",
+    "Report task submitted without proof",
+    "Blocks report confidence because submitted metrics have no proof source.",
+    "Leadership hold until the submitted task has evidence attached.",
+    "Open the campaign and ask the creator to attach proof before review.",
+    "Creator attaches evidence or admin returns the report task with an audit note.",
     "Blocks complete creator readout unless excused.",
     "Leadership hold unless the missed read is excused with audit trail.",
     "Open the campaign and excuse only with a written audit reason.",
@@ -408,6 +426,7 @@ function validateAdminReportCommandCenterSmoke({
 
   for (const text of [
     "Needs brand review",
+    "Missing proof",
     "SLA breaches",
     "Missed reports",
     "Correction requests",
@@ -587,18 +606,19 @@ export async function runAdminReportCommandCenterSmoke() {
             readinessPrimaries.some((row) => row.innerText.includes("top leadership gate")) &&
             readinessShareGates.some((row) => row.innerText.includes("Leadership hold until brand verifies submitted proof.")) &&
             readinessClearances.some((row) => row.innerText.includes("Brand reviews or requests correction on submitted proof.")) &&
-            rows.length >= 6 &&
-            rowDecisionGrids.length >= 6 &&
-            rowImpacts.length >= 6 &&
-            rowShareGates.length >= 6 &&
-            rowOperationGrids.length >= 6 &&
-            rowAges.length >= 6 &&
+            rows.length >= 7 &&
+            rowDecisionGrids.length >= 7 &&
+            rowImpacts.length >= 7 &&
+            rowShareGates.length >= 7 &&
+            rowOperationGrids.length >= 7 &&
+            rowAges.length >= 7 &&
             rowAges.every((row) => /\\b\\d+[mhd] waiting\\b/i.test(row.innerText)) &&
-            rowNextSteps.length >= 6 &&
-            rowOwners.length >= 6 &&
-            rowClearances.length >= 6 &&
+            rowNextSteps.length >= 7 &&
+            rowOwners.length >= 7 &&
+            rowClearances.length >= 7 &&
              text.includes("Report command center") &&
              text.includes("Needs brand review") &&
+             text.includes("Missing proof") &&
              text.includes("SLA breaches") &&
              text.includes("Campaign leadership readiness") &&
              text.includes("Leadership hold") &&
@@ -618,6 +638,10 @@ export async function runAdminReportCommandCenterSmoke() {
              text.includes("Brand reviews or requests correction on submitted proof.") &&
              text.includes("Blocks board-ready artifact delivery.") &&
              text.includes("Leadership hold until replacement artifact is generated.") &&
+             text.includes("Blocks report confidence because submitted metrics have no proof source.") &&
+             text.includes("Leadership hold until the submitted task has evidence attached.") &&
+             text.includes("Open the campaign and ask the creator to attach proof before review.") &&
+             text.includes("Creator attaches evidence or admin returns the report task with an audit note.") &&
              text.includes("Open the campaign and retry or inspect the failed export.") &&
              text.includes("Replacement export completes and old failure is traced.") &&
              text.includes("Blocks complete creator readout unless excused.") &&
@@ -688,6 +712,7 @@ export async function runAdminReportCommandCenterSmoke() {
             rowClearanceCount: document.querySelectorAll('[data-testid="admin-report-exception-clearance"]').length,
             mentionsReportCommandCenter: (document.body.innerText || "").includes("Report command center"),
             mentionsNeedsBrandReview: (document.body.innerText || "").includes("Needs brand review"),
+            mentionsMissingProof: (document.body.innerText || "").includes("Missing proof"),
             mentionsSlaBreaches: (document.body.innerText || "").includes("SLA breaches"),
             mentionsReviewSlaBreach: (document.body.innerText || "").includes("Review SLA breach"),
             mentionsLeadershipImpact: (document.body.innerText || "").toLowerCase().includes("leadership impact"),
@@ -706,6 +731,10 @@ export async function runAdminReportCommandCenterSmoke() {
             mentionsExportShareGate: (document.body.innerText || "").includes("Leadership hold until replacement artifact is generated."),
             mentionsExportNextStep: (document.body.innerText || "").includes("Open the campaign and retry or inspect the failed export."),
             mentionsExportClearance: (document.body.innerText || "").includes("Replacement export completes and old failure is traced."),
+            mentionsMissingProofImpact: (document.body.innerText || "").includes("Blocks report confidence because submitted metrics have no proof source."),
+            mentionsMissingProofShareGate: (document.body.innerText || "").includes("Leadership hold until the submitted task has evidence attached."),
+            mentionsMissingProofNextStep: (document.body.innerText || "").includes("Open the campaign and ask the creator to attach proof before review."),
+            mentionsMissingProofClearance: (document.body.innerText || "").includes("Creator attaches evidence or admin returns the report task with an audit note."),
             mentionsMissedImpact: (document.body.innerText || "").includes("Blocks complete creator readout unless excused."),
             mentionsMissedShareGate: (document.body.innerText || "").includes("Leadership hold unless the missed read is excused with audit trail."),
             mentionsMissedNextStep: (document.body.innerText || "").includes("Open the campaign and excuse only with a written audit reason."),

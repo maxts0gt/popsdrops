@@ -89,6 +89,7 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("admin-report-sla-breach-count");
     expect(source).toContain("admin-report-command-proof.png");
     expect(source).toContain("returnedTaskId");
+    expect(source).toContain("missingEvidenceTaskId");
     expect(source).toContain("returnedRejectedEvidenceId");
     expect(source).toContain("returnedSubmittedEvidenceId");
     expect(source).toContain("admin-report-command-returned-proof.png");
@@ -97,6 +98,8 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("replaced a rejected proof");
     expect(source).toContain("Report command center");
     expect(source).toContain("Needs brand review");
+    expect(source).toContain("Missing proof");
+    expect(source).toContain("Report task submitted without proof");
     expect(source).toContain("Missed report");
     expect(source).toContain("Correction request");
     expect(source).toContain("Export failure");
@@ -110,13 +113,17 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("Brand owner");
     expect(source).toContain("PopsDrops ops");
     expect(source).toContain("Leadership hold until brand verifies submitted proof.");
+    expect(source).toContain("Leadership hold until the submitted task has evidence attached.");
     expect(source).toContain("Leadership hold until replacement artifact is generated.");
     expect(source).toContain("Leadership hold unless the missed read is excused with audit trail.");
     expect(source).toContain("Leadership hold until creator returns usable proof.");
     expect(source).toContain("Leadership hold until corrected proof is reviewed.");
     expect(source).toContain("Blocks report confidence until brand confirms proof.");
+    expect(source).toContain("Blocks report confidence because submitted metrics have no proof source.");
     expect(source).toContain("Open the campaign and push brand proof review.");
+    expect(source).toContain("Open the campaign and ask the creator to attach proof before review.");
     expect(source).toContain("Brand reviews or requests correction on submitted proof.");
+    expect(source).toContain("Creator attaches evidence or admin returns the report task with an audit note.");
     expect(source).toContain("Blocks board-ready artifact delivery.");
     expect(source).toContain("Open the campaign and retry or inspect the failed export.");
     expect(source).toContain("Replacement export completes and old failure is traced.");

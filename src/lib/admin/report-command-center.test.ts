@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   buildReportCommandCenter,
+  formatReportCommandDateTime,
   formatReportCommandWaitingAge,
   type ReportCommandCampaignMeta,
   type ReportCommandEvidenceRow,
@@ -41,6 +42,18 @@ describe("admin report command center model", () => {
       updated_at: "2026-06-01T10:00:00.000Z",
     },
   ];
+
+  const missingEvidenceTask: ReportCommandTaskRow = {
+    id: "submitted-without-proof",
+    campaign_id: campaign.id,
+    campaign_member_id: "member-4",
+    due_at: "2026-06-04T09:00:00.000Z",
+    missed_at: null,
+    review_note: null,
+    status: "submitted",
+    submitted_at: "2026-06-04T08:45:00.000Z",
+    updated_at: "2026-06-04T08:45:00.000Z",
+  };
 
   const chanelCampaign: ReportCommandCampaignMeta = {
     brandName: "Chanel Korea",
@@ -240,6 +253,56 @@ describe("admin report command center model", () => {
       primaryLabel: "Needs brand review",
       shareGate: "Leadership hold until brand verifies submitted proof.",
       waitingLabel: "1h waiting",
+    });
+  });
+
+  it("flags submitted report tasks that have no proof evidence attached", () => {
+    const command = buildReportCommandCenter({
+      campaigns: new Map([[campaign.id, campaign]]),
+      evidenceRows: [
+        {
+          id: "verified-proof-for-other-task",
+          campaign_id: campaign.id,
+          campaign_member_id: "member-5",
+          created_at: "2026-06-04T08:50:00.000Z",
+          file_name: "verified-proof.png",
+          report_task_id: "submitted-with-proof",
+          review_note: null,
+          verification_status: "verified",
+        },
+      ],
+      exportRows: [],
+      now: new Date("2026-06-04T09:30:00.000Z").getTime(),
+      tasks: [
+        missingEvidenceTask,
+        {
+          ...missingEvidenceTask,
+          id: "submitted-with-proof",
+          campaign_member_id: "member-5",
+        },
+      ],
+    });
+
+    expect(command.missingEvidenceCount).toBe(1);
+    expect(command.rows).toHaveLength(1);
+    expect(command.rows[0]).toMatchObject({
+      actionHref: `/admin/campaigns/${campaign.id}?focus=reporting#admin-reporting-exceptions`,
+      clearance: "Creator attaches evidence or admin returns the report task with an audit note.",
+      detail: `Submitted at ${formatReportCommandDateTime(missingEvidenceTask.submitted_at)}, but no evidence file is attached to the report task.`,
+      impact: "Blocks report confidence because submitted metrics have no proof source.",
+      kind: "missing_evidence",
+      label: "Missing proof",
+      nextStep: "Open the campaign and ask the creator to attach proof before review.",
+      owner: "Creator success",
+      shareGate: "Leadership hold until the submitted task has evidence attached.",
+      title: "Report task submitted without proof",
+      waitingLabel: "45m waiting",
+    });
+    expect(command.campaignReadiness[0]).toMatchObject({
+      blockerCount: 1,
+      primaryKind: "missing_evidence",
+      primaryLabel: "Missing proof",
+      shareGate: "Leadership hold until the submitted task has evidence attached.",
     });
   });
 });

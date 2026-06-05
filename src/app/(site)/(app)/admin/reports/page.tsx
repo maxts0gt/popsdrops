@@ -94,7 +94,7 @@ async function fetchReportCommandCenter(): Promise<ReportCommandCenter> {
       .select(
         "id, campaign_id, campaign_member_id, report_task_id, file_name, verification_status, review_note, created_at",
       )
-      .in("verification_status", ["submitted", "rejected"])
+      .in("verification_status", ["submitted", "rejected", "verified"])
       .order("created_at", { ascending: false })
       .limit(80),
     admin
@@ -353,13 +353,19 @@ export default async function AdminReportsPage() {
 
       <div
         data-testid="admin-report-command-summary"
-        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6"
       >
         <SummaryCard
           detail="Creator proof submitted, brand review pending"
           icon={UploadCloud}
           label="Needs brand review"
           value={command.evidenceReviewCount}
+        />
+        <SummaryCard
+          detail="Submitted report tasks with no proof attached"
+          icon={FileWarning}
+          label="Missing proof"
+          value={command.missingEvidenceCount}
         />
         <SummaryCard
           detail="Creator reads missed their reporting window"

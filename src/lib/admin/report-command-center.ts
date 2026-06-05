@@ -50,6 +50,7 @@ export type ReportCommandExceptionKind =
   | "correction_returned"
   | "evidence_review"
   | "export_failure"
+  | "missing_evidence"
   | "missed"
   | "review_sla";
 
@@ -102,6 +103,7 @@ export type ReportCommandCenter = {
   correctionCount: number;
   evidenceReviewCount: number;
   exportFailureCount: number;
+  missingEvidenceCount: number;
   missedCount: number;
   reviewSlaBreachCount: number;
   rows: ReportCommandExceptionRow[];
@@ -145,7 +147,12 @@ export function isReportCommandReviewSlaBreached(
 }
 
 export function toneForReportCommandKind(kind: ReportCommandExceptionKind) {
-  if (kind === "missed" || kind === "export_failure" || kind === "review_sla") {
+  if (
+    kind === "missed" ||
+    kind === "export_failure" ||
+    kind === "missing_evidence" ||
+    kind === "review_sla"
+  ) {
     return "border-red-200 bg-red-50 text-red-700";
   }
   if (kind === "correction" || kind === "correction_returned") {
@@ -169,7 +176,7 @@ function getCampaign(
 function priorityForKind(kind: ReportCommandExceptionKind) {
   if (kind === "review_sla") return 5;
   if (kind === "export_failure") return 4;
-  if (kind === "missed") return 3;
+  if (kind === "missed" || kind === "missing_evidence") return 3;
   if (kind === "correction" || kind === "correction_returned") return 2;
   return 1;
 }
@@ -183,6 +190,9 @@ function impactForKind(kind: ReportCommandExceptionKind) {
   }
   if (kind === "missed") {
     return "Blocks complete creator readout unless excused.";
+  }
+  if (kind === "missing_evidence") {
+    return "Blocks report confidence because submitted metrics have no proof source.";
   }
   if (kind === "correction") {
     return "Blocks metric inclusion until creator returns usable proof.";
@@ -203,6 +213,9 @@ function shareGateForKind(kind: ReportCommandExceptionKind) {
   if (kind === "missed") {
     return "Leadership hold unless the missed read is excused with audit trail.";
   }
+  if (kind === "missing_evidence") {
+    return "Leadership hold until the submitted task has evidence attached.";
+  }
   if (kind === "correction") {
     return "Leadership hold until creator returns usable proof.";
   }
@@ -218,6 +231,9 @@ function nextStepForKind(kind: ReportCommandExceptionKind) {
   }
   if (kind === "missed") {
     return "Open the campaign and excuse only with a written audit reason.";
+  }
+  if (kind === "missing_evidence") {
+    return "Open the campaign and ask the creator to attach proof before review.";
   }
   if (kind === "correction") {
     return "Open the campaign and confirm the creator correction path.";
@@ -238,6 +254,9 @@ function ownerForKind(kind: ReportCommandExceptionKind) {
   if (kind === "correction") {
     return "Creator success";
   }
+  if (kind === "missing_evidence") {
+    return "Creator success";
+  }
   return "Brand owner";
 }
 
@@ -250,6 +269,9 @@ function clearanceForKind(kind: ReportCommandExceptionKind) {
   }
   if (kind === "missed") {
     return "Creator submits proof or admin excuses with a written audit reason.";
+  }
+  if (kind === "missing_evidence") {
+    return "Creator attaches evidence or admin returns the report task with an audit note.";
   }
   if (kind === "correction") {
     return "Creator submits corrected proof with visible account/date.";
@@ -351,6 +373,7 @@ export function buildReportCommandCenter({
   tasks: ReportCommandTaskRow[];
 }): ReportCommandCenter {
   const currentEvidenceRows = getCurrentAdminEvidenceReviewRows(evidenceRows);
+  const evidenceTaskIds = new Set(evidenceRows.map((row) => row.report_task_id));
 
   const taskRows: ReportCommandExceptionRow[] = tasks
     .filter((task) => task.status === "missed" || task.status === "needs_revision")
@@ -376,6 +399,35 @@ export function buildReportCommandCenter({
         owner: ownerForKind(kind),
         shareGate: shareGateForKind(kind),
         title: missed ? "Report task missed" : "Correction request open",
+        waitingLabel: formatReportCommandWaitingAge(createdAt, now),
+      };
+    });
+
+  const missingEvidenceRows: ReportCommandExceptionRow[] = tasks
+    .filter(
+      (task) =>
+        (task.status === "submitted" || task.status === "submitted_late") &&
+        !evidenceTaskIds.has(task.id),
+    )
+    .map((task) => {
+      const campaign = getCampaign(campaigns, task.campaign_id);
+      const kind: ReportCommandExceptionKind = "missing_evidence";
+      const createdAt = task.submitted_at ?? task.updated_at;
+      return {
+        actionHref: `/admin/campaigns/${task.campaign_id}?focus=reporting#admin-reporting-exceptions`,
+        actionLabel: "Open campaign",
+        campaign,
+        createdAt,
+        clearance: clearanceForKind(kind),
+        detail: `Submitted at ${formatReportCommandDateTime(createdAt)}, but no evidence file is attached to the report task.`,
+        id: `task:${task.id}:missing-evidence`,
+        impact: impactForKind(kind),
+        kind,
+        label: "Missing proof",
+        nextStep: nextStepForKind(kind),
+        owner: ownerForKind(kind),
+        shareGate: shareGateForKind(kind),
+        title: "Report task submitted without proof",
         waitingLabel: formatReportCommandWaitingAge(createdAt, now),
       };
     });
@@ -462,6 +514,7 @@ export function buildReportCommandCenter({
 
   const rows = [
     ...taskRows,
+    ...missingEvidenceRows,
     ...evidenceRowsForReview,
     ...exportFailureRows,
   ].sort(
@@ -481,6 +534,7 @@ export function buildReportCommandCenter({
       (row) => row.status !== "correction",
     ).length,
     exportFailureCount: exportRows.length,
+    missingEvidenceCount: missingEvidenceRows.length,
     missedCount: tasks.filter((task) => task.status === "missed").length,
     reviewSlaBreachCount: currentEvidenceRows.filter(
       (row) =>
