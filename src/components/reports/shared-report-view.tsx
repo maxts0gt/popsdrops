@@ -1271,7 +1271,7 @@ export function SharedReportView({ data, share }: SharedReportViewProps) {
      [creatorSort, data.creators],
   );
   const trustDecision = getSharedReportTrustDecision(data);
-  const leadershipGate = getSharedReportLeadershipGate(trustDecision);
+  const leadershipGate = getSharedReportLeadershipGate(data);
   const sharedReportNextAction = getSharedReportNextAction(data);
   const sharedReportProofBasis = useMemo(
     () => getSharedReportProofBasis(data),

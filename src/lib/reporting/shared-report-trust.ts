@@ -13,12 +13,22 @@ const noSubmittedProofDecision =
 
 type SharedReportTrustData = Pick<ReportExportData, "trust" | "leadershipHandoff">;
 
-export function getSharedReportLeadershipGate(trustDecision: string): {
+export function getSharedReportLeadershipGate(
+  input: string | SharedReportTrustData,
+): {
   state: SharedReportLeadershipState;
   label: string;
   detail: string;
 } {
-  if (trustDecision === "Ready for leadership sharing.") {
+  const trustDecision = typeof input === "string"
+    ? input
+    : getSharedReportTrustDecision(input);
+  const state = typeof input === "string"
+    ? trustDecision === "Ready for leadership sharing." ? "ready" : "hold"
+    : input.leadershipHandoff?.state ??
+      (trustDecision === "Ready for leadership sharing." ? "ready" : "hold");
+
+  if (state === "ready") {
     return {
       state: "ready",
       label: "Leadership-ready",

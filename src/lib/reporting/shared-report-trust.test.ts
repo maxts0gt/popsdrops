@@ -166,6 +166,36 @@ describe("shared report trust decision", () => {
     );
   });
 
+  it("uses authoritative leadership state even when decision copy looks ready", () => {
+    const sharedReport: Pick<ReportExportData, "trust" | "leadershipHandoff"> = {
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Proof coverage",
+          value: "1/1",
+          detail: "Native analytics screenshots",
+        },
+      ],
+      leadershipHandoff: {
+        state: "hold",
+        label: "Leadership hold",
+        decision: "Ready for leadership sharing.",
+        proofBasis: [
+          { key: "included", label: "Included", value: 0 },
+          { key: "needs-review", label: "Needs review", value: 1 },
+          { key: "corrections", label: "Corrections", value: 0 },
+          { key: "missing-proof", label: "Missing proof", value: 0 },
+        ],
+      },
+    };
+
+    expect(getSharedReportLeadershipGate(sharedReport)).toMatchObject({
+      state: "hold",
+      label: "Leadership hold",
+      detail: "Ready for leadership sharing.",
+    });
+  });
+
   it("uses authoritative proof basis counts for shared report next actions", () => {
     const sharedReport: Pick<ReportExportData, "trust" | "leadershipHandoff"> = {
       trust: [

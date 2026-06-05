@@ -191,6 +191,7 @@ describe("public shared report route", () => {
     expect(sharedReportTrustSource).toContain("Leadership-ready");
     expect(sharedReportTrustSource).toContain("Leadership hold");
     expect(sharedViewSource).toContain("<SharedReportExecutiveCover");
+    expect(sharedViewSource).toContain("const leadershipGate = getSharedReportLeadershipGate(data);");
     expect(sharedViewSource).toContain("leadershipGate={leadershipGate}");
     expect(sharedViewSource).toContain("nextAction={sharedReportNextAction}");
     expect(sharedViewSource).toContain("proofBasis={sharedReportProofBasis}");
