@@ -47,6 +47,7 @@ import {
   serviceFeeLabel,
   type CampaignAttentionKind,
 } from "@/lib/admin/campaign-attention";
+import { getCampaignPaidCreatorCapacity } from "@/lib/campaign-service-packages";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,15 +75,23 @@ interface CampaignRow {
   service_fee_cents: number | null;
   service_fee_currency: string | null;
   service_fee_status: PaymentStatusType;
+  service_package_snapshot: Record<string, unknown> | null;
   brand_name: string;
+  invite_reserved_count: number;
   member_count: number;
+  paid_creator_capacity: number | null;
   report_correction_count: number;
   report_missed_count: number;
 }
 
 type CampaignQueryRow = Omit<
   CampaignRow,
-  "brand_name" | "member_count" | "report_correction_count" | "report_missed_count"
+  | "brand_name"
+  | "invite_reserved_count"
+  | "member_count"
+  | "paid_creator_capacity"
+  | "report_correction_count"
+  | "report_missed_count"
 > & {
   brand?: { full_name: string | null } | { full_name: string | null }[] | null;
 };
@@ -92,10 +101,25 @@ type ReportTaskExceptionRow = {
   status: string;
 };
 
+type InviteReservationRow = {
+  campaign_id: string;
+  normalized_contact: string;
+  status: string;
+};
+
+type PaymentEventRow = {
+  amount_cents: number | null;
+  campaign_id: string;
+  checkout_session_id: string | null;
+  event_summary: Record<string, unknown> | null;
+  service_fee_status: string | null;
+};
+
 const attentionFilters: Array<{ key: AttentionFilter; label: string }> = [
   { key: "all", label: "All" },
   { key: "payment", label: "Payment" },
   { key: "launch", label: "Launch" },
+  { key: "operations", label: "Operations" },
   { key: "reporting", label: "Reporting" },
 ];
 
@@ -106,7 +130,7 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
     .from("campaigns")
     .select(`
       id, title, status, max_creators, markets, created_at,
-      service_fee_cents, service_fee_currency, service_fee_status,
+      service_fee_cents, service_fee_currency, service_fee_status, service_package_snapshot,
       brand:profiles!campaigns_brand_id_fkey (full_name)
     `)
     .order("created_at", { ascending: false })
@@ -130,10 +154,38 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
         .in("campaign_id", campaignIds)
         .in("status", ["missed", "needs_revision"])
     : { data: [] };
+  const { data: inviteRows } = campaignIds.length > 0
+    ? await supabase
+        .from("campaign_creator_invites")
+        .select("campaign_id,normalized_contact,status")
+        .in("campaign_id", campaignIds)
+        .neq("status", "sent")
+    : { data: [] };
+  const { data: paymentEventRows } = campaignIds.length > 0
+    ? await supabase
+        .from("campaign_payment_events")
+        .select("campaign_id,amount_cents,checkout_session_id,service_fee_status,event_summary")
+        .in("campaign_id", campaignIds)
+    : { data: [] };
 
   const memberCounts = new Map<string, number>();
   for (const row of memberRows ?? []) {
     memberCounts.set(row.campaign_id, (memberCounts.get(row.campaign_id) ?? 0) + 1);
+  }
+  const inviteReservations = new Map<string, Set<string>>();
+  for (const row of (inviteRows ?? []) as InviteReservationRow[]) {
+    const normalizedContact = row.normalized_contact?.trim().toLowerCase();
+    if (!normalizedContact) continue;
+    const contacts = inviteReservations.get(row.campaign_id) ?? new Set<string>();
+    contacts.add(normalizedContact);
+    inviteReservations.set(row.campaign_id, contacts);
+  }
+  const paymentEventsByCampaign = new Map<string, PaymentEventRow[]>();
+  for (const row of (paymentEventRows ?? []) as PaymentEventRow[]) {
+    paymentEventsByCampaign.set(row.campaign_id, [
+      ...(paymentEventsByCampaign.get(row.campaign_id) ?? []),
+      row,
+    ]);
   }
   const reportCounts = new Map<
     string,
@@ -162,7 +214,15 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
       status: campaign.status as CampaignStatus,
       service_fee_status: campaign.service_fee_status as PaymentStatusType,
       brand_name: brand?.full_name ?? "Unknown",
+      invite_reserved_count: inviteReservations.get(campaign.id)?.size ?? 0,
       member_count: memberCounts.get(campaign.id) ?? 0,
+      paid_creator_capacity: getCampaignPaidCreatorCapacity({
+        maxCreators: campaign.max_creators,
+        paymentEvents: paymentEventsByCampaign.get(campaign.id) ?? [],
+        serviceFeeCents: campaign.service_fee_cents,
+        serviceFeeStatus: campaign.service_fee_status,
+        servicePackageSnapshot: campaign.service_package_snapshot,
+      }),
       report_correction_count: reportCount?.correctionCount ?? 0,
       report_missed_count: reportCount?.missedCount ?? 0,
     };
@@ -186,6 +246,7 @@ function serviceFeeTone(status: PaymentStatusType) {
 function attentionTone(kind: AttentionKind) {
   if (kind === "payment") return "border-red-200 bg-red-50 text-red-700";
   if (kind === "reporting") return "border-amber-200 bg-amber-50 text-amber-900";
+  if (kind === "operations") return "border-orange-200 bg-orange-50 text-orange-800";
   return "border-slate-200 bg-slate-50 text-slate-700";
 }
 
@@ -445,7 +506,7 @@ export default function AdminCampaignsPage() {
             <div>
               <CardTitle>Needs attention</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Payment, launch, and reporting exceptions across live campaigns
+                Payment, launch, operations, and reporting exceptions across live campaigns
               </p>
             </div>
             <span className="text-sm font-semibold tabular-nums text-foreground">
@@ -516,7 +577,7 @@ export default function AdminCampaignsPage() {
                 No open exceptions
               </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                The selected queue has no payment, launch, or reporting blockers.
+                The selected queue has no payment, launch, operations, or reporting blockers.
               </p>
             </div>
           )}

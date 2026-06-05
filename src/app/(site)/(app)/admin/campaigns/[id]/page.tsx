@@ -24,6 +24,8 @@ import {
   getPlatformLabel,
 } from "@/lib/constants";
 import { getAdminAuditActionLabel } from "@/lib/admin/audit-action-labels";
+import { getCampaignPaidCreatorCapacity } from "@/lib/campaign-service-packages";
+import { getCampaignCreatorInviteSendCapacityState } from "@/lib/campaigns/creator-invite-capacity";
 import { getCurrentEvidenceReviewRows } from "@/lib/reporting/evidence-review";
 import {
   excuseAdminReportTask,
@@ -49,7 +51,7 @@ type Params = Promise<{ id: string }>;
 type SearchParams = Promise<{
   focus?: string | string[];
 }>;
-type AdminCampaignFocus = "finance" | "launch" | "reporting" | null;
+type AdminCampaignFocus = "finance" | "launch" | "reporting" | "operations" | null;
 
 type CampaignRow = {
   id: string;
@@ -78,6 +80,7 @@ type CampaignRow = {
   service_fee_failed_at: string | null;
   service_fee_refunded_at: string | null;
   service_fee_disputed_at: string | null;
+  service_package_snapshot: Record<string, unknown> | null;
   application_deadline: string | null;
   content_due_date: string | null;
   performance_due_date: string | null;
@@ -220,11 +223,21 @@ type PaymentEventRow = {
   event_type: string;
   service_fee_status: PaymentStatusType | null;
   checkout_session_id: string | null;
+  event_summary: Record<string, unknown> | null;
   payment_intent_id: string | null;
   charge_id: string | null;
   amount_cents: number | null;
   currency: string | null;
   received_at: string;
+};
+
+type CreatorInviteRow = {
+  id: string;
+  contact_type: string;
+  contact_value: string;
+  normalized_contact: string | null;
+  status: string | null;
+  invited_at: string | null;
 };
 
 type AdminCampaignDetail = {
@@ -242,6 +255,7 @@ type AdminCampaignDetail = {
   assets: AssetRow[];
   agreements: AgreementRow[];
   auditEntries: AuditEntryRow[];
+  creatorInvites: CreatorInviteRow[];
   paymentEvents: PaymentEventRow[];
 };
 
@@ -393,7 +407,12 @@ function reportTaskTone(status: CampaignReportTaskStatus) {
 
 function getAdminCampaignFocus(params: Awaited<SearchParams>): AdminCampaignFocus {
   const value = Array.isArray(params.focus) ? params.focus[0] : params.focus;
-  if (value === "finance" || value === "launch" || value === "reporting") {
+  if (
+    value === "finance" ||
+    value === "launch" ||
+    value === "reporting" ||
+    value === "operations"
+  ) {
     return value;
   }
   return null;
@@ -676,6 +695,7 @@ async function fetchAdminCampaignDetail(
         "service_fee_failed_at",
         "service_fee_refunded_at",
         "service_fee_disputed_at",
+        "service_package_snapshot",
         "application_deadline",
         "content_due_date",
         "performance_due_date",
@@ -709,6 +729,7 @@ async function fetchAdminCampaignDetail(
     assetsResult,
     agreementsResult,
     paymentEventsResult,
+    creatorInvitesResult,
     auditResult,
   ] = await Promise.all([
     admin
@@ -750,11 +771,16 @@ async function fetchAdminCampaignDetail(
     admin
       .from("campaign_payment_events")
       .select(
-        "id, event_id, event_type, service_fee_status, checkout_session_id, payment_intent_id, charge_id, amount_cents, currency, received_at",
+        "id, event_id, event_type, service_fee_status, checkout_session_id, event_summary, payment_intent_id, charge_id, amount_cents, currency, received_at",
       )
       .eq("campaign_id", campaignId)
       .order("received_at", { ascending: false })
       .limit(6),
+    admin
+      .from("campaign_creator_invites")
+      .select("id, contact_type, contact_value, normalized_contact, status, invited_at")
+      .eq("campaign_id", campaignId)
+      .order("created_at", { ascending: false }),
     admin
       .from("admin_audit_log")
       .select("id, action, target_type, target_id, metadata, created_at")
@@ -772,6 +798,7 @@ async function fetchAdminCampaignDetail(
     assetsResult,
     agreementsResult,
     paymentEventsResult,
+    creatorInvitesResult,
     auditResult,
   ]) {
     if (result.error) throw new Error(result.error.message);
@@ -878,6 +905,7 @@ async function fetchAdminCampaignDetail(
     brandProfile: (brandProfileResult.data as BrandProfileRow | null) ?? null,
     brandUser: (brandUserResult.data as ProfileRow | null) ?? null,
     campaign: typedCampaign,
+    creatorInvites: (creatorInvitesResult.data ?? []) as CreatorInviteRow[],
     creatorProfiles: new Map(
       ((creatorProfilesResult.data ?? []) as CreatorProfileRow[]).map((profile) => [
         profile.profile_id,
@@ -968,6 +996,7 @@ export default async function AdminCampaignDetailPage({
     brandProfile,
     brandUser,
     campaign,
+    creatorInvites,
     evidenceRows,
     members,
     paymentEvents,
@@ -982,7 +1011,22 @@ export default async function AdminCampaignDetailPage({
   const evidenceCounts = countBy(evidenceRows.map((item) => item.verification_status));
   const paymentCounts = countBy(members.map((item) => item.payment_status));
   const acceptedCreators = members.length;
-  const maxCreators = campaign.max_creators ?? 0;
+  const paidCreatorCapacity = getCampaignPaidCreatorCapacity({
+    maxCreators: campaign.max_creators,
+    paymentEvents,
+    serviceFeeCents: campaign.service_fee_cents,
+    serviceFeeStatus: campaign.service_fee_status,
+    servicePackageSnapshot: campaign.service_package_snapshot,
+  });
+  const inviteCapacityState = getCampaignCreatorInviteSendCapacityState({
+    acceptedCreatorCount: acceptedCreators,
+    capacity: paidCreatorCapacity,
+    inviteNormalizedContact: null,
+    savedInvites: creatorInvites.map((invite) => ({
+      normalizedContact: invite.normalized_contact,
+      status: invite.status,
+    })),
+  });
   const activeAgreement = detail.agreements[0] ?? null;
   const readyAssets = assets.filter((asset) => asset.status === "ready").length;
   const publicAssets = assets.filter((asset) => asset.visibility === "public").length;
@@ -1563,6 +1607,66 @@ export default async function AdminCampaignDetailPage({
         </Card>
       )}
 
+      {focus === "operations" && (
+        <Card
+          id="admin-creator-operations"
+          data-testid="admin-campaign-focus-panel"
+          className="mb-6 scroll-mt-24 border-orange-200 bg-white"
+        >
+          <CardContent className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+            <div className="min-w-0">
+              <Badge
+                variant="outline"
+                className={badgeClassForTone(
+                  inviteCapacityState.isOverCapacity ? "warning" : "good",
+                )}
+              >
+                Creator operations
+              </Badge>
+              <h2 className="mt-3 text-xl font-semibold text-foreground">
+                {inviteCapacityState.isOverCapacity
+                  ? "Invite capacity needs intervention"
+                  : "Creator capacity is aligned"}
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {inviteCapacityState.isOverCapacity
+                  ? "Pause outreach or increase paid capacity before sending more creator invites."
+                  : "Accepted creators and saved invite reservations are inside paid capacity."}
+              </p>
+            </div>
+            <div
+              data-testid="admin-creator-operations-capacity"
+              className="grid gap-2 rounded-xl border border-border bg-slate-50 p-3 text-sm sm:grid-cols-3"
+            >
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Paid slots
+                </p>
+                <p className="mt-1 font-semibold tabular-nums text-foreground">
+                  {inviteCapacityState.capacity}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Reserved
+                </p>
+                <p className="mt-1 font-semibold tabular-nums text-foreground">
+                  {inviteCapacityState.totalReservedCreatorCount}
+                </p>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Remaining
+                </p>
+                <p className="mt-1 font-semibold tabular-nums text-foreground">
+                  {inviteCapacityState.remainingCreatorSlots}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>Campaign command center</CardTitle>
@@ -1606,8 +1710,8 @@ export default async function AdminCampaignDetailPage({
             <MetricTile
               icon={Users}
               label="Creators"
-              value={`${acceptedCreators}/${maxCreators || "-"}`}
-              detail={`${statusCount(applicationCounts, "pending")} applicants waiting`}
+              value={`${acceptedCreators}/${paidCreatorCapacity || "-"}`}
+              detail={`${inviteCapacityState.reservedInviteCount} invite reservations`}
             />
             <MetricTile
               icon={FileText}
@@ -1668,6 +1772,20 @@ export default async function AdminCampaignDetailPage({
 
         <SectionSummary title="Creator operations">
           <div className="space-y-4">
+            {inviteCapacityState.isOverCapacity && (
+              <div
+                data-testid="admin-creator-operations-capacity-inline"
+                className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm text-orange-900"
+              >
+                <p className="font-semibold">Invite capacity exception</p>
+                <p className="mt-1">
+                  {inviteCapacityState.totalReservedCreatorCount} creator seats
+                  reserved for {inviteCapacityState.capacity} paid slots. Pause
+                  outreach or increase paid capacity before sending more creator
+                  invites.
+                </p>
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3 text-sm">
               <div>
                 <p className="text-xl font-semibold text-foreground">

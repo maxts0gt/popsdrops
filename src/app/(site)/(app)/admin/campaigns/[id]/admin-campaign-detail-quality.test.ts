@@ -76,15 +76,22 @@ describe("admin campaign detail quality contract", () => {
     expect(campaignsSource).toContain("getAdminCampaignAttentionItems");
     expect(campaignAttentionSource).toContain("?focus=reporting#admin-reporting-exceptions");
     expect(campaignAttentionSource).toContain("?focus=launch#admin-launch-readiness");
+    expect(campaignAttentionSource).toContain("?focus=operations#admin-creator-operations");
+    expect(campaignAttentionSource).toContain('label: "Invite capacity exception"');
     expect(campaignAttentionSource).toContain('label: "Launch blocker"');
     expect(campaignAttentionSource).toContain("isServiceFeeBlockingLaunch");
+    expect(campaignsSource).toContain('{ key: "operations", label: "Operations" }');
     expect(revenueSource).toContain("#service-fees");
 
-    expect(detailSource).toContain('type AdminCampaignFocus = "finance" | "launch" | "reporting" | null;');
+    expect(detailSource).toContain('type AdminCampaignFocus = "finance" | "launch" | "reporting" | "operations" | null;');
     expect(detailSource).toContain("function getAdminCampaignFocus");
     expect(detailSource).toContain("data-testid=\"admin-campaign-focus-panel\"");
     expect(detailSource).toContain("id=\"admin-launch-readiness\"");
     expect(detailSource).toContain("id=\"admin-reporting-exceptions\"");
+    expect(detailSource).toContain("id=\"admin-creator-operations\"");
+    expect(detailSource).toContain("data-testid=\"admin-creator-operations-capacity\"");
+    expect(detailSource).toContain("inviteCapacityState.isOverCapacity");
+    expect(detailSource).toContain("Pause outreach or increase paid capacity before sending more creator invites.");
     expect(detailSource).toContain("data-testid=\"admin-reporting-exception-row\"");
     expect(detailSource).toContain("excuseAdminReportTask");
     expect(detailSource).toContain("data-testid=\"admin-reporting-excuse-form\"");

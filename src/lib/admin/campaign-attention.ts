@@ -1,9 +1,16 @@
 import type { PaymentStatusType } from "@/types/database";
 
-export type CampaignAttentionKind = "payment" | "launch" | "reporting";
+export type CampaignAttentionKind =
+  | "payment"
+  | "launch"
+  | "reporting"
+  | "operations";
 
 export type AdminCampaignAttentionInput = {
   id: string;
+  invite_reserved_count: number;
+  member_count: number;
+  paid_creator_capacity: number | null;
   report_correction_count: number;
   report_missed_count: number;
   service_fee_cents: number | null;
@@ -28,6 +35,10 @@ const paymentExceptionStatuses = new Set<PaymentStatusType>([
   "disputed",
   "overdue",
 ]);
+
+function normalizeCount(value: number | null | undefined) {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(Number(value))) : 0;
+}
 
 export function serviceFeeLabel(status: PaymentStatusType) {
   return status[0].toUpperCase() + status.slice(1);
@@ -70,6 +81,29 @@ export function getAdminCampaignAttentionItems(
       id: `${campaign.id}:launch`,
       kind: "launch",
       label: "Launch blocker",
+      title: campaign.title,
+    });
+  }
+
+  const paidCreatorCapacity =
+    campaign.paid_creator_capacity === null
+      ? null
+      : normalizeCount(campaign.paid_creator_capacity);
+  const reservedCreatorSeats =
+    normalizeCount(campaign.member_count) +
+    normalizeCount(campaign.invite_reserved_count);
+  if (
+    paidCreatorCapacity !== null &&
+    reservedCreatorSeats > paidCreatorCapacity
+  ) {
+    items.push({
+      actionLabel: "Open operations",
+      campaignId: campaign.id,
+      detail: `${reservedCreatorSeats} creator seats reserved for ${paidCreatorCapacity} paid slots. Pause outreach or increase capacity.`,
+      href: `/admin/campaigns/${campaign.id}?focus=operations#admin-creator-operations`,
+      id: `${campaign.id}:operations`,
+      kind: "operations",
+      label: "Invite capacity exception",
       title: campaign.title,
     });
   }
