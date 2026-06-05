@@ -479,6 +479,16 @@ function sourceLabel(read: CampaignReportRead): string {
   const sourceType = read.sourceType;
   const aiExtractionStatus = read.aiExtractionStatus;
 
+  if (
+    isVerifiedRead(read) &&
+    (!sourceType ||
+      sourceType === "creator_confirmed" ||
+      sourceType === "creator_manual" ||
+      sourceType === "brand_verified")
+  ) {
+    return "Brand-reviewed proof";
+  }
+
   if (sourceType === "creator_confirmed") {
     if (aiExtractionStatus === "edited_by_creator") {
       return "AI read, creator edited";

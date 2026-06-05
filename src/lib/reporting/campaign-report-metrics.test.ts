@@ -425,7 +425,7 @@ describe("campaign report metrics", () => {
     ]);
   });
 
-  it("labels report reads by strongest available data source", () => {
+  it("labels brand-reviewed AI-assisted reads as brand-reviewed proof", () => {
     const evidence = buildReportEvidenceMetric({
       reads: [
         {
@@ -452,7 +452,36 @@ describe("campaign report metrics", () => {
     });
 
     expect(evidence.confidence).toBe("verified");
-    expect(evidence.sourceLabels).toEqual(["AI read, creator edited"]);
+    expect(evidence.sourceLabels).toEqual(["Brand-reviewed proof"]);
+  });
+
+  it("keeps unreviewed AI-assisted reads labeled as creator confirmed", () => {
+    const evidence = buildReportEvidenceMetric({
+      reads: [
+        {
+          campaignMemberId: "member-1",
+          platform: "instagram",
+          reportedAt: "2026-05-10T10:00:00.000Z",
+          views: 1000,
+          likes: 80,
+          comments: 10,
+          shares: 5,
+          screenshotUrl: "campaign-evidence/campaign/member/task/evidence.png",
+          sourceType: "creator_confirmed",
+          aiExtractionStatus: "accepted_by_creator",
+        },
+      ],
+      tasks: [
+        {
+          dueAt: "2026-05-18T10:00:00.000Z",
+          status: "submitted",
+          submittedAt: "2026-05-17T10:00:00.000Z",
+        },
+      ],
+    });
+
+    expect(evidence.confidence).toBe("supported");
+    expect(evidence.sourceLabels).toEqual(["AI read, creator confirmed"]);
   });
 
   it("labels verified creator-entered fallback reads as brand-reviewed proof", () => {
