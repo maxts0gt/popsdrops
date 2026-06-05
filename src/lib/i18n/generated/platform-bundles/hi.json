@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "बंद होने से पहले सेव",
     "inviteImport.statusReadOnly.queued": "बंद होने से पहले कतार में",
     "inviteImport.statusReadOnly.sent": "बंद होने से पहले आवेदन किया",
-    "inviteImport.statusReadOnly.failed": "बंद होने से पहले विफल"
+    "inviteImport.statusReadOnly.failed": "बंद होने से पहले विफल",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "अभियान इंटेलिजेंस रिपोर्ट",

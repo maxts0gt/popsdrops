@@ -11,6 +11,8 @@ export type CampaignNextActionKind =
   | "wait_for_reports"
   | "complete_campaign"
   | "campaign_complete"
+  | "campaign_paused"
+  | "campaign_cancelled"
   | "pay_service_fee"
   | "start_work"
   | "no_blockers";
@@ -43,6 +45,8 @@ export type CampaignNextAction = {
 
 const completableCampaignStatuses = new Set(["monitoring"]);
 const completedCampaignStatuses = new Set(["completed"]);
+const pausedCampaignStatuses = new Set(["paused"]);
+const cancelledCampaignStatuses = new Set(["cancelled"]);
 
 export function getCampaignNextAction(
   state: CampaignCockpitState,
@@ -52,6 +56,17 @@ export function getCampaignNextAction(
     completedCampaignStatuses.has(state.campaignStatus)
   ) {
     return { kind: "campaign_complete", tone: "calm" };
+  }
+
+  if (state.campaignStatus && pausedCampaignStatuses.has(state.campaignStatus)) {
+    return { kind: "campaign_paused", tone: "calm" };
+  }
+
+  if (
+    state.campaignStatus &&
+    cancelledCampaignStatuses.has(state.campaignStatus)
+  ) {
+    return { kind: "campaign_cancelled", tone: "calm" };
   }
 
   if (state.reportCorrections > 0) {

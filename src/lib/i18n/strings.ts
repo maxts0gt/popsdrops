@@ -1774,6 +1774,12 @@ export const strings = {
     "cockpit.campaignComplete": "Campaign complete",
     "cockpit.campaignCompleteDetail":
       "Creator invites and campaign work are closed.",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail":
+      "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail":
+      "Invite and work actions are closed; campaign history stays visible.",
     "cockpit.noBlockers": "No blockers",
     "cockpit.noBlockersDetail":
       "Campaign setup, content, and reporting are clear.",

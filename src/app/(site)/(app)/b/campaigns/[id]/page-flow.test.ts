@@ -878,6 +878,27 @@ describe("brand campaign workspace flow", () => {
     expect(platformEnglishBundleSource).toContain('"inviteImport.closedAction": "Closed"');
   });
 
+  it("gives paused and cancelled campaigns read-only cockpit states instead of invite actions", () => {
+    expect(nextActionPresentationSource).toContain("campaign_paused:");
+    expect(nextActionPresentationSource).toContain('labelKey: "cockpit.campaignPaused"');
+    expect(nextActionPresentationSource).toContain("campaign_cancelled:");
+    expect(nextActionPresentationSource).toContain('labelKey: "cockpit.campaignCancelled"');
+    expect(stringsSource).toContain('"cockpit.campaignPaused": "Campaign paused"');
+    expect(stringsSource).toContain('"cockpit.campaignCancelled": "Campaign cancelled"');
+    expect(platformEnglishBundleSource).toContain(
+      '"cockpit.campaignPaused": "Campaign paused"',
+    );
+    expect(platformEnglishBundleSource).toContain(
+      '"cockpit.campaignCancelled": "Campaign cancelled"',
+    );
+
+    for (const bundleFile of platformBundleFiles) {
+      const bundleSource = readFileSync(new URL(bundleFile, platformBundleDir), "utf8");
+      expect(bundleSource, bundleFile).toContain('"cockpit.campaignPaused"');
+      expect(bundleSource, bundleFile).toContain('"cockpit.campaignCancelled"');
+    }
+  });
+
   it("lets brand managers mark a missed report as excused from the members table", () => {
     expect(source).toContain("markReportTaskExcused");
     expect(source).toContain("handleExcuseReportTask");

@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "마감 전 저장됨",
     "inviteImport.statusReadOnly.queued": "마감 전 대기 중",
     "inviteImport.statusReadOnly.sent": "마감 전 지원됨",
-    "inviteImport.statusReadOnly.failed": "마감 전 실패"
+    "inviteImport.statusReadOnly.failed": "마감 전 실패",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "캠페인 분석 리포트",

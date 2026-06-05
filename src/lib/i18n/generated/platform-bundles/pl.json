@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "Zapisano przed zamknięciem",
     "inviteImport.statusReadOnly.queued": "W kolejce przed zamknięciem",
     "inviteImport.statusReadOnly.sent": "Zgłoszono przed zamknięciem",
-    "inviteImport.statusReadOnly.failed": "Niepowodzenie przed zamknięciem"
+    "inviteImport.statusReadOnly.failed": "Niepowodzenie przed zamknięciem",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Raport analityczny kampanii",

@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "Na-save bago isara",
     "inviteImport.statusReadOnly.queued": "Nakapila bago isara",
     "inviteImport.statusReadOnly.sent": "Nag-apply bago isara",
-    "inviteImport.statusReadOnly.failed": "Nabigo bago isara"
+    "inviteImport.statusReadOnly.failed": "Nabigo bago isara",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Ulat ng Campaign Intelligence",

@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "Salvato prima della chiusura",
     "inviteImport.statusReadOnly.queued": "In coda prima della chiusura",
     "inviteImport.statusReadOnly.sent": "Candidatura prima della chiusura",
-    "inviteImport.statusReadOnly.failed": "Non riuscito prima della chiusura"
+    "inviteImport.statusReadOnly.failed": "Non riuscito prima della chiusura",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Report Analisi Campagna",

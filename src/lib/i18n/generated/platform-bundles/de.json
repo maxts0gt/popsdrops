@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "Vor Abschluss gespeichert",
     "inviteImport.statusReadOnly.queued": "Vor Abschluss in Warteschlange",
     "inviteImport.statusReadOnly.sent": "Vor Abschluss beworben",
-    "inviteImport.statusReadOnly.failed": "Vor Abschluss fehlgeschlagen"
+    "inviteImport.statusReadOnly.failed": "Vor Abschluss fehlgeschlagen",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Kampagnen-Analyse",

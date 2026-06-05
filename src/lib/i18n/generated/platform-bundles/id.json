@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "Disimpan sebelum ditutup",
     "inviteImport.statusReadOnly.queued": "Diantrekan sebelum ditutup",
     "inviteImport.statusReadOnly.sent": "Melamar sebelum ditutup",
-    "inviteImport.statusReadOnly.failed": "Gagal sebelum ditutup"
+    "inviteImport.statusReadOnly.failed": "Gagal sebelum ditutup",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Laporan Analisis Kampanye",

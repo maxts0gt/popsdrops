@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "Sparad före stängning",
     "inviteImport.statusReadOnly.queued": "Köad före stängning",
     "inviteImport.statusReadOnly.sent": "Ansökt före stängning",
-    "inviteImport.statusReadOnly.failed": "Misslyckades före stängning"
+    "inviteImport.statusReadOnly.failed": "Misslyckades före stängning",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Kampanjanalys",

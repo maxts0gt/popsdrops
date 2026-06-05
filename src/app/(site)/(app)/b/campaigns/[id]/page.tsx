@@ -1692,6 +1692,18 @@ const nextActionPresentation: Record<
     ctaKey: "action.viewReport",
     icon: CheckCircle,
   },
+  campaign_paused: {
+    labelKey: "cockpit.campaignPaused",
+    detailKey: "cockpit.campaignPausedDetail",
+    ctaKey: "action.viewReport",
+    icon: Clock,
+  },
+  campaign_cancelled: {
+    labelKey: "cockpit.campaignCancelled",
+    detailKey: "cockpit.campaignCancelledDetail",
+    ctaKey: "action.viewReport",
+    icon: XCircle,
+  },
   no_blockers: {
     labelKey: "cockpit.noBlockers",
     detailKey: "cockpit.noBlockersDetail",

@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "বন্ধের আগে সংরক্ষিত",
     "inviteImport.statusReadOnly.queued": "বন্ধের আগে সারিবদ্ধ",
     "inviteImport.statusReadOnly.sent": "বন্ধের আগে আবেদন করা হয়েছে",
-    "inviteImport.statusReadOnly.failed": "বন্ধের আগে ব্যর্থ"
+    "inviteImport.statusReadOnly.failed": "বন্ধের আগে ব্যর্থ",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "Campaign Intelligence Report",

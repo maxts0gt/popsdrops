@@ -951,7 +951,11 @@
     "inviteImport.statusReadOnly.manual": "关闭前已保存",
     "inviteImport.statusReadOnly.queued": "关闭前已排队",
     "inviteImport.statusReadOnly.sent": "关闭前已申请",
-    "inviteImport.statusReadOnly.failed": "关闭前失败"
+    "inviteImport.statusReadOnly.failed": "关闭前失败",
+    "cockpit.campaignPaused": "Campaign paused",
+    "cockpit.campaignPausedDetail": "Invite and work actions are paused; campaign history stays visible.",
+    "cockpit.campaignCancelled": "Campaign cancelled",
+    "cockpit.campaignCancelledDetail": "Invite and work actions are closed; campaign history stays visible."
   },
   "brand.report": {
     "title": "营销活动智能报告",

@@ -206,6 +206,30 @@ describe("getCampaignNextAction", () => {
     });
   });
 
+  it("does not ask brands to invite creators when the campaign is paused or cancelled", () => {
+    expect(
+      getCampaignNextAction({
+        ...baseState,
+        campaignStatus: "paused",
+        memberCount: 0,
+      }),
+    ).toMatchObject({
+      kind: "campaign_paused",
+      tone: "calm",
+    });
+
+    expect(
+      getCampaignNextAction({
+        ...baseState,
+        campaignStatus: "cancelled",
+        memberCount: 0,
+      }),
+    ).toMatchObject({
+      kind: "campaign_cancelled",
+      tone: "calm",
+    });
+  });
+
   it("does not claim the campaign is clear when the private campaign fee still blocks invite sharing", () => {
     expect(
       getCampaignNextAction({
