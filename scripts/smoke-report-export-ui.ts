@@ -582,6 +582,7 @@ async function smokeSharedReportLeadershipGate({
   description,
   expectedDetail,
   expectedLabel,
+  expectedNextAction,
   expectedState,
   sharedReportScreenshotPath,
   viewerClient,
@@ -591,6 +592,7 @@ async function smokeSharedReportLeadershipGate({
   description: string;
   expectedDetail: string;
   expectedLabel: string;
+  expectedNextAction?: string;
   expectedState: "ready" | "hold";
   sharedReportScreenshotPath?: string;
   viewerClient?: SmokeCdpPage;
@@ -606,18 +608,23 @@ async function smokeSharedReportLeadershipGate({
   await navigate(sharedReportClient, sharedReportUrl);
   const leadershipGateExpression = `(() => {
       const expectedState = ${JSON.stringify(expectedState)};
+      const expectedNextAction = ${JSON.stringify(expectedNextAction ?? "")};
       const gate = document.querySelector('[data-testid="shared-report-leadership-gate"]');
       const cover = document.querySelector('[data-testid="shared-report-executive-cover"]');
       const coverTrustDecision = cover?.querySelector('[data-testid="shared-report-executive-cover-trust-decision"]');
+      const coverNextAction = cover?.querySelector('[data-testid="shared-report-leadership-next-action"]');
       const coverMetrics = [...(cover?.querySelectorAll('[data-testid="shared-report-executive-cover-metric"]') ?? [])];
       const gateText = gate?.textContent || "";
       const coverTrustText = coverTrustDecision?.textContent || "";
+      const coverNextActionText = coverNextAction?.textContent || "";
       const proofBasis = gate?.querySelector('[data-testid="shared-report-proof-basis"]');
       const proofBasisText = proofBasis?.textContent || "";
       const proofBasisItems = [...(proofBasis?.querySelectorAll('[data-testid="shared-report-proof-basis-item"]') ?? [])];
       const text = document.body.textContent || "";
       const holdPanel = document.querySelector('[data-testid="shared-report-leadership-hold-panel"]');
+      const holdNextAction = holdPanel?.querySelector('[data-testid="shared-report-hold-next-action"]');
       const holdPanelText = holdPanel?.textContent || "";
+      const holdNextActionText = holdNextAction?.textContent || "";
       const holdProofItems = [...(holdPanel?.querySelectorAll('[data-testid="shared-report-hold-proof-item"]') ?? [])];
       const proofBasisReady = Boolean(proofBasis)
         && proofBasisText.includes("Proof basis")
@@ -639,6 +646,16 @@ async function smokeSharedReportLeadershipGate({
         && !text.includes("Creator Performance")
         && !text.includes("No chart data yet")
       );
+      const nextActionReady = !expectedNextAction || (
+        Boolean(coverNextAction)
+        && gateText.includes("Next action")
+        && gateText.includes(expectedNextAction)
+        && coverNextActionText.includes(expectedNextAction)
+        && (expectedState !== "hold" || (
+          Boolean(holdNextAction)
+          && holdNextActionText.includes(expectedNextAction)
+        ))
+      );
       return document.readyState === "complete"
         && Boolean(cover)
         && gate?.getAttribute("data-leadership-state") === expectedState
@@ -649,6 +666,7 @@ async function smokeSharedReportLeadershipGate({
         && proofBasisReady
         && coverTrustText.includes(${JSON.stringify(expectedLabel)})
         && coverTrustText.includes(${JSON.stringify(expectedDetail)})
+        && nextActionReady
         && holdStateIsProofOnly
         && ${expectedState === "hold" ? "!gateText.includes(\"Leadership-ready\")" : "true"};
     })()`;
@@ -672,10 +690,12 @@ async function smokeSharedReportLeadershipGate({
         const gate = document.querySelector('[data-testid="shared-report-leadership-gate"]');
         const cover = document.querySelector('[data-testid="shared-report-executive-cover"]');
         const coverTrustDecision = cover?.querySelector('[data-testid="shared-report-executive-cover-trust-decision"]');
+        const coverNextAction = cover?.querySelector('[data-testid="shared-report-leadership-next-action"]');
         const proofBasis = gate?.querySelector('[data-testid="shared-report-proof-basis"]');
         const proofBasisItems = [...(proofBasis?.querySelectorAll('[data-testid="shared-report-proof-basis-item"]') ?? [])];
         const coverMetrics = [...(cover?.querySelectorAll('[data-testid="shared-report-executive-cover-metric"]') ?? [])];
         const holdPanel = document.querySelector('[data-testid="shared-report-leadership-hold-panel"]');
+        const holdNextAction = holdPanel?.querySelector('[data-testid="shared-report-hold-next-action"]');
         const kpiCards = [...document.querySelectorAll('[data-testid="shared-report-kpi-card"]')].map((card) => ({
           label: card.querySelector('[data-testid="shared-report-kpi-label"]')?.textContent,
           value: card.querySelector('[data-testid="shared-report-kpi-value"]')?.textContent,
@@ -694,6 +714,7 @@ async function smokeSharedReportLeadershipGate({
           expectedState: ${JSON.stringify(expectedState)},
           expectedLabel: ${JSON.stringify(expectedLabel)},
           expectedDetail: ${JSON.stringify(expectedDetail)},
+          expectedNextAction: ${JSON.stringify(expectedNextAction ?? null)},
           readyState: document.readyState,
           hasCover: Boolean(cover),
           coverMode: cover?.getAttribute("data-cover-mode") ?? null,
@@ -706,7 +727,9 @@ async function smokeSharedReportLeadershipGate({
           })),
           coverTrustState: coverTrustDecision?.getAttribute("data-cover-trust-state") ?? null,
           coverTrustText: (coverTrustDecision?.textContent || "").replace(/\\s+/g, " ").slice(0, 600),
+          coverNextActionText: (coverNextAction?.textContent || "").replace(/\\s+/g, " ").slice(0, 300),
           holdPanelText: (holdPanel?.textContent || "").replace(/\\s+/g, " ").slice(0, 600),
+          holdNextActionText: (holdNextAction?.textContent || "").replace(/\\s+/g, " ").slice(0, 300),
           coverMetrics: coverMetrics.map((metric) => ({
             source: metric.getAttribute("data-cover-metric-source"),
             key: metric.getAttribute("data-cover-metric-key"),
@@ -2004,16 +2027,20 @@ async function assertReportBuilderStoryStrip({
       const templateStrip = document.querySelector('[data-testid="report-builder-template-strip"]');
       const promise = document.querySelector('[data-testid="report-builder-reader-promise"]');
       const strip = document.querySelector('[data-testid="report-builder-story-strip"]');
+      const recipe = strip?.querySelector('[data-testid="report-builder-decision-recipe"]');
       const contract = strip?.querySelector('[data-testid="report-builder-export-contract"]');
       const text = strip.textContent || "";
+      const recipeText = recipe?.textContent || "";
       const promiseText = promise?.textContent || "";
       const controlText = controls?.textContent || "";
       const previewText = preview?.textContent || "";
       const promiseItems = [...(promise?.querySelectorAll('[data-testid="report-builder-reader-promise-item"]') ?? [])];
       const promiseItemKeys = promiseItems.map((item) => item.getAttribute("data-promise-item"));
       const steps = [...(strip?.querySelectorAll('[data-testid="report-builder-story-step"]') ?? [])];
+      const recipeItems = [...(recipe?.querySelectorAll('[data-testid="report-builder-decision-recipe-item"]') ?? [])];
       const contractItems = [...(contract?.querySelectorAll('[data-testid="report-builder-contract-item"]') ?? [])];
       const stepIds = steps.map((step) => step.getAttribute("data-story-step"));
+      const recipeItemKeys = recipeItems.map((item) => item.getAttribute("data-recipe-step"));
       const contractItemKeys = contractItems.map((item) => item.getAttribute("data-contract-item"));
       const contractText = contract?.textContent || "";
 
@@ -2033,6 +2060,17 @@ async function assertReportBuilderStoryStrip({
         hasEvidenceStep: stepIds.includes("evidence"),
         hasPresentationStep: stepIds.includes("presentation"),
         hasOrderStep: stepIds.includes("order"),
+        hasRecipe: Boolean(recipe),
+        recipeItemCount: recipeItems.length === 4,
+        hasQuestionRecipe: recipeItemKeys.includes("question"),
+        hasVisualJobRecipe: recipeItemKeys.includes("visual-job"),
+        hasEvidenceGateRecipe: recipeItemKeys.includes("evidence-gate"),
+        hasNextActionRecipe: recipeItemKeys.includes("next-action"),
+        recipeBeforeContract: Boolean(
+          recipe &&
+            contract &&
+            (recipe.compareDocumentPosition(contract) & Node.DOCUMENT_POSITION_FOLLOWING),
+        ),
         hasContract: Boolean(contract),
         contractItemCount: contractItems.length === 4,
         hasLeadMetricContract: contractItemKeys.includes("lead-metric"),
@@ -2054,6 +2092,12 @@ async function assertReportBuilderStoryStrip({
         stripStoryOrder: text.includes("Story order"),
         stripPreviewUpdates: text.includes("Output preview updates immediately."),
         stripTrustLocked: text.includes("Trust block locked"),
+        recipeTitle: recipeText.includes("Decision recipe"),
+        recipeQuestion: recipeText.includes("Question"),
+        recipeVisualJob: recipeText.includes("Visual job"),
+        recipeEvidenceGate: recipeText.includes("Evidence gate"),
+        recipeNextAction: recipeText.includes("Next action"),
+        recipeLeadershipReady: recipeText.includes("Ready for leadership sharing."),
         contractLeadMetric: contractText.includes("Lead metric"),
         contractViews: contractText.includes("Views"),
         contractTrustDecision: contractText.includes("Trust decision"),
@@ -2085,11 +2129,13 @@ async function assertReportBuilderStoryStrip({
           checks,
           promiseItemKeys,
           stepIds,
+          recipeItemKeys,
           contractItemKeys,
           controlText: controlText.replace(/\\s+/g, " ").slice(0, 500),
           promiseText: promiseText.replace(/\\s+/g, " ").slice(0, 500),
           previewText: previewText.replace(/\\s+/g, " ").slice(0, 500),
           stripText: text.replace(/\\s+/g, " ").slice(0, 900),
+          recipeText: recipeText.replace(/\\s+/g, " ").slice(0, 700),
           contractText: contractText.replace(/\\s+/g, " ").slice(0, 700),
         });
       })()`,
@@ -2965,6 +3011,7 @@ export async function runReportExportUiSmoke() {
           description: "configured shared campaign report leadership hold",
           expectedDetail: "Keep in proof room until evidence is reviewed.",
           expectedLabel: "Leadership hold",
+          expectedNextAction: "Review 1 submitted proof read before sharing.",
           expectedState: "hold",
           sharedReportScreenshotPath: sharedReportHoldScreenshotPath,
           viewerClient: sharedReportClient,

@@ -74,6 +74,23 @@ export function parseEvidenceStorageReference(
   };
 }
 
+export function getExternalEvidenceUrl(value: string | null | undefined): string | null {
+  const trimmed = value?.trim();
+  if (!trimmed) return null;
+
+  try {
+    const url = new URL(trimmed);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+export function hasEvidenceProofReference(value: string | null | undefined): boolean {
+  return Boolean(parseEvidenceStorageReference(value) || getExternalEvidenceUrl(value));
+}
+
 export function isEvidenceAllowedMimeType(
   mimeType: string,
 ): mimeType is EvidenceAllowedMimeType {

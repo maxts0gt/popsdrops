@@ -259,6 +259,7 @@ describe("campaign report live data flow", () => {
 
   it("shows a builder-side export contract before the brand saves or exports", () => {
     expect(reportBuilderPanelSource).toContain("trustDecision: string;");
+    expect(reportBuilderPanelSource).toContain("nextAction: string;");
     expect(reportBuilderPanelSource).toContain("const activeBlockSequence =");
     expect(reportBuilderPanelSource).toContain('data-testid="report-builder-export-contract"');
     expect(reportBuilderPanelSource).toContain('data-testid="report-builder-contract-item"');
@@ -270,6 +271,43 @@ describe("campaign report live data flow", () => {
     expect(reportBuilderPanelSource).toContain("value: trustDecision");
     expect(reportBuilderPanelSource).toContain("value: activeBlockSequence");
     expect(reportPageSource).toContain("trustDecision={selectedReportTrustDecision}");
+    expect(reportPageSource).toContain("nextAction={selectedReportStory.nextAction}");
+  });
+
+  it("shows the export decision recipe inside the builder before save or export", () => {
+    const builderRecipeSource = reportBuilderPanelSource.slice(
+      reportBuilderPanelSource.indexOf('data-testid="report-builder-decision-recipe"'),
+      reportBuilderPanelSource.indexOf('data-testid="report-builder-export-contract"'),
+    );
+
+    expect(reportBuilderPanelSource).toContain("const builderDecisionRecipeItems =");
+    expect(reportBuilderPanelSource).toContain('data-testid="report-builder-decision-recipe"');
+    expect(reportBuilderPanelSource).toContain(
+      'data-testid="report-builder-decision-recipe-item"',
+    );
+    expect(reportBuilderPanelSource).toContain("data-recipe-step={item.key}");
+    expect(reportBuilderPanelSource).toContain('key: "question"');
+    expect(reportBuilderPanelSource).toContain('key: "visual-job"');
+    expect(reportBuilderPanelSource).toContain('key: "evidence-gate"');
+    expect(reportBuilderPanelSource).toContain('key: "next-action"');
+    expect(reportBuilderPanelSource).toContain('t("builder.output.recipeQuestion")');
+    expect(reportBuilderPanelSource).toContain('t("builder.output.recipeVisualJob")');
+    expect(reportBuilderPanelSource).toContain('t("builder.output.recipeEvidenceGate")');
+    expect(reportBuilderPanelSource).toContain('t("builder.output.recipeNextAction")');
+    expect(reportBuilderPanelSource).toContain("activeExecutiveQuestion");
+    expect(reportBuilderPanelSource).toContain("activeChartLayoutTitle");
+    expect(reportBuilderPanelSource).toContain("activeChartModeTitle");
+    expect(reportBuilderPanelSource).toContain("trustDecision");
+    expect(reportBuilderPanelSource).toContain("nextAction");
+    expect(builderRecipeSource).toContain('t("builder.output.recipe")');
+    expect(builderRecipeSource).toContain('t("builder.output.recipeDetail")');
+    expect(builderRecipeSource).toContain("builderDecisionRecipeItems.map");
+    expect(builderRecipeSource).toContain("{item.label}");
+    expect(builderRecipeSource).toContain("{item.value}");
+    expect(builderRecipeSource).toContain("{item.detail}");
+    expect(reportBuilderPanelSource.indexOf('data-testid="report-builder-decision-recipe"')).toBeLessThan(
+      reportBuilderPanelSource.indexOf('data-testid="report-builder-export-contract"'),
+    );
   });
 
   it("summarizes the leadership reader promise before detailed report controls", () => {
@@ -741,6 +779,10 @@ describe("campaign report live data flow", () => {
     expect(reportPageSource).toContain("data-testid=\"report-share-trust-decision\"");
     expect(reportPageSource).toContain("data-testid=\"report-share-trust-detail\"");
     expect(reportPageSource).toContain("trustDecision={selectedReportTrustDecision}");
+    expect(reportPageSource).toContain("leadershipState={selectedReportLeadershipHandoff.state}");
+    expect(reportPageSource).not.toContain(
+      'trustDecision === "Ready for leadership sharing." ? "ready" : "hold"',
+    );
     expect(reportPageSource).toContain("data-testid=\"report-share-url\"");
     expect(reportPageSource).not.toContain('t("share.newLinkHint")');
     expect(reportPageSource).not.toContain('t("share.revoked")');
@@ -1024,7 +1066,9 @@ describe("campaign report live data flow", () => {
     );
     expect(reportPageSource).toContain("data-testid=\"report-evidence-proof-cell\"");
     expect(reportPageSource).toContain("data-testid=\"report-evidence-review-cell\"");
-    expect(reportPageSource).toContain("const evidenceReference = parseEvidenceStorageReference");
+    expect(reportPageSource).toContain("hasEvidenceProofReference(read.screenshotUrl)");
+    expect(reportPageSource).toContain("getExternalEvidenceUrl(read.screenshotUrl)");
+    expect(reportPageSource).toContain("reviewPerformanceProofLink");
     expect(reportPageSource).toContain("t(\"evidence.noProof\")");
     expect(reportPageSource).toContain('sortKey="source"');
     expect(reportPageSource).toContain('sortKey="proof"');
@@ -1386,6 +1430,9 @@ describe("campaign report live data flow", () => {
       'data-testid="report-output-executive-read"',
     );
     expect(reportOutputContractPanelSource).toContain(
+      "data-executive-read-state={leadershipHandoff.state}",
+    );
+    expect(reportOutputContractPanelSource).not.toContain(
       'data-executive-read-state={readinessDecision === "Ready for leadership sharing." ? "ready" : "hold"}',
     );
     expect(executiveReadSource).toContain("border-slate-200 bg-white px-4 py-3");

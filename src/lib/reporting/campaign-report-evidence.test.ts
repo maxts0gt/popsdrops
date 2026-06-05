@@ -206,7 +206,7 @@ describe("campaign report evidence metric", () => {
     expect(readiness.lanes).toEqual([{ id: "missing_proof", count: 1 }]);
   });
 
-  it("only treats openable platform proof as evidence-backed", () => {
+  it("treats brand-reviewable external proof links as evidence-backed", () => {
     const evidence = buildReportEvidenceMetric({
       reads: [
         {
@@ -227,10 +227,10 @@ describe("campaign report evidence metric", () => {
       ],
     });
 
-    expect(evidence.evidenceBackedReads).toBe(0);
-    expect(evidence.verifiedReads).toBe(0);
-    expect(evidence.missingEvidenceReads).toBe(1);
-    expect(evidence.confidence).toBe("incomplete");
+    expect(evidence.evidenceBackedReads).toBe(1);
+    expect(evidence.verifiedReads).toBe(1);
+    expect(evidence.missingEvidenceReads).toBe(0);
+    expect(evidence.confidence).toBe("verified");
   });
 
   it("scores trust from the latest read per submission so corrected proof clears the alert", () => {

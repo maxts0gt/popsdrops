@@ -31,6 +31,7 @@ import {
   type ReportBuilderPresetSelectionId,
 } from "@/lib/reporting/report-builder";
 import { getCampaignReportingPlanWindow } from "@/lib/reporting/plan-window";
+import { assertCampaignCreatorInviteSendCapacity } from "@/lib/campaigns/creator-invite-capacity";
 import {
   assertCampaignCloseoutReadiness,
   getCampaignCloseoutReadiness,
@@ -1359,14 +1360,35 @@ export async function sendCampaignCreatorInvite(
     throw new Error("Invite link is locked.");
   }
 
-  const { data: invite, error: inviteError } = await supabase
-    .from("campaign_creator_invites")
-    .select("id, campaign_id, contact_type, contact_value, status")
-    .eq("campaign_id", parsed.data.campaignId)
-    .eq("id", parsed.data.inviteId)
-    .single();
+  const [
+    { data: invite, error: inviteError },
+    { count: acceptedCount, error: acceptedError },
+    { data: savedInvites, error: savedInvitesError },
+    { data: paymentEvents, error: paymentEventsError },
+  ] = await Promise.all([
+    supabase
+      .from("campaign_creator_invites")
+      .select("id, campaign_id, contact_type, contact_value, normalized_contact, status")
+      .eq("campaign_id", parsed.data.campaignId)
+      .eq("id", parsed.data.inviteId)
+      .single(),
+    supabase
+      .from("campaign_members")
+      .select("id", { count: "exact", head: true })
+      .eq("campaign_id", parsed.data.campaignId),
+    supabase
+      .from("campaign_creator_invites")
+      .select("normalized_contact, status")
+      .eq("campaign_id", parsed.data.campaignId),
+    supabase
+      .from("campaign_payment_events")
+      .select("amount_cents, checkout_session_id, service_fee_status, event_summary")
+      .eq("campaign_id", parsed.data.campaignId),
+  ]);
 
   if (inviteError || !invite) throw new Error("Invite contact not found.");
+  const capacityError = acceptedError ?? savedInvitesError ?? paymentEventsError;
+  if (capacityError) throw new Error(capacityError.message);
   if (invite.contact_type !== "email") {
     throw new Error("Only email contacts can be sent from PopsDrops.");
   }
@@ -1376,6 +1398,23 @@ export async function sendCampaignCreatorInvite(
   if (invite.status === "sent") {
     throw new Error("This creator has already used this invite.");
   }
+
+  const capacity = getCampaignPaidCreatorCapacity({
+    maxCreators: campaign.max_creators,
+    paymentEvents: paymentEvents ?? [],
+    serviceFeeCents: campaign.service_fee_cents,
+    serviceFeeStatus: campaign.service_fee_status,
+    servicePackageSnapshot: campaign.service_package_snapshot,
+  });
+  assertCampaignCreatorInviteSendCapacity({
+    acceptedCreatorCount: acceptedCount ?? 0,
+    capacity,
+    inviteNormalizedContact: invite.normalized_contact,
+    savedInvites: (savedInvites ?? []).map((savedInvite) => ({
+      normalizedContact: savedInvite.normalized_contact,
+      status: savedInvite.status,
+    })),
+  });
 
   const admin = createAdminClient();
   const queueItem = await queueCampaignCreatorInviteEmail({

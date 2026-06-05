@@ -1248,6 +1248,8 @@ function buildHtmlLeadershipImpactSummary(data: ReportExportData): string {
 
 function buildHtmlProofOperations(data: ReportExportData): string {
   const operations = buildReportProofOperations(data);
+  const nextAction = getReportProofNextAction(data, { includeReadyAction: true }) ??
+    operations.decision;
   const attentionLabel =
     operations.attentionCount === 1
       ? "1 open proof action"
@@ -1267,6 +1269,10 @@ function buildHtmlProofOperations(data: ReportExportData): string {
       <article>
         <p>Attention queue</p>
         <strong>${escapeHtml(attentionLabel)}</strong>
+      </article>
+      <article class="proof-operations-action">
+        <p>Next action</p>
+        <strong>${escapeHtml(nextAction)}</strong>
       </article>
     </div>
     <div class="proof-operations-basis">
@@ -1310,14 +1316,74 @@ function buildHtmlLeadershipHandoffGate(data: ReportExportData): string {
   </div>`;
 }
 
+function formatReportCount(count: number, singular: string, plural: string): string {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function getProofBasisCount(
+  data: ReportExportData,
+  key: ReportLeadershipProofBasisKey,
+): number {
+  return buildReportLeadershipHandoff(data).proofBasis.find((item) => item.key === key)?.value ?? 0;
+}
+
+function getReportProofNextAction(
+  data: ReportExportData,
+  options: { includeReadyAction?: boolean } = {},
+): string | null {
+  const trustDecision = getReportTrustDecision(data);
+  const correctionCount = Math.max(
+    getProofBasisCount(data, "corrections"),
+    getReportStatusCorrectionCount(data),
+  );
+  const missingProofCount = Math.max(
+    getProofBasisCount(data, "missing-proof"),
+    getReportStatusMissingProofCount(data),
+  );
+  const needsReviewCount = getProofBasisCount(data, "needs-review");
+
+  if (correctionCount > 0) {
+    return `Resolve ${formatReportCount(correctionCount, "correction request", "correction requests")} before leadership sharing.`;
+  }
+
+  if (missingProofCount > 0) {
+    const creatorLabel = missingProofCount === 1 ? "creator" : "creators";
+    return `Ask ${creatorLabel} to upload ${formatReportCount(missingProofCount, "missing proof read", "missing proof reads")}.`;
+  }
+
+  if (needsReviewCount > 0) {
+    return `Review ${formatReportCount(needsReviewCount, "submitted proof read", "submitted proof reads")} before sharing.`;
+  }
+
+  if (trustDecision === noSubmittedProofTrustDecision) {
+    return "Collect and review the first proof read before sharing.";
+  }
+
+  if (
+    options.includeReadyAction &&
+    trustDecision === "Ready for leadership sharing."
+  ) {
+    return "Share the verified proof room with leadership.";
+  }
+
+  if (
+    options.includeReadyAction &&
+    trustDecision !== "Ready for leadership sharing."
+  ) {
+    return trustDecision;
+  }
+
+  return null;
+}
+
 function getHtmlStoryAction(data: ReportExportData): string {
   const chartModeId = data.composition?.chartModeId;
+  const proofNextAction = getReportProofNextAction(data, {
+    includeReadyAction: chartModeId === "proof",
+  });
 
-  if (chartModeId === "proof") {
-    const trustDecision = getReportTrustDecision(data);
-    return trustDecision === "Ready for leadership sharing."
-      ? "Share the verified proof room with leadership."
-      : trustDecision;
+  if (proofNextAction) {
+    return proofNextAction;
   }
 
   if (chartModeId === "comparison") {
@@ -3059,6 +3125,9 @@ export function buildHtmlDocument(data: ReportExportData): string {
         gap: 10px;
         grid-template-columns: repeat(2, minmax(0, 1fr));
       }
+      .proof-operations-action {
+        grid-column: 1 / -1;
+      }
       .proof-operations-basis {
         border-top: 1px solid var(--line);
         grid-column: 1 / -1;
@@ -3110,7 +3179,6 @@ export function buildHtmlDocument(data: ReportExportData): string {
       .proof-operations article strong {
         color: var(--value);
         display: block;
-        font-family: var(--mono-font);
         font-size: 13px;
         font-weight: 520;
         line-height: 1.45;

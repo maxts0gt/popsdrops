@@ -4,6 +4,9 @@ import { getAdminCampaignAttentionItems } from "./campaign-attention";
 
 const baseCampaign = {
   id: "campaign-1",
+  invite_reserved_count: 0,
+  member_count: 0,
+  paid_creator_capacity: 10,
   report_correction_count: 0,
   report_missed_count: 0,
   service_fee_cents: 25000,
@@ -64,6 +67,26 @@ describe("admin campaign attention model", () => {
         href: "/admin/campaigns/campaign-1?focus=reporting#admin-reporting-exceptions",
         kind: "reporting",
         label: "Reporting exception",
+      }),
+    ]);
+  });
+
+  it("flags invite reservations that exceed paid creator capacity as operations exceptions", () => {
+    const items = getAdminCampaignAttentionItems({
+      ...baseCampaign,
+      invite_reserved_count: 2,
+      member_count: 99,
+      paid_creator_capacity: 100,
+    });
+
+    expect(items).toEqual([
+      expect.objectContaining({
+        actionLabel: "Open operations",
+        detail:
+          "101 creator seats reserved for 100 paid slots. Pause outreach or increase capacity.",
+        href: "/admin/campaigns/campaign-1?focus=operations#admin-creator-operations",
+        kind: "operations",
+        label: "Invite capacity exception",
       }),
     ]);
   });

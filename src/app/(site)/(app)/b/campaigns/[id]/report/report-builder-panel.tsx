@@ -47,6 +47,7 @@ interface ReportBuilderPanelProps {
   activeTemplateId: string | null;
   campaignTitle: string;
   metricTileOptions: ReportTileOption[];
+  nextAction: string;
   onChartModeChange: (chartModeId: ReportBuilderChartModeId) => void;
   onChartMetricChange: (metricKey: ReportBuilderChartMetricKey) => void;
   onPresentationChange: (presentation: ReportBuilderPresentation) => void;
@@ -105,6 +106,7 @@ export function ReportBuilderPanel({
   activeTemplateId,
   campaignTitle,
   metricTileOptions,
+  nextAction,
   onChartModeChange,
   onChartMetricChange,
   onMoveBlock,
@@ -283,6 +285,35 @@ export function ReportBuilderPanel({
       detail: `${activeChartLayoutTitle} / ${t("builder.selected", {
         count: String(selectedBlockIds.length),
       })}`,
+    },
+  ] as const;
+  const builderDecisionRecipeItems = [
+    {
+      key: "question",
+      label: t("builder.output.recipeQuestion"),
+      value: activeExecutiveQuestion,
+      detail: activeDisplayTitle,
+    },
+    {
+      key: "visual-job",
+      label: t("builder.output.recipeVisualJob"),
+      value: activeChartLayoutTitle,
+      detail: `${activeChartModeTitle} / ${activeChartMetricLabel}`,
+    },
+    {
+      key: "evidence-gate",
+      label: t("builder.output.recipeEvidenceGate"),
+      value: trustDecision,
+      detail:
+        activeTrustTileLabels.length > 0
+          ? activeTrustTileLabels.join(" / ")
+          : t("builder.chartStory.noProofSources"),
+    },
+    {
+      key: "next-action",
+      label: t("builder.output.recipeNextAction"),
+      value: nextAction,
+      detail: t("builder.output.recipeDetail"),
     },
   ] as const;
   const builderContractItems: Array<{
@@ -1157,6 +1188,39 @@ export function ReportBuilderPanel({
                   </span>
                 </span>
               </article>
+            </div>
+            <div
+              data-testid="report-builder-decision-recipe"
+              className="mt-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3"
+            >
+              <div className="flex flex-col gap-1">
+                <p className="text-[11px] font-semibold uppercase tracking-normal text-slate-500">
+                  {t("builder.output.recipe")}
+                </p>
+                <p className="text-xs leading-5 text-slate-500">
+                  {t("builder.output.recipeDetail")}
+                </p>
+              </div>
+              <div className="mt-3 grid gap-2">
+                {builderDecisionRecipeItems.map((item) => (
+                  <article
+                    key={item.key}
+                    data-testid="report-builder-decision-recipe-item"
+                    data-recipe-step={item.key}
+                    className="rounded-lg border border-slate-200 bg-white px-3 py-2"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-normal text-slate-500">
+                      {item.label}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-sm font-medium leading-snug text-slate-900">
+                      {item.value}
+                    </p>
+                    <p className="mt-1 line-clamp-2 text-xs leading-5 text-slate-500">
+                      {item.detail}
+                    </p>
+                  </article>
+                ))}
+              </div>
             </div>
             <div
               data-testid="report-builder-export-contract"

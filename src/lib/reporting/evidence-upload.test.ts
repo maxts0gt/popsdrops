@@ -4,10 +4,12 @@ import {
   EVIDENCE_BUCKET_ID,
   EVIDENCE_MAX_FILE_BYTES,
   buildEvidenceStoragePath,
+  getExternalEvidenceUrl,
   getEvidenceFileValidationError,
   parseEvidenceStorageReference,
   getEvidenceStorageUri,
   getEvidenceTypeFromMime,
+  hasEvidenceProofReference,
   sanitizeEvidenceFileName,
 } from "./evidence-upload";
 
@@ -67,6 +69,22 @@ describe("reporting evidence upload helpers", () => {
       path: storagePath,
     });
     expect(parseEvidenceStorageReference("https://example.com/proof.png")).toBeNull();
+  });
+
+  it("accepts safe external evidence links as proof references", () => {
+    const storagePath = buildEvidenceStoragePath({
+      ...ids,
+      fileName: "instagram-proof.png",
+    });
+
+    expect(getExternalEvidenceUrl("https://example.com/proof.png")).toBe(
+      "https://example.com/proof.png",
+    );
+    expect(hasEvidenceProofReference(`${EVIDENCE_BUCKET_ID}/${storagePath}`)).toBe(
+      true,
+    );
+    expect(hasEvidenceProofReference("https://example.com/proof.png")).toBe(true);
+    expect(hasEvidenceProofReference("javascript:alert(1)")).toBe(false);
   });
 
   it("rejects malformed evidence storage references", () => {

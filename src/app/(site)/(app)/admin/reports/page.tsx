@@ -246,6 +246,17 @@ export default async function AdminReportsPage() {
                     <p className="mt-1 text-xs leading-5 text-slate-400">
                       Keep the report out of leadership handoff until this gate clears.
                     </p>
+                    <div className="mt-3 rounded-lg border border-white/10 bg-slate-950/45 px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        Leadership next action
+                      </p>
+                      <p
+                        data-testid="admin-report-priority-leadership-next-action"
+                        className="mt-1 text-sm font-semibold leading-6 text-white"
+                      >
+                        {priorityException.leadershipNextAction}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 <div
@@ -454,7 +465,7 @@ export default async function AdminReportsPage() {
                     >
                       {row.summary}
                     </p>
-                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                    <div className="mt-3 grid gap-2 md:grid-cols-3">
                       <p
                         data-testid="admin-report-campaign-readiness-share-gate"
                         className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
@@ -463,6 +474,15 @@ export default async function AdminReportsPage() {
                           Leadership share gate
                         </span>
                         {row.shareGate}
+                      </p>
+                      <p
+                        data-testid="admin-report-campaign-readiness-next-action"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Leadership next action
+                        </span>
+                        {row.leadershipNextAction}
                       </p>
                       <p
                         data-testid="admin-report-campaign-readiness-clearance"
@@ -549,7 +569,7 @@ export default async function AdminReportsPage() {
                     </p>
                     <div
                       data-testid="admin-report-exception-decision-grid"
-                      className="mt-3 grid gap-2 lg:grid-cols-2"
+                      className="mt-3 grid gap-2 lg:grid-cols-3"
                     >
                       <p
                         data-testid="admin-report-exception-impact"
@@ -568,6 +588,15 @@ export default async function AdminReportsPage() {
                           Leadership share gate
                         </span>
                         {row.shareGate}
+                      </p>
+                      <p
+                        data-testid="admin-report-exception-leadership-next-action"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Leadership next action
+                        </span>
+                        {row.leadershipNextAction}
                       </p>
                     </div>
                     <div

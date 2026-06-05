@@ -13,12 +13,22 @@ const noSubmittedProofDecision =
 
 type SharedReportTrustData = Pick<ReportExportData, "trust" | "leadershipHandoff">;
 
-export function getSharedReportLeadershipGate(trustDecision: string): {
+export function getSharedReportLeadershipGate(
+  input: string | SharedReportTrustData,
+): {
   state: SharedReportLeadershipState;
   label: string;
   detail: string;
 } {
-  if (trustDecision === "Ready for leadership sharing.") {
+  const trustDecision = typeof input === "string"
+    ? input
+    : getSharedReportTrustDecision(input);
+  const state = typeof input === "string"
+    ? trustDecision === "Ready for leadership sharing." ? "ready" : "hold"
+    : input.leadershipHandoff?.state ??
+      (trustDecision === "Ready for leadership sharing." ? "ready" : "hold");
+
+  if (state === "ready") {
     return {
       state: "ready",
       label: "Leadership-ready",
@@ -95,6 +105,17 @@ function getSharedReportCorrectionCount(
   return Number.isFinite(explicitCount) && explicitCount > 0
     ? explicitCount
     : 1;
+}
+
+function formatSharedReportCount(count: number, singular: string, plural: string) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function getSharedReportProofBasisValue(
+  proofBasis: Array<{ key: SharedReportProofBasisKey; value: number }>,
+  key: SharedReportProofBasisKey,
+) {
+  return Math.max(0, proofBasis.find((item) => item.key === key)?.value ?? 0);
 }
 
 export function getSharedReportProofBasis(
@@ -190,4 +211,46 @@ export function getSharedReportTrustDecision(
   }
 
   return "Ready for leadership sharing.";
+}
+
+export function getSharedReportNextAction(data: SharedReportTrustData): string {
+  const trustDecision = getSharedReportTrustDecision(data);
+  const proofBasis = getSharedReportProofBasis(data);
+  const corrections = getSharedReportProofBasisValue(proofBasis, "corrections");
+  const missingProof = getSharedReportProofBasisValue(proofBasis, "missing-proof");
+  const needsReview = getSharedReportProofBasisValue(proofBasis, "needs-review");
+
+  if (corrections > 0) {
+    return `Resolve ${formatSharedReportCount(
+      corrections,
+      "correction request",
+      "correction requests",
+    )} before leadership sharing.`;
+  }
+
+  if (missingProof > 0) {
+    return `Ask ${missingProof === 1 ? "creator" : "creators"} to upload ${formatSharedReportCount(
+      missingProof,
+      "missing proof read",
+      "missing proof reads",
+    )}.`;
+  }
+
+  if (needsReview > 0) {
+    return `Review ${formatSharedReportCount(
+      needsReview,
+      "submitted proof read",
+      "submitted proof reads",
+    )} before sharing.`;
+  }
+
+  if (trustDecision === noSubmittedProofDecision) {
+    return "Collect and review the first proof read before sharing.";
+  }
+
+  if (trustDecision === "Ready for leadership sharing.") {
+    return "Share the verified proof room with leadership.";
+  }
+
+  return trustDecision;
 }

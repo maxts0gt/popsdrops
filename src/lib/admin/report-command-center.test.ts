@@ -168,6 +168,9 @@ describe("admin report command center model", () => {
     expect(priority.shareGate).toBe(
       "Leadership hold until brand verifies submitted proof.",
     );
+    expect(priority.leadershipNextAction).toBe(
+      "Review 1 submitted proof read before sharing.",
+    );
     expect(priority.nextStep).toBe(
       "Open the campaign and push brand proof review.",
     );
@@ -184,6 +187,7 @@ describe("admin report command center model", () => {
           row.actionLabel === "Open campaign" &&
           row.impact.length > 0 &&
           row.shareGate.startsWith("Leadership hold") &&
+          row.leadershipNextAction.length > 0 &&
           row.nextStep.length > 0 &&
           row.owner.length > 0 &&
           row.clearance.length > 0 &&
@@ -236,6 +240,7 @@ describe("admin report command center model", () => {
       campaign,
       clearance: "Brand reviews or requests correction on submitted proof.",
       leadershipStatus: "Leadership hold",
+      leadershipNextAction: "Review 1 submitted proof read before sharing.",
       primaryKind: "review_sla",
       primaryLabel: "Review SLA breach",
       shareGate: "Leadership hold until brand verifies submitted proof.",
@@ -249,6 +254,7 @@ describe("admin report command center model", () => {
       blockerCount: 1,
       campaign: chanelCampaign,
       leadershipStatus: "Leadership hold",
+      leadershipNextAction: "Review 1 submitted proof read before sharing.",
       primaryKind: "evidence_review",
       primaryLabel: "Needs brand review",
       shareGate: "Leadership hold until brand verifies submitted proof.",
@@ -292,6 +298,7 @@ describe("admin report command center model", () => {
       impact: "Blocks report confidence because submitted metrics have no proof source.",
       kind: "missing_evidence",
       label: "Missing proof",
+      leadershipNextAction: "Ask creator to upload 1 missing proof read.",
       nextStep: "Open the campaign and ask the creator to attach proof before review.",
       owner: "Creator success",
       shareGate: "Leadership hold until the submitted task has evidence attached.",
@@ -300,6 +307,7 @@ describe("admin report command center model", () => {
     });
     expect(command.campaignReadiness[0]).toMatchObject({
       blockerCount: 1,
+      leadershipNextAction: "Ask creator to upload 1 missing proof read.",
       primaryKind: "missing_evidence",
       primaryLabel: "Missing proof",
       shareGate: "Leadership hold until the submitted task has evidence attached.",

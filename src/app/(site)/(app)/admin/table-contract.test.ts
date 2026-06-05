@@ -24,7 +24,7 @@ describe("admin table contract", () => {
     expect(source).toContain("service_fee_currency");
     expect(source).toContain("service_fee_status");
     expect(source).toContain("function serviceFeeTone");
-    expect(source).toContain("function serviceFeeLabel");
+    expect(source).toContain("serviceFeeLabel,");
     expect(source).toContain('<CampaignSortableHead label="Service fee" sortKey="service_fee_status"');
     expect(source).toContain('data-testid="admin-campaigns-service-fee-status"');
     expect(source).toContain('"Service fee"');
@@ -34,19 +34,20 @@ describe("admin table contract", () => {
   it("turns admin campaign oversight into an exception queue before the full table", () => {
     const source = read("./campaigns/page.tsx");
 
-    expect(source).toContain('type AttentionFilter = "all" | "payment" | "launch" | "reporting";');
-    expect(source).toContain("type CampaignAttentionItem");
+    expect(source).toContain("type AttentionFilter = \"all\" | CampaignAttentionKind;");
+    expect(source).toContain("type CampaignAttentionKind");
     expect(source).toContain(".from(\"campaign_report_tasks\")");
-    expect(source).toContain("function getCampaignAttentionItems");
-    expect(source).toContain("paymentExceptionStatuses");
+    expect(source).toContain(".from(\"campaign_creator_invites\")");
+    expect(source).toContain(".from(\"campaign_payment_events\")");
+    expect(source).toContain("getAdminCampaignAttentionItems");
+    expect(source).toContain('{ key: "operations", label: "Operations" }');
     expect(source).not.toContain('label: "Payment required"');
     expect(source).not.toContain("Service fee must clear before the invite link can be used.");
     expect(source).toContain('data-testid="admin-campaign-attention-panel"');
     expect(source).toContain('data-testid="admin-campaign-attention-filter"');
     expect(source).toContain('data-testid="admin-campaign-attention-row"');
-    expect(source).toContain("Open finance");
-    expect(source).toContain("?focus=finance#admin-finance-exception");
-    expect(source).toContain("Open campaign");
+    expect(source).toContain("{item.actionLabel}");
+    expect(source).toContain("href={item.href}");
   });
 
   it("keeps admin user data columns sortable and avoids an em dash fallback", () => {

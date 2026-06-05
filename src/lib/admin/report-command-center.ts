@@ -76,6 +76,7 @@ export type ReportCommandExceptionRow = {
   impact: string;
   kind: ReportCommandExceptionKind;
   label: string;
+  leadershipNextAction: string;
   nextStep: string;
   owner: string;
   shareGate: string;
@@ -89,6 +90,7 @@ export type ReportCommandCampaignReadiness = {
   blockerCount: number;
   campaign: ReportCommandCampaignMeta;
   clearance: string;
+  leadershipNextAction: string;
   leadershipStatus: "Leadership hold";
   primaryKind: ReportCommandExceptionKind;
   primaryLabel: string;
@@ -222,6 +224,25 @@ function shareGateForKind(kind: ReportCommandExceptionKind) {
   return "Leadership hold until corrected proof is reviewed.";
 }
 
+function leadershipNextActionForKind(kind: ReportCommandExceptionKind) {
+  if (kind === "review_sla" || kind === "evidence_review") {
+    return "Review 1 submitted proof read before sharing.";
+  }
+  if (kind === "missing_evidence") {
+    return "Ask creator to upload 1 missing proof read.";
+  }
+  if (kind === "correction") {
+    return "Resolve 1 correction request before leadership sharing.";
+  }
+  if (kind === "correction_returned") {
+    return "Review 1 corrected proof read before sharing.";
+  }
+  if (kind === "export_failure") {
+    return "Regenerate the failed report export before leadership sharing.";
+  }
+  return "Resolve 1 missed report read before leadership sharing.";
+}
+
 function nextStepForKind(kind: ReportCommandExceptionKind) {
   if (kind === "review_sla") {
     return "Open the campaign and push brand proof review.";
@@ -326,6 +347,7 @@ function buildCampaignReadiness(
       blockerCount,
       campaign: primary.campaign,
       clearance: primary.clearance,
+      leadershipNextAction: primary.leadershipNextAction,
       leadershipStatus: "Leadership hold" as const,
       primaryKind: primary.kind,
       primaryLabel: primary.label,
@@ -395,6 +417,7 @@ export function buildReportCommandCenter({
         impact: impactForKind(kind),
         kind,
         label: missed ? "Missed report" : "Correction request",
+        leadershipNextAction: leadershipNextActionForKind(kind),
         nextStep: nextStepForKind(kind),
         owner: ownerForKind(kind),
         shareGate: shareGateForKind(kind),
@@ -424,6 +447,7 @@ export function buildReportCommandCenter({
         impact: impactForKind(kind),
         kind,
         label: "Missing proof",
+        leadershipNextAction: leadershipNextActionForKind(kind),
         nextStep: nextStepForKind(kind),
         owner: ownerForKind(kind),
         shareGate: shareGateForKind(kind),
@@ -474,6 +498,7 @@ export function buildReportCommandCenter({
             : correctionReturned
               ? "Correction returned"
               : "Needs brand review",
+        leadershipNextAction: leadershipNextActionForKind(kind),
         nextStep: nextStepForKind(kind),
         owner: ownerForKind(kind),
         shareGate: shareGateForKind(kind),
@@ -502,6 +527,7 @@ export function buildReportCommandCenter({
       impact: impactForKind(kind),
       kind,
       label: "Export failure",
+      leadershipNextAction: leadershipNextActionForKind(kind),
       nextStep: nextStepForKind(kind),
       owner: ownerForKind(kind),
       shareGate: shareGateForKind(kind),

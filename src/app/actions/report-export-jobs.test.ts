@@ -65,7 +65,7 @@ describe("report export jobs", () => {
     expect(actionSource).toContain("/functions/v1/generate-report");
     expect(contractVersion).toBeTruthy();
     expect(edgeContractVersion).toBe(contractVersion);
-    expect(contractVersion).toBe("report-export-proof-ops-basis-v9-2026-06-05");
+    expect(contractVersion).toBe("report-export-proof-next-actions-v10-2026-06-05");
     expect(actionSource).toContain("assertReportExportServiceReady()");
     expect(serviceSource).toContain('method: "GET"');
     expect(serviceSource).toContain("STALE_REPORT_EXPORT_SERVICE_ERROR");

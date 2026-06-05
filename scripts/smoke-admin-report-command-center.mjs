@@ -330,6 +330,7 @@ function validateAdminReportCommandCenterSmoke({
     "blockers",
     "Review SLA breach is the top leadership gate.",
     "Leadership hold until brand verifies submitted proof.",
+    "Review 1 submitted proof read before sharing.",
     "Brand reviews or requests correction on submitted proof.",
     getSmokeCampaignTitle(),
   ];
@@ -338,18 +339,21 @@ function validateAdminReportCommandCenterSmoke({
     "Proof review older than 24h",
     "Blocks report confidence until brand confirms proof.",
     "Leadership hold until brand verifies submitted proof.",
+    "Review 1 submitted proof read before sharing.",
     "Open the campaign and push brand proof review.",
     "Brand owner",
     "PopsDrops ops",
     "Brand reviews or requests correction on submitted proof.",
     "Blocks board-ready artifact delivery.",
     "Leadership hold until replacement artifact is generated.",
+    "Regenerate the failed report export before leadership sharing.",
     "Open the campaign and retry or inspect the failed export.",
     "Replacement export completes and old failure is traced.",
     "Missing proof",
     "Report task submitted without proof",
     "Blocks report confidence because submitted metrics have no proof source.",
     "Leadership hold until the submitted task has evidence attached.",
+    "Ask creator to upload 1 missing proof read.",
     "Open the campaign and ask the creator to attach proof before review.",
     "Creator attaches evidence or admin returns the report task with an audit note.",
     "Blocks complete creator readout unless excused.",
@@ -357,7 +361,9 @@ function validateAdminReportCommandCenterSmoke({
     "Open the campaign and excuse only with a written audit reason.",
     "Creator submits proof or admin excuses with a written audit reason.",
     "Leadership hold until creator returns usable proof.",
+    "Resolve 1 correction request before leadership sharing.",
     "Leadership hold until corrected proof is reviewed.",
+    "Review 1 corrected proof read before sharing.",
     "Missed report",
     "Correction request",
     "Correction returned",
@@ -371,6 +377,7 @@ function validateAdminReportCommandCenterSmoke({
   const requiredNormalizedRowText = [
     "Leadership impact",
     "Leadership share gate",
+    "Leadership next action",
     "Waiting",
     "Next move",
     "Escalation owner",
@@ -449,6 +456,7 @@ function validateAdminReportCommandCenterSmoke({
     !priorityText.includes("Review SLA breach") ||
     !normalizedPriorityText.includes("leadership impact") ||
     !normalizedPriorityText.includes("leadership share gate") ||
+    !normalizedPriorityText.includes("leadership next action") ||
     !normalizedPriorityText.includes("waiting") ||
     !normalizedPriorityText.includes("next move") ||
     !normalizedPriorityText.includes("escalation owner") ||
@@ -457,6 +465,7 @@ function validateAdminReportCommandCenterSmoke({
     !priorityText.includes("Brand owner") ||
     !priorityText.includes("Blocks report confidence until brand confirms proof.") ||
     !priorityText.includes("Leadership hold until brand verifies submitted proof.") ||
+    !priorityText.includes("Review 1 submitted proof read before sharing.") ||
     !priorityText.includes("Open the campaign and push brand proof review.") ||
     !priorityText.includes("Brand reviews or requests correction on submitted proof.")
   ) {
@@ -547,6 +556,7 @@ export async function runAdminReportCommandCenterSmoke() {
           const priorityImpact = document.querySelector('[data-testid="admin-report-priority-impact"]');
           const priorityShareGatePanel = document.querySelector('[data-testid="admin-report-priority-share-gate-panel"]');
           const priorityShareGate = document.querySelector('[data-testid="admin-report-priority-share-gate"]');
+          const priorityLeadershipNextAction = document.querySelector('[data-testid="admin-report-priority-leadership-next-action"]');
           const priorityOperations = document.querySelector('[data-testid="admin-report-priority-operations"]');
           const priorityAge = document.querySelector('[data-testid="admin-report-priority-age"]');
           const priorityNextStep = document.querySelector('[data-testid="admin-report-priority-next-step"]');
@@ -559,11 +569,13 @@ export async function runAdminReportCommandCenterSmoke() {
           const readinessStatuses = [...document.querySelectorAll('[data-testid="admin-report-campaign-readiness-status"]')];
           const readinessPrimaries = [...document.querySelectorAll('[data-testid="admin-report-campaign-readiness-primary"]')];
           const readinessShareGates = [...document.querySelectorAll('[data-testid="admin-report-campaign-readiness-share-gate"]')];
+          const readinessNextActions = [...document.querySelectorAll('[data-testid="admin-report-campaign-readiness-next-action"]')];
           const readinessClearances = [...document.querySelectorAll('[data-testid="admin-report-campaign-readiness-clearance"]')];
           const rows = [...document.querySelectorAll('[data-testid="admin-report-exception-row"]')];
           const rowDecisionGrids = [...document.querySelectorAll('[data-testid="admin-report-exception-decision-grid"]')];
           const rowImpacts = [...document.querySelectorAll('[data-testid="admin-report-exception-impact"]')];
           const rowShareGates = [...document.querySelectorAll('[data-testid="admin-report-exception-share-gate"]')];
+          const rowLeadershipNextActions = [...document.querySelectorAll('[data-testid="admin-report-exception-leadership-next-action"]')];
           const rowOperationGrids = [...document.querySelectorAll('[data-testid="admin-report-exception-operations-grid"]')];
           const rowAges = [...document.querySelectorAll('[data-testid="admin-report-exception-age"]')];
           const rowNextSteps = [...document.querySelectorAll('[data-testid="admin-report-exception-next-step"]')];
@@ -579,6 +591,7 @@ export async function runAdminReportCommandCenterSmoke() {
             Boolean(priorityImpact?.innerText.trim()) &&
             Boolean(priorityShareGatePanel) &&
             Boolean(priorityShareGate?.innerText.trim()) &&
+            Boolean(priorityLeadershipNextAction?.innerText.trim()) &&
             Boolean(priorityOperations) &&
             Boolean(priorityAge?.innerText.trim()) &&
             Boolean(priorityNextStep?.innerText.trim()) &&
@@ -588,6 +601,7 @@ export async function runAdminReportCommandCenterSmoke() {
             priorityRail.innerText.includes("Review SLA breach") &&
             normalizedPriorityText.includes("leadership impact") &&
             normalizedPriorityText.includes("leadership share gate") &&
+            normalizedPriorityText.includes("leadership next action") &&
             normalizedPriorityText.includes("waiting") &&
             /\\b\\d+[mhd] waiting\\b/.test(normalizedPriorityText) &&
             normalizedPriorityText.includes("next move") &&
@@ -596,6 +610,7 @@ export async function runAdminReportCommandCenterSmoke() {
             priorityRail.innerText.includes("Brand owner") &&
             priorityRail.innerText.includes("Blocks report confidence until brand confirms proof.") &&
             priorityRail.innerText.includes("Leadership hold until brand verifies submitted proof.") &&
+            priorityRail.innerText.includes("Review 1 submitted proof read before sharing.") &&
             priorityRail.innerText.includes("Open the campaign and push brand proof review.") &&
             priorityRail.innerText.includes("Brand reviews or requests correction on submitted proof.") &&
             Boolean(summary) &&
@@ -605,11 +620,13 @@ export async function runAdminReportCommandCenterSmoke() {
             readinessStatuses.some((row) => row.innerText.includes("Leadership hold")) &&
             readinessPrimaries.some((row) => row.innerText.includes("top leadership gate")) &&
             readinessShareGates.some((row) => row.innerText.includes("Leadership hold until brand verifies submitted proof.")) &&
+            readinessNextActions.some((row) => row.innerText.includes("Review 1 submitted proof read before sharing.")) &&
             readinessClearances.some((row) => row.innerText.includes("Brand reviews or requests correction on submitted proof.")) &&
             rows.length >= 7 &&
             rowDecisionGrids.length >= 7 &&
             rowImpacts.length >= 7 &&
             rowShareGates.length >= 7 &&
+            rowLeadershipNextActions.length >= 7 &&
             rowOperationGrids.length >= 7 &&
             rowAges.length >= 7 &&
             rowAges.every((row) => /\\b\\d+[mhd] waiting\\b/i.test(row.innerText)) &&
@@ -626,6 +643,7 @@ export async function runAdminReportCommandCenterSmoke() {
              text.includes("Review SLA breach") &&
              normalizedText.includes("leadership impact") &&
              normalizedText.includes("leadership share gate") &&
+             normalizedText.includes("leadership next action") &&
              normalizedText.includes("waiting") &&
              normalizedText.includes("next move") &&
              normalizedText.includes("escalation owner") &&
@@ -634,22 +652,28 @@ export async function runAdminReportCommandCenterSmoke() {
              text.includes("PopsDrops ops") &&
              text.includes("Blocks report confidence until brand confirms proof.") &&
              text.includes("Leadership hold until brand verifies submitted proof.") &&
+             text.includes("Review 1 submitted proof read before sharing.") &&
              text.includes("Open the campaign and push brand proof review.") &&
              text.includes("Brand reviews or requests correction on submitted proof.") &&
              text.includes("Blocks board-ready artifact delivery.") &&
              text.includes("Leadership hold until replacement artifact is generated.") &&
+             text.includes("Regenerate the failed report export before leadership sharing.") &&
              text.includes("Blocks report confidence because submitted metrics have no proof source.") &&
              text.includes("Leadership hold until the submitted task has evidence attached.") &&
+             text.includes("Ask creator to upload 1 missing proof read.") &&
              text.includes("Open the campaign and ask the creator to attach proof before review.") &&
              text.includes("Creator attaches evidence or admin returns the report task with an audit note.") &&
              text.includes("Open the campaign and retry or inspect the failed export.") &&
              text.includes("Replacement export completes and old failure is traced.") &&
              text.includes("Blocks complete creator readout unless excused.") &&
              text.includes("Leadership hold unless the missed read is excused with audit trail.") &&
+             text.includes("Resolve 1 missed report read before leadership sharing.") &&
              text.includes("Open the campaign and excuse only with a written audit reason.") &&
              text.includes("Creator submits proof or admin excuses with a written audit reason.") &&
              text.includes("Leadership hold until creator returns usable proof.") &&
+             text.includes("Resolve 1 correction request before leadership sharing.") &&
              text.includes("Leadership hold until corrected proof is reviewed.") &&
+             text.includes("Review 1 corrected proof read before sharing.") &&
              text.includes("Correction returned") &&
              text.includes("Corrected proof awaiting brand review") &&
              text.includes("admin-report-command-returned-proof.png") &&
@@ -674,6 +698,7 @@ export async function runAdminReportCommandCenterSmoke() {
             hasPriorityImpact: Boolean(document.querySelector('[data-testid="admin-report-priority-impact"]')?.innerText.trim()),
             hasPriorityShareGatePanel: Boolean(document.querySelector('[data-testid="admin-report-priority-share-gate-panel"]')),
             hasPriorityShareGate: Boolean(document.querySelector('[data-testid="admin-report-priority-share-gate"]')?.innerText.trim()),
+            hasPriorityLeadershipNextAction: Boolean(document.querySelector('[data-testid="admin-report-priority-leadership-next-action"]')?.innerText.trim()),
             hasPriorityOperations: Boolean(document.querySelector('[data-testid="admin-report-priority-operations"]')),
             hasPriorityAge: Boolean(document.querySelector('[data-testid="admin-report-priority-age"]')?.innerText.trim()),
             hasPriorityNextStep: Boolean(document.querySelector('[data-testid="admin-report-priority-next-step"]')?.innerText.trim()),
@@ -683,6 +708,8 @@ export async function runAdminReportCommandCenterSmoke() {
             priorityMentionsReviewSla: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.includes("Review SLA breach")),
             priorityMentionsImpact: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.toLowerCase().includes("leadership impact")),
             priorityMentionsShareGate: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.toLowerCase().includes("leadership share gate")),
+            priorityMentionsLeadershipNextAction: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.toLowerCase().includes("leadership next action")),
+            priorityMentionsProofNextAction: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.includes("Review 1 submitted proof read before sharing.")),
             priorityMentionsWaiting: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.toLowerCase().includes("waiting")),
             priorityMentionsWaitingAge: /\\b\\d+[mhd] waiting\\b/i.test(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText || ""),
             priorityMentionsNextStep: Boolean(document.querySelector('[data-testid="admin-report-priority-rail"]')?.innerText.toLowerCase().includes("next move")),
@@ -697,6 +724,7 @@ export async function runAdminReportCommandCenterSmoke() {
             campaignReadinessStatusCount: document.querySelectorAll('[data-testid="admin-report-campaign-readiness-status"]').length,
             campaignReadinessPrimaryCount: document.querySelectorAll('[data-testid="admin-report-campaign-readiness-primary"]').length,
             campaignReadinessShareGateCount: document.querySelectorAll('[data-testid="admin-report-campaign-readiness-share-gate"]').length,
+            campaignReadinessNextActionCount: document.querySelectorAll('[data-testid="admin-report-campaign-readiness-next-action"]').length,
             campaignReadinessClearanceCount: document.querySelectorAll('[data-testid="admin-report-campaign-readiness-clearance"]').length,
             campaignReadinessMentionsHold: Boolean(document.querySelector('[data-testid="admin-report-campaign-readiness"]')?.innerText.includes("Leadership hold")),
             campaignReadinessMentionsTopGate: Boolean(document.querySelector('[data-testid="admin-report-campaign-readiness"]')?.innerText.includes("top leadership gate")),
@@ -704,6 +732,7 @@ export async function runAdminReportCommandCenterSmoke() {
             rowDecisionGridCount: document.querySelectorAll('[data-testid="admin-report-exception-decision-grid"]').length,
             rowImpactCount: document.querySelectorAll('[data-testid="admin-report-exception-impact"]').length,
             rowShareGateCount: document.querySelectorAll('[data-testid="admin-report-exception-share-gate"]').length,
+            rowLeadershipNextActionCount: document.querySelectorAll('[data-testid="admin-report-exception-leadership-next-action"]').length,
             rowOperationGridCount: document.querySelectorAll('[data-testid="admin-report-exception-operations-grid"]').length,
             rowAgeCount: document.querySelectorAll('[data-testid="admin-report-exception-age"]').length,
             rowAgesHaveWaiting: [...document.querySelectorAll('[data-testid="admin-report-exception-age"]')].every((row) => /\\b\\d+[mhd] waiting\\b/i.test(row.innerText)),
@@ -717,6 +746,7 @@ export async function runAdminReportCommandCenterSmoke() {
             mentionsReviewSlaBreach: (document.body.innerText || "").includes("Review SLA breach"),
             mentionsLeadershipImpact: (document.body.innerText || "").toLowerCase().includes("leadership impact"),
             mentionsLeadershipShareGate: (document.body.innerText || "").toLowerCase().includes("leadership share gate"),
+            mentionsLeadershipNextAction: (document.body.innerText || "").toLowerCase().includes("leadership next action"),
             mentionsWaiting: (document.body.innerText || "").toLowerCase().includes("waiting"),
             mentionsNextMove: (document.body.innerText || "").toLowerCase().includes("next move"),
             mentionsEscalationOwner: (document.body.innerText || "").toLowerCase().includes("escalation owner"),
@@ -725,22 +755,28 @@ export async function runAdminReportCommandCenterSmoke() {
             mentionsPopsDropsOps: (document.body.innerText || "").includes("PopsDrops ops"),
             mentionsBrandProofImpact: (document.body.innerText || "").includes("Blocks report confidence until brand confirms proof."),
             mentionsBrandProofShareGate: (document.body.innerText || "").includes("Leadership hold until brand verifies submitted proof."),
+            mentionsBrandProofLeadershipNextAction: (document.body.innerText || "").includes("Review 1 submitted proof read before sharing."),
             mentionsBrandProofNextStep: (document.body.innerText || "").includes("Open the campaign and push brand proof review."),
             mentionsBrandReviewClearance: (document.body.innerText || "").includes("Brand reviews or requests correction on submitted proof."),
             mentionsExportImpact: (document.body.innerText || "").includes("Blocks board-ready artifact delivery."),
             mentionsExportShareGate: (document.body.innerText || "").includes("Leadership hold until replacement artifact is generated."),
+            mentionsExportLeadershipNextAction: (document.body.innerText || "").includes("Regenerate the failed report export before leadership sharing."),
             mentionsExportNextStep: (document.body.innerText || "").includes("Open the campaign and retry or inspect the failed export."),
             mentionsExportClearance: (document.body.innerText || "").includes("Replacement export completes and old failure is traced."),
             mentionsMissingProofImpact: (document.body.innerText || "").includes("Blocks report confidence because submitted metrics have no proof source."),
             mentionsMissingProofShareGate: (document.body.innerText || "").includes("Leadership hold until the submitted task has evidence attached."),
+            mentionsMissingProofLeadershipNextAction: (document.body.innerText || "").includes("Ask creator to upload 1 missing proof read."),
             mentionsMissingProofNextStep: (document.body.innerText || "").includes("Open the campaign and ask the creator to attach proof before review."),
             mentionsMissingProofClearance: (document.body.innerText || "").includes("Creator attaches evidence or admin returns the report task with an audit note."),
             mentionsMissedImpact: (document.body.innerText || "").includes("Blocks complete creator readout unless excused."),
             mentionsMissedShareGate: (document.body.innerText || "").includes("Leadership hold unless the missed read is excused with audit trail."),
+            mentionsMissedLeadershipNextAction: (document.body.innerText || "").includes("Resolve 1 missed report read before leadership sharing."),
             mentionsMissedNextStep: (document.body.innerText || "").includes("Open the campaign and excuse only with a written audit reason."),
             mentionsMissedClearance: (document.body.innerText || "").includes("Creator submits proof or admin excuses with a written audit reason."),
             mentionsCorrectionShareGate: (document.body.innerText || "").includes("Leadership hold until creator returns usable proof."),
+            mentionsCorrectionLeadershipNextAction: (document.body.innerText || "").includes("Resolve 1 correction request before leadership sharing."),
             mentionsReturnedCorrectionShareGate: (document.body.innerText || "").includes("Leadership hold until corrected proof is reviewed."),
+            mentionsReturnedCorrectionLeadershipNextAction: (document.body.innerText || "").includes("Review 1 corrected proof read before sharing."),
             mentionsCorrectionReturned: (document.body.innerText || "").includes("Correction returned"),
             mentionsCorrectedProof: (document.body.innerText || "").includes("Corrected proof awaiting brand review"),
             mentionsReturnedProofFile: (document.body.innerText || "").includes("admin-report-command-returned-proof.png"),

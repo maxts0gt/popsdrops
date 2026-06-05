@@ -120,7 +120,7 @@ export function ReportOutputContractPanel({
       </div>
       <article
         data-testid="report-output-executive-read"
-        data-executive-read-state={readinessDecision === "Ready for leadership sharing." ? "ready" : "hold"}
+        data-executive-read-state={leadershipHandoff.state}
         data-leadership-handoff-state={leadershipHandoff.state}
         className="mt-4 rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-[0_16px_40px_-34px_rgba(15,23,42,0.45)]"
       >
