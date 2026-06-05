@@ -57,6 +57,7 @@ describe("admin reports command center", () => {
     expect(source).toContain('data-testid="admin-report-priority-impact"');
     expect(source).toContain('data-testid="admin-report-priority-share-gate-panel"');
     expect(source).toContain('data-testid="admin-report-priority-share-gate"');
+    expect(source).toContain('data-testid="admin-report-priority-leadership-next-action"');
     expect(source).toContain('data-testid="admin-report-priority-operations"');
     expect(source).toContain('data-testid="admin-report-priority-age"');
     expect(source).toContain('data-testid="admin-report-priority-next-step"');
@@ -79,6 +80,7 @@ describe("admin reports command center", () => {
     expect(source).toContain('data-testid="admin-report-campaign-readiness-status"');
     expect(source).toContain('data-testid="admin-report-campaign-readiness-primary"');
     expect(source).toContain('data-testid="admin-report-campaign-readiness-share-gate"');
+    expect(source).toContain('data-testid="admin-report-campaign-readiness-next-action"');
     expect(source).toContain('data-testid="admin-report-campaign-readiness-clearance"');
     expect(source.indexOf('data-testid="admin-report-campaign-readiness"')).toBeLessThan(
       source.indexOf('data-testid="admin-report-exception-row"'),
@@ -91,6 +93,7 @@ describe("admin reports command center", () => {
     expect(source).toContain('data-testid="admin-report-exception-decision-grid"');
     expect(source).toContain('data-testid="admin-report-exception-impact"');
     expect(source).toContain('data-testid="admin-report-exception-share-gate"');
+    expect(source).toContain('data-testid="admin-report-exception-leadership-next-action"');
     expect(source).toContain('data-testid="admin-report-exception-operations-grid"');
     expect(source).toContain('data-testid="admin-report-exception-age"');
     expect(source).toContain('data-testid="admin-report-exception-next-step"');
@@ -102,6 +105,7 @@ describe("admin reports command center", () => {
     expect(modelSource).toContain("function ownerForKind");
     expect(modelSource).toContain("function clearanceForKind");
     expect(modelSource).toContain("function shareGateForKind");
+    expect(modelSource).toContain("function leadershipNextActionForKind");
     expect(modelSource).toContain("Brand owner");
     expect(modelSource).toContain("PopsDrops ops");
     expect(source).toContain("Escalation owner");
@@ -110,6 +114,7 @@ describe("admin reports command center", () => {
     expect(modelSource).toContain("waitingLabel");
     expect(modelSource).toContain("formatReportCommandWaitingAge");
     expect(source).toContain("Leadership share gate");
+    expect(source).toContain("Leadership next action");
     expect(modelSource).toContain("Leadership hold until brand verifies submitted proof.");
     expect(modelSource).toContain("Leadership hold until the submitted task has evidence attached.");
     expect(modelSource).toContain("Leadership hold until replacement artifact is generated.");
@@ -119,6 +124,10 @@ describe("admin reports command center", () => {
     expect(modelSource).toContain("Blocks report confidence until brand confirms proof.");
     expect(modelSource).toContain("Blocks report confidence because submitted metrics have no proof source.");
     expect(modelSource).toContain("Open the campaign and push brand proof review.");
+    expect(modelSource).toContain("Review 1 submitted proof read before sharing.");
+    expect(modelSource).toContain("Ask creator to upload 1 missing proof read.");
+    expect(modelSource).toContain("Resolve 1 correction request before leadership sharing.");
+    expect(modelSource).toContain("Regenerate the failed report export before leadership sharing.");
     expect(modelSource).toContain("Open the campaign and ask the creator to attach proof before review.");
     expect(modelSource).toContain("Brand reviews or requests correction on submitted proof.");
     expect(modelSource).toContain("Creator attaches evidence or admin returns the report task with an audit note.");

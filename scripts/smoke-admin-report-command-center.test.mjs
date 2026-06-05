@@ -32,6 +32,7 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("admin-report-priority-impact");
     expect(source).toContain("admin-report-priority-share-gate-panel");
     expect(source).toContain("admin-report-priority-share-gate");
+    expect(source).toContain("admin-report-priority-leadership-next-action");
     expect(source).toContain("admin-report-priority-operations");
     expect(source).toContain("admin-report-priority-age");
     expect(source).toContain("admin-report-priority-next-step");
@@ -45,6 +46,7 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("admin-report-campaign-readiness-status");
     expect(source).toContain("admin-report-campaign-readiness-primary");
     expect(source).toContain("admin-report-campaign-readiness-share-gate");
+    expect(source).toContain("admin-report-campaign-readiness-next-action");
     expect(source).toContain("admin-report-campaign-readiness-clearance");
     expect(source).toContain("Campaign leadership readiness");
     expect(source).toContain("Leadership hold");
@@ -53,6 +55,7 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("admin-report-exception-decision-grid");
     expect(source).toContain("admin-report-exception-impact");
     expect(source).toContain("admin-report-exception-share-gate");
+    expect(source).toContain("admin-report-exception-leadership-next-action");
     expect(source).toContain("admin-report-exception-operations-grid");
     expect(source).toContain("admin-report-exception-age");
     expect(source).toContain("admin-report-exception-next-step");
@@ -105,6 +108,7 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("Export failure");
     expect(source).toContain("Leadership impact");
     expect(source).toContain("Leadership share gate");
+    expect(source).toContain("Leadership next action");
     expect(source).toContain("Next move");
     expect(source).toContain("Escalation owner");
     expect(source).toContain("Clears when");
@@ -121,6 +125,10 @@ describe("admin report command center smoke", () => {
     expect(source).toContain("Blocks report confidence until brand confirms proof.");
     expect(source).toContain("Blocks report confidence because submitted metrics have no proof source.");
     expect(source).toContain("Open the campaign and push brand proof review.");
+    expect(source).toContain("Review 1 submitted proof read before sharing.");
+    expect(source).toContain("Ask creator to upload 1 missing proof read.");
+    expect(source).toContain("Resolve 1 correction request before leadership sharing.");
+    expect(source).toContain("Regenerate the failed report export before leadership sharing.");
     expect(source).toContain("Open the campaign and ask the creator to attach proof before review.");
     expect(source).toContain("Brand reviews or requests correction on submitted proof.");
     expect(source).toContain("Creator attaches evidence or admin returns the report task with an audit note.");
