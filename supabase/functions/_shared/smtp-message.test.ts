@@ -45,6 +45,12 @@ describe("SMTP MIME message builder", () => {
     ).toBe("Visible");
   });
 
+  it("strips script blocks with malformed closing tag attributes", () => {
+    expect(
+      htmlToPlainText("<p>Before</p><script>alert('x')</script\t\n bar><p>After</p>"),
+    ).toBe("Before\n\nAfter");
+  });
+
   it("decodes supported entities once when deriving plain text", () => {
     expect(
       htmlToPlainText("<p>One&nbsp;&amp;&nbsp;two &amp;lt;not a tag&amp;gt;</p>"),
