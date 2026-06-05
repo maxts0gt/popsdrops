@@ -20,7 +20,7 @@ function detectLocale(request: NextRequest): string {
     return cookieLocale;
   }
 
-  // 2. Accept-Language header — accept ANY valid locale, Gemini handles the rest
+  // 2. Accept-Language header - accept ANY valid locale, Gemini handles the rest
   const acceptLang = request.headers.get("accept-language");
   if (acceptLang) {
     const preferred = acceptLang
@@ -44,6 +44,7 @@ function detectLocale(request: NextRequest): string {
 
 export async function updateSession(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
+  const pendingAccessPath = "/pending-approval";
   const detectedLocale = detectLocale(request);
   const routeLocale = getMarketingLocaleFromPathname(pathname);
   const publicRouting = resolvePublicLocaleRouting(
@@ -121,7 +122,7 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: use getUser(), not getSession() — getUser() validates the JWT
+  // IMPORTANT: use getUser(), not getSession() - getUser() validates the JWT
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -141,11 +142,11 @@ export async function updateSession(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  // No profile yet → onboarding
+  // No profile yet -> closed launch pending access
   if (!profile) {
-    if (!pathname.startsWith("/onboarding")) {
+    if (pathname !== pendingAccessPath) {
       const url = request.nextUrl.clone();
-      url.pathname = "/onboarding";
+      url.pathname = pendingAccessPath;
       return NextResponse.redirect(url);
     }
     return supabaseResponse;
@@ -153,12 +154,9 @@ export async function updateSession(request: NextRequest) {
 
   // Pending approval
   if (profile.status === "pending") {
-    if (
-      pathname !== "/pending-approval" &&
-      !pathname.startsWith("/onboarding")
-    ) {
+    if (pathname !== pendingAccessPath) {
       const url = request.nextUrl.clone();
-      url.pathname = "/pending-approval";
+      url.pathname = pendingAccessPath;
       return NextResponse.redirect(url);
     }
     return supabaseResponse;
@@ -174,6 +172,32 @@ export async function updateSession(request: NextRequest) {
     return supabaseResponse;
   }
 
+  if (profile.status === "suspended") {
+    if (pathname !== "/account-deleted") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/account-deleted";
+      return NextResponse.redirect(url);
+    }
+    return supabaseResponse;
+  }
+
+  const isAdminBrandReportPath =
+    /^\/b\/campaigns\/[^/]+\/report(?:\/|$)/.test(pathname);
+
+  if (
+    profile.status === "approved" &&
+    (pathname.startsWith("/onboarding") || pathname === pendingAccessPath)
+  ) {
+    const url = request.nextUrl.clone();
+    url.pathname =
+      profile.role === "creator"
+        ? "/i/home"
+        : profile.role === "brand"
+          ? "/b/home"
+          : "/admin";
+    return NextResponse.redirect(url);
+  }
+
   // Role-based access control
   if (pathname.startsWith("/i/") && profile.role !== "creator") {
     const url = request.nextUrl.clone();
@@ -182,6 +206,10 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (pathname.startsWith("/b/") && profile.role !== "brand") {
+    if (profile.role === "admin" && isAdminBrandReportPath) {
+      return supabaseResponse;
+    }
+
     const url = request.nextUrl.clone();
     url.pathname = profile.role === "creator" ? "/i/home" : "/admin";
     return NextResponse.redirect(url);

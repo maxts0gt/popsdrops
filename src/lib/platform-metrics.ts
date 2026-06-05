@@ -1,26 +1,12 @@
-import type { Platform } from "@/lib/constants";
 import {
   getReportingMetricTemplate,
   type ReportingMetricDefinition,
-} from "@/lib/reporting/platform-templates";
+  type ReportingPlatform,
+} from "./reporting/platform-templates";
 
-export type MetricFieldType = "integer" | "decimal" | "percentage";
+export type MetricFieldType = "integer" | "decimal" | "percentage" | "text";
 
-export type MetricKey =
-  | "views"
-  | "reach"
-  | "impressions"
-  | "likes"
-  | "comments"
-  | "shares"
-  | "saves"
-  | "sends"
-  | "screenshots"
-  | "replies"
-  | "clicks"
-  | "completion_rate"
-  | "avg_watch_time_seconds"
-  | "subscriber_gains";
+export type MetricKey = string;
 
 export interface MetricField {
   key: MetricKey;
@@ -30,35 +16,22 @@ export interface MetricField {
   type: MetricFieldType;
 }
 
-const LEGACY_KEY_MAP: Record<string, MetricKey | null> = {
-  favorites: "saves",
-  avg_view_duration_seconds: "avg_watch_time_seconds",
-  watch_time_minutes: null,
-  impressions_click_through_rate: "clicks",
-  subscribers_gained: "subscriber_gains",
-  reactions: "likes",
-  viewers: "reach",
-  swipe_ups: "clicks",
-  avg_view_time_seconds: "avg_watch_time_seconds",
-  total_view_time_seconds: null,
-  profile_visits: "reach",
-  link_clicks: "clicks",
-};
-
-function legacyField(definition: ReportingMetricDefinition): MetricField | null {
-  const mapped = LEGACY_KEY_MAP[definition.metricKey] ?? definition.metricKey;
-  if (!mapped) return null;
-
+function legacyField(
+  definition: ReportingMetricDefinition,
+  required = definition.isDefault,
+): MetricField | null {
   return {
-    key: mapped as MetricKey,
+    key: definition.metricKey,
     label: definition.label,
     description:
       definition.evidenceScope === "native_insights"
         ? `${definition.label} from native platform insights`
         : `${definition.label} for the published content`,
-    required: definition.isDefault,
+    required,
     type:
-      definition.fieldType === "percentage"
+      definition.fieldType === "text"
+        ? "text"
+        : definition.fieldType === "percentage"
         ? "percentage"
         : definition.fieldType === "integer"
           ? "integer"
@@ -76,21 +49,61 @@ function uniqueFields(fields: Array<MetricField | null>): MetricField[] {
   });
 }
 
-export const PLATFORM_METRICS: Record<Platform, MetricField[]> = {
-  tiktok: uniqueFields(getReportingMetricTemplate("tiktok").map(legacyField)),
+export const PLATFORM_METRICS: Record<ReportingPlatform, MetricField[]> = {
+  tiktok: uniqueFields(
+    getReportingMetricTemplate("tiktok").map((definition) =>
+      legacyField(definition),
+    ),
+  ),
   instagram: uniqueFields(
-    getReportingMetricTemplate("instagram").map(legacyField),
+    getReportingMetricTemplate("instagram").map((definition) =>
+      legacyField(definition),
+    ),
   ),
   snapchat: uniqueFields(
-    getReportingMetricTemplate("snapchat").map(legacyField),
+    getReportingMetricTemplate("snapchat").map((definition) =>
+      legacyField(definition),
+    ),
   ),
-  youtube: uniqueFields(getReportingMetricTemplate("youtube").map(legacyField)),
+  youtube: uniqueFields(
+    getReportingMetricTemplate("youtube").map((definition) =>
+      legacyField(definition),
+    ),
+  ),
   facebook: uniqueFields(
-    getReportingMetricTemplate("facebook").map(legacyField),
+    getReportingMetricTemplate("facebook").map((definition) =>
+      legacyField(definition),
+    ),
+  ),
+  x: uniqueFields(
+    getReportingMetricTemplate("x").map((definition) =>
+      legacyField(definition),
+    ),
+  ),
+  generic: uniqueFields(
+    getReportingMetricTemplate("generic").map((definition) =>
+      legacyField(definition),
+    ),
   ),
 };
 
-export const PLATFORM_METRIC_NOTES: Record<Platform, string> = {
+export function getPlatformMetricFields(
+  platform: ReportingPlatform,
+  requiredMetricKeys?: string[],
+): MetricField[] {
+  if (!requiredMetricKeys?.length) return PLATFORM_METRICS[platform];
+
+  const requiredKeySet = new Set(requiredMetricKeys);
+  const fields = uniqueFields(
+    getReportingMetricTemplate(platform)
+      .filter((definition) => requiredKeySet.has(definition.metricKey))
+      .map((definition) => legacyField(definition, true)),
+  );
+
+  return fields.length > 0 ? fields : PLATFORM_METRICS[platform];
+}
+
+export const PLATFORM_METRIC_NOTES: Record<ReportingPlatform, string> = {
   tiktok:
     "TikTok reporting can include public engagement plus native analytics such as watch time and completion.",
   instagram:
@@ -101,4 +114,8 @@ export const PLATFORM_METRIC_NOTES: Record<Platform, string> = {
     "Snapchat reporting often depends on Public Profile analytics screenshots for private engagement signals.",
   facebook:
     "Facebook reporting may require Page or professional dashboard insights for reach, impressions, and clicks.",
+  x:
+    "X proof can include public post metrics and native analytics screenshots for impressions, replies, reposts, and bookmarks.",
+  generic:
+    "Generic proof is a brand-defined source such as a partner dashboard, affiliate report, or retail analytics export.",
 };

@@ -22,6 +22,17 @@ export type CampaignStatus =
 
 export type CampaignModeType = 'private' | 'sourced';
 
+export type CampaignRecruitmentVisibility =
+  | 'private_invite'
+  | 'shortlist_invite'
+  | 'open_applications';
+
+export type CampaignResponsibilityKind =
+  | 'owner'
+  | 'approvals'
+  | 'reporting'
+  | 'billing';
+
 export type ApplicationStatus =
   | 'pending'
   | 'accepted'
@@ -46,7 +57,12 @@ export type PlatformType =
 export type NotificationType =
   | 'account_approved'
   | 'account_rejected'
+  | 'account_suspended'
+  | 'account_restored'
+  | 'account_review_reopened'
   | 'campaign_match'
+  | 'campaign_paused'
+  | 'campaign_cancelled'
   | 'application_received'
   | 'application_accepted'
   | 'application_rejected'
@@ -54,7 +70,7 @@ export type NotificationType =
   | 'content_submitted'
   | 'content_approved'
   | 'revision_requested'
-  | 'new_message'
+  | 'campaign_update'
   | 'campaign_completed'
   | 'review_received'
   | 'content_due_soon'
@@ -62,13 +78,58 @@ export type NotificationType =
   | 'payment_received'
   | 'tier_upgrade'
   | 'waitlist_approved'
-  | 'waitlist_rejected';
+  | 'waitlist_rejected'
+  | 'report_correction_requested'
+  | 'report_ready_for_review'
+  | 'report_correction_resubmitted'
+  | 'report_follow_up_requested'
+  | 'data_deletion_scheduled'
+  | 'data_deletion_completed'
+  | 'data_export_ready'
+  | 'privacy_request_denied';
 
 export type WaitlistType = 'brand' | 'creator';
 
 export type WaitlistStatus = 'pending' | 'approved' | 'rejected';
 
-export type PaymentStatusType = 'pending' | 'invoiced' | 'paid' | 'overdue';
+export type BrandTeamRole = 'owner' | 'admin' | 'manager' | 'viewer';
+
+export type BrandTeamInvitationStatus =
+  | 'pending'
+  | 'accepted'
+  | 'revoked'
+  | 'expired';
+
+export type LegalConsentSource =
+  | 'login'
+  | 'request_invite'
+  | 'settings'
+  | 'policy_update';
+
+export type LegalConsentType =
+  | 'terms_privacy_retention'
+  | 'privacy_request';
+
+export type DataRightsRequestType = 'export' | 'deletion' | 'correction';
+
+export type DataRightsRequestStatus =
+  | 'pending'
+  | 'scheduled'
+  | 'reviewing'
+  | 'processing'
+  | 'completed'
+  | 'failed'
+  | 'rejected'
+  | 'cancelled';
+
+export type PaymentStatusType =
+  | 'pending'
+  | 'invoiced'
+  | 'paid'
+  | 'overdue'
+  | 'failed'
+  | 'refunded'
+  | 'disputed';
 
 export type CreatorTier = 'new' | 'rising' | 'established' | 'top';
 
@@ -76,13 +137,17 @@ export type MeasurementType = 'initial_48h' | 'final_7d' | 'extended_30d';
 
 export type NotificationPriority = 'immediate' | 'batched';
 
+export type NotificationQueueStatus =
+  | 'pending'
+  | 'sent'
+  | 'failed'
+  | 'unsupported'
+  | 'skipped'
+  | 'archived';
+
 export type ComplianceSeverity = 'required' | 'advisory';
 
 export type FunctionExecutionStatus = 'success' | 'error';
-
-export type SocialConnectionStatus = 'active' | 'expired' | 'revoked' | 'error';
-
-export type MetricDataSource = 'manual' | 'api' | 'api_partial';
 
 export type CampaignBriefBlockType =
   | 'product_notes'
@@ -105,7 +170,7 @@ export type CampaignAssetType =
   | 'document'
   | 'other';
 
-export type CampaignAssetVisibility = 'member' | 'brand';
+export type CampaignAssetVisibility = 'public' | 'member' | 'brand';
 
 export type CampaignAssetStatus = 'uploading' | 'ready' | 'archived';
 
@@ -124,6 +189,20 @@ export type CampaignReportTaskStatus =
   | 'needs_revision'
   | 'missed'
   | 'excused';
+
+export type CampaignAgreementStatus = 'draft' | 'published' | 'archived';
+
+export type CampaignAgreementGateMode =
+  | 'rules_acknowledgement'
+  | 'typed_signature'
+  | 'brand_agreement'
+  | 'rules_and_brand_agreement';
+
+export type CampaignAgreementMemberStatus =
+  | 'not_required'
+  | 'pending'
+  | 'signed'
+  | 'needs_reacceptance';
 
 export type PerformanceVerificationStatus =
   | 'submitted'
@@ -200,14 +279,6 @@ export interface SocialAccount {
 /** Rate card: platform -> content_type -> rate in creator's rate_currency */
 export type RateCard = Record<string, Record<string, number>>;
 
-/** Audience demographics stored on social_connections */
-export interface AudienceDemographicsData {
-  ageRanges?: Record<string, number>;
-  genderSplit?: Record<string, number>;
-  topCountries?: Record<string, number>;
-  topCities?: Record<string, number>;
-}
-
 /** Translated brief content keyed by language code (ar, fr, ru, kk, uz, tr) */
 export type BriefTranslation = Record<
   string,
@@ -266,6 +337,123 @@ export interface Database {
           onboarding_completed?: boolean;
           approved_at?: string | null;
           approved_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      legal_consents: {
+        Row: {
+          id: string;
+          profile_id: string | null;
+          email: string | null;
+          consent_type: LegalConsentType;
+          source: LegalConsentSource;
+          terms_version: string;
+          privacy_version: string;
+          retention_version: string;
+          locale: string;
+          ip_hash: string | null;
+          user_agent_hash: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id?: string | null;
+          email?: string | null;
+          consent_type?: LegalConsentType;
+          source: LegalConsentSource;
+          terms_version: string;
+          privacy_version: string;
+          retention_version: string;
+          locale?: string;
+          ip_hash?: string | null;
+          user_agent_hash?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string | null;
+          email?: string | null;
+          consent_type?: LegalConsentType;
+          source?: LegalConsentSource;
+          terms_version?: string;
+          privacy_version?: string;
+          retention_version?: string;
+          locale?: string;
+          ip_hash?: string | null;
+          user_agent_hash?: string | null;
+          created_at?: string;
+        };
+      };
+
+      data_rights_requests: {
+        Row: {
+          id: string;
+          profile_id: string;
+          email: string;
+          request_type: DataRightsRequestType;
+          status: DataRightsRequestStatus;
+          details: string | null;
+          retention_note: string | null;
+          scheduled_for: string | null;
+          verification_due_at: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          processed_at: string | null;
+          processing_error: string | null;
+          completed_at: string | null;
+          export_storage_bucket: string;
+          export_storage_path: string | null;
+          export_file_name: string | null;
+          export_mime_type: string | null;
+          export_expires_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          profile_id: string;
+          email: string;
+          request_type: DataRightsRequestType;
+          status?: DataRightsRequestStatus;
+          details?: string | null;
+          retention_note?: string | null;
+          scheduled_for?: string | null;
+          verification_due_at?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          processed_at?: string | null;
+          processing_error?: string | null;
+          completed_at?: string | null;
+          export_storage_bucket?: string;
+          export_storage_path?: string | null;
+          export_file_name?: string | null;
+          export_mime_type?: string | null;
+          export_expires_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string;
+          email?: string;
+          request_type?: DataRightsRequestType;
+          status?: DataRightsRequestStatus;
+          details?: string | null;
+          retention_note?: string | null;
+          scheduled_for?: string | null;
+          verification_due_at?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          processed_at?: string | null;
+          processing_error?: string | null;
+          completed_at?: string | null;
+          export_storage_bucket?: string;
+          export_storage_path?: string | null;
+          export_file_name?: string | null;
+          export_mime_type?: string | null;
+          export_expires_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -430,6 +618,81 @@ export interface Database {
         };
       };
 
+      brand_team_members: {
+        Row: {
+          id: string;
+          brand_id: string;
+          user_id: string;
+          role: BrandTeamRole;
+          invited_by: string | null;
+          accepted_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          brand_id: string;
+          user_id: string;
+          role?: BrandTeamRole;
+          invited_by?: string | null;
+          accepted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          brand_id?: string;
+          user_id?: string;
+          role?: BrandTeamRole;
+          invited_by?: string | null;
+          accepted_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      brand_team_invitations: {
+        Row: {
+          id: string;
+          brand_id: string;
+          email: string;
+          role: BrandTeamRole;
+          status: BrandTeamInvitationStatus;
+          invited_by: string;
+          invited_at: string;
+          expires_at: string;
+          revoked_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          brand_id: string;
+          email: string;
+          role?: BrandTeamRole;
+          status?: BrandTeamInvitationStatus;
+          invited_by: string;
+          invited_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          brand_id?: string;
+          email?: string;
+          role?: BrandTeamRole;
+          status?: BrandTeamInvitationStatus;
+          invited_by?: string;
+          invited_at?: string;
+          expires_at?: string;
+          revoked_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
       playbooks: {
         Row: {
           id: string;
@@ -469,6 +732,7 @@ export interface Database {
           brand_id: string;
           playbook_id: string | null;
           campaign_mode: CampaignModeType;
+          recruitment_visibility: CampaignRecruitmentVisibility;
           title: string;
           brief_description: string | null;
           brief_requirements: string | null;
@@ -486,6 +750,16 @@ export interface Database {
           service_fee_cents: number;
           service_fee_currency: string;
           service_fee_status: PaymentStatusType;
+          service_fee_checkout_session_id: string | null;
+          service_fee_payment_intent_id: string | null;
+          service_fee_charge_id: string | null;
+          service_fee_paid_at: string | null;
+          service_fee_failed_at: string | null;
+          service_fee_refunded_at: string | null;
+          service_fee_disputed_at: string | null;
+          service_fee_last_event_id: string | null;
+          service_fee_last_event_type: string | null;
+          service_fee_last_event_at: string | null;
           service_package_snapshot: Record<string, unknown>;
           status: CampaignStatus;
           application_deadline: string | null;
@@ -512,6 +786,7 @@ export interface Database {
           brand_id: string;
           playbook_id?: string | null;
           campaign_mode?: CampaignModeType;
+          recruitment_visibility?: CampaignRecruitmentVisibility;
           title: string;
           brief_description?: string | null;
           brief_requirements?: string | null;
@@ -529,6 +804,16 @@ export interface Database {
           service_fee_cents?: number;
           service_fee_currency?: string;
           service_fee_status?: PaymentStatusType;
+          service_fee_checkout_session_id?: string | null;
+          service_fee_payment_intent_id?: string | null;
+          service_fee_charge_id?: string | null;
+          service_fee_paid_at?: string | null;
+          service_fee_failed_at?: string | null;
+          service_fee_refunded_at?: string | null;
+          service_fee_disputed_at?: string | null;
+          service_fee_last_event_id?: string | null;
+          service_fee_last_event_type?: string | null;
+          service_fee_last_event_at?: string | null;
           service_package_snapshot?: Record<string, unknown>;
           status?: CampaignStatus;
           application_deadline?: string | null;
@@ -555,6 +840,7 @@ export interface Database {
           brand_id?: string;
           playbook_id?: string | null;
           campaign_mode?: CampaignModeType;
+          recruitment_visibility?: CampaignRecruitmentVisibility;
           title?: string;
           brief_description?: string | null;
           brief_requirements?: string | null;
@@ -572,6 +858,16 @@ export interface Database {
           service_fee_cents?: number;
           service_fee_currency?: string;
           service_fee_status?: PaymentStatusType;
+          service_fee_checkout_session_id?: string | null;
+          service_fee_payment_intent_id?: string | null;
+          service_fee_charge_id?: string | null;
+          service_fee_paid_at?: string | null;
+          service_fee_failed_at?: string | null;
+          service_fee_refunded_at?: string | null;
+          service_fee_disputed_at?: string | null;
+          service_fee_last_event_id?: string | null;
+          service_fee_last_event_type?: string | null;
+          service_fee_last_event_at?: string | null;
           service_package_snapshot?: Record<string, unknown>;
           status?: CampaignStatus;
           application_deadline?: string | null;
@@ -592,6 +888,159 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           completed_at?: string | null;
+        };
+      };
+
+      campaign_payment_events: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          provider: string;
+          event_id: string;
+          event_type: string;
+          service_fee_status: PaymentStatusType | null;
+          checkout_session_id: string | null;
+          payment_intent_id: string | null;
+          charge_id: string | null;
+          amount_cents: number | null;
+          currency: string | null;
+          event_summary: Record<string, unknown>;
+          received_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          provider?: string;
+          event_id: string;
+          event_type: string;
+          service_fee_status?: PaymentStatusType | null;
+          checkout_session_id?: string | null;
+          payment_intent_id?: string | null;
+          charge_id?: string | null;
+          amount_cents?: number | null;
+          currency?: string | null;
+          event_summary?: Record<string, unknown>;
+          received_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          provider?: string;
+          event_id?: string;
+          event_type?: string;
+          service_fee_status?: PaymentStatusType | null;
+          checkout_session_id?: string | null;
+          payment_intent_id?: string | null;
+          charge_id?: string | null;
+          amount_cents?: number | null;
+          currency?: string | null;
+          event_summary?: Record<string, unknown>;
+          received_at?: string;
+        };
+      };
+
+      enterprise_concierge_requests: {
+        Row: {
+          id: string;
+          brand_id: string;
+          campaign_title: string;
+          campaign_mode: CampaignModeType;
+          requested_creator_count: number;
+          market_count: number;
+          markets: string[];
+          platforms: string[];
+          creator_budget_cents: number;
+          product_value_cents: number;
+          fulfillment_budget_cents: number;
+          service_estimate: Record<string, unknown>;
+          note: string | null;
+          status: string;
+          quoted_service_fee_cents: number | null;
+          quoted_service_fee_currency: string;
+          quote_note: string | null;
+          quoted_at: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          brand_id: string;
+          campaign_title: string;
+          campaign_mode?: CampaignModeType;
+          requested_creator_count: number;
+          market_count: number;
+          markets?: string[];
+          platforms?: string[];
+          creator_budget_cents?: number;
+          product_value_cents?: number;
+          fulfillment_budget_cents?: number;
+          service_estimate: Record<string, unknown>;
+          note?: string | null;
+          status?: string;
+          quoted_service_fee_cents?: number | null;
+          quoted_service_fee_currency?: string;
+          quote_note?: string | null;
+          quoted_at?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          brand_id?: string;
+          campaign_title?: string;
+          campaign_mode?: CampaignModeType;
+          requested_creator_count?: number;
+          market_count?: number;
+          markets?: string[];
+          platforms?: string[];
+          creator_budget_cents?: number;
+          product_value_cents?: number;
+          fulfillment_budget_cents?: number;
+          service_estimate?: Record<string, unknown>;
+          note?: string | null;
+          status?: string;
+          quoted_service_fee_cents?: number | null;
+          quoted_service_fee_currency?: string;
+          quote_note?: string | null;
+          quoted_at?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_responsibility_assignments: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          brand_team_member_id: string;
+          responsibility: CampaignResponsibilityKind;
+          assigned_by: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          brand_team_member_id: string;
+          responsibility: CampaignResponsibilityKind;
+          assigned_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          brand_team_member_id?: string;
+          responsibility?: CampaignResponsibilityKind;
+          assigned_by?: string | null;
+          created_at?: string;
+          updated_at?: string;
         };
       };
 
@@ -691,6 +1140,177 @@ export interface Database {
           payment_status?: PaymentStatusType;
           payment_confirmed_at?: string | null;
           joined_at?: string;
+        };
+      };
+
+      campaign_creator_invites: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          contact_type: 'email' | 'handle';
+          contact_value: string;
+          normalized_contact: string;
+          status: 'manual' | 'queued' | 'sent' | 'failed';
+          queued_email_id: string | null;
+          invited_by: string;
+          invited_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          contact_type: 'email' | 'handle';
+          contact_value: string;
+          normalized_contact: string;
+          status?: 'manual' | 'queued' | 'sent' | 'failed';
+          queued_email_id?: string | null;
+          invited_by: string;
+          invited_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          contact_type?: 'email' | 'handle';
+          contact_value?: string;
+          normalized_contact?: string;
+          status?: 'manual' | 'queued' | 'sent' | 'failed';
+          queued_email_id?: string | null;
+          invited_by?: string;
+          invited_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_agreements: {
+        Row: {
+          id: string;
+          campaign_id: string;
+          created_by: string;
+          version: number;
+          status: CampaignAgreementStatus;
+          gate_mode: CampaignAgreementGateMode;
+          title: string;
+          rules: Record<string, unknown>;
+          agreement_body: string | null;
+          preview_enabled: boolean;
+          preview_summary: Record<string, unknown>;
+          file_bucket: 'campaign-agreements' | null;
+          file_path: string | null;
+          file_name: string | null;
+          file_mime_type: 'application/pdf' | null;
+          file_size_bytes: number | null;
+          file_sha256: string | null;
+          content_hash: string;
+          requires_typed_name: boolean;
+          requires_reacceptance: boolean;
+          published_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          campaign_id: string;
+          created_by: string;
+          version: number;
+          status?: CampaignAgreementStatus;
+          gate_mode: CampaignAgreementGateMode;
+          title: string;
+          rules?: Record<string, unknown>;
+          agreement_body?: string | null;
+          preview_enabled?: boolean;
+          preview_summary?: Record<string, unknown>;
+          file_bucket?: 'campaign-agreements' | null;
+          file_path?: string | null;
+          file_name?: string | null;
+          file_mime_type?: 'application/pdf' | null;
+          file_size_bytes?: number | null;
+          file_sha256?: string | null;
+          content_hash: string;
+          requires_typed_name?: boolean;
+          requires_reacceptance?: boolean;
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          campaign_id?: string;
+          created_by?: string;
+          version?: number;
+          status?: CampaignAgreementStatus;
+          gate_mode?: CampaignAgreementGateMode;
+          title?: string;
+          rules?: Record<string, unknown>;
+          agreement_body?: string | null;
+          preview_enabled?: boolean;
+          preview_summary?: Record<string, unknown>;
+          file_bucket?: 'campaign-agreements' | null;
+          file_path?: string | null;
+          file_name?: string | null;
+          file_mime_type?: 'application/pdf' | null;
+          file_size_bytes?: number | null;
+          file_sha256?: string | null;
+          content_hash?: string;
+          requires_typed_name?: boolean;
+          requires_reacceptance?: boolean;
+          published_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
+
+      campaign_agreement_acceptances: {
+        Row: {
+          id: string;
+          agreement_id: string;
+          campaign_id: string;
+          campaign_member_id: string;
+          application_id: string | null;
+          creator_id: string;
+          typed_name: string;
+          accepted_rules: Record<string, unknown>;
+          accepted_content_hash: string;
+          accepted_version: number;
+          ip_hash: string | null;
+          user_agent: string | null;
+          accepted_at: string;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          agreement_id: string;
+          campaign_id: string;
+          campaign_member_id: string;
+          application_id?: string | null;
+          creator_id: string;
+          typed_name: string;
+          accepted_rules?: Record<string, unknown>;
+          accepted_content_hash: string;
+          accepted_version: number;
+          ip_hash?: string | null;
+          user_agent?: string | null;
+          accepted_at?: string;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          agreement_id?: string;
+          campaign_id?: string;
+          campaign_member_id?: string;
+          application_id?: string | null;
+          creator_id?: string;
+          typed_name?: string;
+          accepted_rules?: Record<string, unknown>;
+          accepted_content_hash?: string;
+          accepted_version?: number;
+          ip_hash?: string | null;
+          user_agent?: string | null;
+          accepted_at?: string;
+          revoked_at?: string | null;
         };
       };
 
@@ -881,6 +1501,11 @@ export interface Database {
           cadence: CampaignReportingCadence;
           required_evidence: string[];
           required_metrics: Record<string, unknown>;
+          report_template_id: string | null;
+          report_preset_id: string;
+          report_chart_mode_id: string;
+          report_block_ids: string[];
+          report_presentation: Record<string, unknown>;
           grace_period_hours: number;
           starts_at: string | null;
           ends_at: string | null;
@@ -894,6 +1519,11 @@ export interface Database {
           cadence?: CampaignReportingCadence;
           required_evidence?: string[];
           required_metrics?: Record<string, unknown>;
+          report_template_id?: string | null;
+          report_preset_id?: string;
+          report_chart_mode_id?: string;
+          report_block_ids?: string[];
+          report_presentation?: Record<string, unknown>;
           grace_period_hours?: number;
           starts_at?: string | null;
           ends_at?: string | null;
@@ -907,6 +1537,11 @@ export interface Database {
           cadence?: CampaignReportingCadence;
           required_evidence?: string[];
           required_metrics?: Record<string, unknown>;
+          report_template_id?: string | null;
+          report_preset_id?: string;
+          report_chart_mode_id?: string;
+          report_block_ids?: string[];
+          report_presentation?: Record<string, unknown>;
           grace_period_hours?: number;
           starts_at?: string | null;
           ends_at?: string | null;
@@ -1032,7 +1667,6 @@ export interface Database {
           reviewed_at: string | null;
           published_at: string | null;
           published_url: string | null;
-          platform_post_id: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1097,7 +1731,6 @@ export interface Database {
           avg_watch_time_seconds: number | null;
           subscriber_gains: number | null;
           screenshot_url: string | null;
-          data_source: MetricDataSource;
           report_task_id: string | null;
           verification_status: PerformanceVerificationStatus;
           verified_at: string | null;
@@ -1125,7 +1758,6 @@ export interface Database {
           avg_watch_time_seconds?: number | null;
           subscriber_gains?: number | null;
           screenshot_url?: string | null;
-          data_source?: MetricDataSource;
           report_task_id?: string | null;
           verification_status?: PerformanceVerificationStatus;
           verified_at?: string | null;
@@ -1153,7 +1785,6 @@ export interface Database {
           avg_watch_time_seconds?: number | null;
           subscriber_gains?: number | null;
           screenshot_url?: string | null;
-          data_source?: MetricDataSource;
           report_task_id?: string | null;
           verification_status?: PerformanceVerificationStatus;
           verified_at?: string | null;
@@ -1231,6 +1862,8 @@ export interface Database {
           size_bytes: number;
           verification_status: PerformanceEvidenceVerificationStatus;
           review_note: string | null;
+          reviewed_by: string | null;
+          reviewed_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -1250,6 +1883,8 @@ export interface Database {
           size_bytes: number;
           verification_status?: PerformanceEvidenceVerificationStatus;
           review_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1269,6 +1904,8 @@ export interface Database {
           size_bytes?: number;
           verification_status?: PerformanceEvidenceVerificationStatus;
           review_note?: string | null;
+          reviewed_by?: string | null;
+          reviewed_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -1310,78 +1947,6 @@ export interface Database {
           confidence_summary?: Record<string, unknown>;
           status?: PerformanceAiExtractionStatus;
           created_at?: string;
-        };
-      };
-
-      social_connections: {
-        Row: {
-          id: string;
-          profile_id: string;
-          platform: PlatformType;
-          platform_user_id: string;
-          platform_username: string | null;
-          platform_display_name: string | null;
-          platform_avatar_url: string | null;
-          access_token_encrypted: string;
-          refresh_token_encrypted: string | null;
-          token_expires_at: string | null;
-          scopes: string[];
-          status: SocialConnectionStatus;
-          error_message: string | null;
-          last_refreshed_at: string | null;
-          refresh_failures: number;
-          followers_count: number | null;
-          followers_updated_at: string | null;
-          audience_demographics: AudienceDemographicsData | null;
-          audience_demographics_updated_at: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          profile_id: string;
-          platform: PlatformType;
-          platform_user_id: string;
-          platform_username?: string | null;
-          platform_display_name?: string | null;
-          platform_avatar_url?: string | null;
-          access_token_encrypted: string;
-          refresh_token_encrypted?: string | null;
-          token_expires_at?: string | null;
-          scopes?: string[];
-          status?: SocialConnectionStatus;
-          error_message?: string | null;
-          last_refreshed_at?: string | null;
-          refresh_failures?: number;
-          followers_count?: number | null;
-          followers_updated_at?: string | null;
-          audience_demographics?: AudienceDemographicsData | null;
-          audience_demographics_updated_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          profile_id?: string;
-          platform?: PlatformType;
-          platform_user_id?: string;
-          platform_username?: string | null;
-          platform_display_name?: string | null;
-          platform_avatar_url?: string | null;
-          access_token_encrypted?: string;
-          refresh_token_encrypted?: string | null;
-          token_expires_at?: string | null;
-          scopes?: string[];
-          status?: SocialConnectionStatus;
-          error_message?: string | null;
-          last_refreshed_at?: string | null;
-          refresh_failures?: number;
-          followers_count?: number | null;
-          followers_updated_at?: string | null;
-          audience_demographics?: AudienceDemographicsData | null;
-          audience_demographics_updated_at?: string | null;
-          created_at?: string;
-          updated_at?: string;
         };
       };
 
@@ -1480,7 +2045,13 @@ export interface Database {
           template: string;
           data: Record<string, unknown> | null;
           priority: NotificationPriority;
+          status: NotificationQueueStatus;
+          attempt_count: number;
+          last_error: string | null;
+          processed_reason: string | null;
+          delivered_at: string | null;
           processed_at: string | null;
+          updated_at: string;
           created_at: string;
         };
         Insert: {
@@ -1490,7 +2061,13 @@ export interface Database {
           template: string;
           data?: Record<string, unknown> | null;
           priority: NotificationPriority;
+          status?: NotificationQueueStatus;
+          attempt_count?: number;
+          last_error?: string | null;
+          processed_reason?: string | null;
+          delivered_at?: string | null;
           processed_at?: string | null;
+          updated_at?: string;
           created_at?: string;
         };
         Update: {
@@ -1500,8 +2077,41 @@ export interface Database {
           template?: string;
           data?: Record<string, unknown> | null;
           priority?: NotificationPriority;
+          status?: NotificationQueueStatus;
+          attempt_count?: number;
+          last_error?: string | null;
+          processed_reason?: string | null;
+          delivered_at?: string | null;
           processed_at?: string | null;
+          updated_at?: string;
           created_at?: string;
+        };
+      };
+
+      notification_email_preferences: {
+        Row: {
+          user_id: string;
+          email_messages: boolean;
+          email_campaign_activity: boolean;
+          email_reports: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          email_messages?: boolean;
+          email_campaign_activity?: boolean;
+          email_reports?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          user_id?: string;
+          email_messages?: boolean;
+          email_campaign_activity?: boolean;
+          email_reports?: boolean;
+          created_at?: string;
+          updated_at?: string;
         };
       };
 
@@ -1716,11 +2326,31 @@ export interface Database {
       };
     };
 
+    Views: {
+      campaign_member_agreement_status: {
+        Row: {
+          campaign_id: string;
+          campaign_member_id: string;
+          creator_id: string;
+          agreement_id: string | null;
+          agreement_version: number | null;
+          status: CampaignAgreementMemberStatus;
+          accepted_at: string | null;
+          typed_name: string | null;
+        };
+        Insert: never;
+        Update: never;
+      };
+    };
+
+    Functions: Record<string, never>;
+
     Enums: {
       user_role: UserRole;
       user_status: UserStatus;
       campaign_status: CampaignStatus;
       campaign_mode_type: CampaignModeType;
+      campaign_recruitment_visibility: CampaignRecruitmentVisibility;
       application_status: ApplicationStatus;
       submission_status: SubmissionStatus;
       platform_type: PlatformType;
@@ -1730,6 +2360,8 @@ export interface Database {
       measurement_type: MeasurementType;
       waitlist_type: WaitlistType;
       waitlist_status: WaitlistStatus;
+      brand_team_role: BrandTeamRole;
+      brand_team_invitation_status: BrandTeamInvitationStatus;
     };
   };
 }
@@ -1743,9 +2375,14 @@ export type CreatorProfile = Database['public']['Tables']['creator_profiles']['R
 export type BrandProfile = Database['public']['Tables']['brand_profiles']['Row'];
 export type Playbook = Database['public']['Tables']['playbooks']['Row'];
 export type Campaign = Database['public']['Tables']['campaigns']['Row'];
+export type EnterpriseConciergeRequest = Database['public']['Tables']['enterprise_concierge_requests']['Row'];
+export type CampaignResponsibilityAssignment = Database['public']['Tables']['campaign_responsibility_assignments']['Row'];
 export type CampaignDeliverable = Database['public']['Tables']['campaign_deliverables']['Row'];
 export type CampaignApplication = Database['public']['Tables']['campaign_applications']['Row'];
 export type CampaignMember = Database['public']['Tables']['campaign_members']['Row'];
+export type CampaignAgreement = Database['public']['Tables']['campaign_agreements']['Row'];
+export type CampaignAgreementAcceptance = Database['public']['Tables']['campaign_agreement_acceptances']['Row'];
+export type CampaignMemberAgreementStatus = Database['public']['Views']['campaign_member_agreement_status']['Row'];
 export type ContentSubmission = Database['public']['Tables']['content_submissions']['Row'];
 export type ContentPerformance = Database['public']['Tables']['content_performance']['Row'];
 export type CampaignMessage = Database['public']['Tables']['campaign_messages']['Row'];
@@ -1767,9 +2404,13 @@ export type CreatorProfileInsert = Database['public']['Tables']['creator_profile
 export type BrandProfileInsert = Database['public']['Tables']['brand_profiles']['Insert'];
 export type PlaybookInsert = Database['public']['Tables']['playbooks']['Insert'];
 export type CampaignInsert = Database['public']['Tables']['campaigns']['Insert'];
+export type EnterpriseConciergeRequestInsert = Database['public']['Tables']['enterprise_concierge_requests']['Insert'];
+export type CampaignResponsibilityAssignmentInsert = Database['public']['Tables']['campaign_responsibility_assignments']['Insert'];
 export type CampaignDeliverableInsert = Database['public']['Tables']['campaign_deliverables']['Insert'];
 export type CampaignApplicationInsert = Database['public']['Tables']['campaign_applications']['Insert'];
 export type CampaignMemberInsert = Database['public']['Tables']['campaign_members']['Insert'];
+export type CampaignAgreementInsert = Database['public']['Tables']['campaign_agreements']['Insert'];
+export type CampaignAgreementAcceptanceInsert = Database['public']['Tables']['campaign_agreement_acceptances']['Insert'];
 export type ContentSubmissionInsert = Database['public']['Tables']['content_submissions']['Insert'];
 export type ContentPerformanceInsert = Database['public']['Tables']['content_performance']['Insert'];
 export type CampaignMessageInsert = Database['public']['Tables']['campaign_messages']['Insert'];
@@ -1791,9 +2432,13 @@ export type CreatorProfileUpdate = Database['public']['Tables']['creator_profile
 export type BrandProfileUpdate = Database['public']['Tables']['brand_profiles']['Update'];
 export type PlaybookUpdate = Database['public']['Tables']['playbooks']['Update'];
 export type CampaignUpdate = Database['public']['Tables']['campaigns']['Update'];
+export type EnterpriseConciergeRequestUpdate = Database['public']['Tables']['enterprise_concierge_requests']['Update'];
+export type CampaignResponsibilityAssignmentUpdate = Database['public']['Tables']['campaign_responsibility_assignments']['Update'];
 export type CampaignDeliverableUpdate = Database['public']['Tables']['campaign_deliverables']['Update'];
 export type CampaignApplicationUpdate = Database['public']['Tables']['campaign_applications']['Update'];
 export type CampaignMemberUpdate = Database['public']['Tables']['campaign_members']['Update'];
+export type CampaignAgreementUpdate = Database['public']['Tables']['campaign_agreements']['Update'];
+export type CampaignAgreementAcceptanceUpdate = Database['public']['Tables']['campaign_agreement_acceptances']['Update'];
 export type ContentSubmissionUpdate = Database['public']['Tables']['content_submissions']['Update'];
 export type ContentPerformanceUpdate = Database['public']['Tables']['content_performance']['Update'];
 export type CampaignMessageUpdate = Database['public']['Tables']['campaign_messages']['Update'];

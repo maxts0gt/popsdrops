@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, LineChart } from "lucide-react";
 import { motion } from "motion/react";
 import { useTranslation } from "@/lib/i18n";
 import { getMarketLabel } from "@/lib/constants";
@@ -49,10 +49,10 @@ export default function LandingPage() {
   return (
     <div className="bg-white">
       {/* ============================================================
-        * HERO — Tight, commanding, no wasted space
+        * HERO - Tight, commanding, no wasted space
         * ============================================================ */}
-      <section className="relative flex min-h-[100vh] items-center justify-center overflow-hidden bg-black pb-32">
-        {/* Atmospheric gradient orbs — subtle neutral warmth */}
+      <section className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-black pb-32">
+        {/* Atmospheric gradient orbs, subtle neutral warmth */}
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute -top-[40%] start-[10%] h-[80vh] w-[80vh] rounded-full bg-neutral-500/[0.04] blur-[120px]" />
           <div className="absolute -bottom-[20%] end-[5%] h-[60vh] w-[60vh] rounded-full bg-neutral-400/[0.03] blur-[100px]" />
@@ -72,7 +72,7 @@ export default function LandingPage() {
         >
           <motion.h1
             variants={fadeUp}
-            className="whitespace-pre-line text-4xl font-extrabold leading-[1.06] tracking-tight text-white sm:text-6xl lg:text-7xl"
+            className="mx-auto max-w-6xl whitespace-pre-line text-4xl font-extrabold leading-[1.06] tracking-tight text-white sm:text-6xl 2xl:text-7xl"
           >
             {t("headline")}
           </motion.h1>
@@ -100,11 +100,22 @@ export default function LandingPage() {
             </Link>
           </motion.div>
 
+          <motion.div
+            variants={fadeUp}
+            data-testid="landing-trust-rail"
+            className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-white/45 sm:gap-x-7"
+          >
+            <span>{t("trust.private")}</span>
+            <span className="h-1 w-1 rounded-full bg-white/20" aria-hidden="true" />
+            <span>{t("trust.languages")}</span>
+            <span className="h-1 w-1 rounded-full bg-white/20" aria-hidden="true" />
+            <span>{t("trust.reports")}</span>
+          </motion.div>
         </motion.div>
       </section>
 
       {/* ============================================================
-        * HOW IT WORKS — 4 steps, clean, confidence-building
+        * HOW IT WORKS - 4 steps, clean, confidence-building
         * ============================================================ */}
       <section className="relative bg-black pt-24 pb-24 sm:pt-32 sm:pb-32">
         <div className="mx-auto max-w-7xl px-6">
@@ -139,14 +150,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Dark-to-light transition — short, intentional */}
+      {/* Dark-to-light transition - short, intentional */}
       <div
         className="h-px"
         style={{ background: "#171717" }}
       />
 
       {/* ============================================================
-        * REPORT PREVIEW — Proof section
+        * REPORT PREVIEW - Proof section
         * ============================================================ */}
       <section className="relative bg-neutral-50 py-24 sm:py-32">
         <div className="mx-auto max-w-7xl px-6">
@@ -268,7 +279,7 @@ export default function LandingPage() {
                 {/* AI recommendation */}
                 <div className="mt-6 flex items-start gap-3 rounded-xl border border-slate-100 bg-gradient-to-r from-slate-50 to-transparent px-5 py-4">
                   <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-slate-900">
-                    <Sparkles className="h-3.5 w-3.5 text-white" />
+                    <LineChart className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div>
                     <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{t("report.ai.label")}</p>
@@ -284,7 +295,7 @@ export default function LandingPage() {
       </section>
 
       {/* ============================================================
-        * TWO PATHS — Elevated cards
+        * TWO PATHS - Elevated cards
         * ============================================================ */}
       <section className="relative py-20 sm:py-28">
         <div className="mx-auto max-w-3xl px-6">
@@ -338,7 +349,7 @@ export default function LandingPage() {
       </section>
 
       {/* ============================================================
-        * FINAL CTA — Strong close
+        * FINAL CTA - Strong close
         * ============================================================ */}
       <section className="relative border-t border-slate-100 bg-slate-50/50 py-20 sm:py-28">
         <div className="mx-auto max-w-md px-6 text-center">

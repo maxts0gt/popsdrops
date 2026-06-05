@@ -27,10 +27,20 @@ export function resolvePlatformBundleTranslations(
   locale: string,
   bundles: Partial<Record<string, PlatformTranslationBundle>> = PLATFORM_TRANSLATION_BUNDLES,
 ): PlatformTranslationBundle {
-  const resolved =
-    locale === "en"
-      ? buildPlatformBundleFallback()
-      : bundles[locale] ?? buildPlatformBundleFallback();
+  const fallback = buildPlatformBundleFallback();
+  const bundle = locale === "en" ? undefined : bundles[locale];
+  const resolved: PlatformTranslationBundle = bundle
+    ? { ...fallback }
+    : fallback;
+
+  if (bundle) {
+    for (const pageKey of PLATFORM_BUNDLE_PAGE_KEYS) {
+      resolved[pageKey] = {
+        ...(fallback[pageKey] ?? {}),
+        ...(bundle[pageKey] ?? {}),
+      };
+    }
+  }
 
   return applyWebEditorialOverrides(resolved, WEB_EDITORIAL_OVERRIDES[locale]);
 }

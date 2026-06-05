@@ -66,4 +66,30 @@ describe("reporting metric values", () => {
       },
     ]);
   });
+
+  it("preserves per-metric reporting platforms when proof includes additional channels", () => {
+    const rows = buildMetricValueRows({
+      performanceId: "performance-1",
+      reportTaskId: "task-1",
+      platform: "instagram",
+      metricValues: [
+        { platform: "instagram", metricKey: "views", metricLabel: "Views", metricValue: 1200 },
+        { platform: "x", metricKey: "impressions", metricLabel: "Impressions", metricValue: 9000 },
+        {
+          platform: "generic",
+          metricKey: "clicks",
+          metricLabel: "Clicks",
+          metricValue: 42,
+        },
+      ],
+      sourceType: "creator_manual",
+      confirmedByCreator: true,
+    });
+
+    expect(rows.map((row) => row.platform)).toEqual([
+      "instagram",
+      "x",
+      "generic",
+    ]);
+  });
 });

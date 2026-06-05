@@ -6,7 +6,6 @@
     "nav.creators": "Creator",
     "nav.earnings": "Einnahmen",
     "nav.profile": "Profil",
-    "nav.messages": "Nachrichten",
     "nav.notifications": "Mitteilungen",
     "nav.settings": "Einstellungen",
     "nav.forBrands": "Für Marken",
@@ -68,7 +67,6 @@
     "empty.noData": "Noch keine Daten vorhanden",
     "empty.noNotifications": "Alles auf dem neuesten Stand",
     "empty.noCampaigns": "Noch keine Kampagnen",
-    "empty.noMessages": "Noch keine Nachrichten",
     "time.today": "Heute",
     "time.yesterday": "Gestern",
     "time.daysAgo": "vor {count} Tagen",
@@ -130,7 +128,9 @@
     "format.photoPost": "Photo Post",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Kommunikation",
+    "empty.noUpdates": "Noch keine Updates"
   },
   "marketing.landing": {
     "meta.title": "Creator-Kampagnen ohne Grenzen",

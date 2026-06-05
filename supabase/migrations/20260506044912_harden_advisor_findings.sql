@@ -137,7 +137,7 @@ begin
 end;
 $$;
 
-grant usage on schema app_private to anon, authenticated, service_role;
+grant usage on schema app_private to authenticated, service_role;
 grant execute on function app_private.can_apply_to_campaign(uuid) to authenticated, service_role;
 grant execute on function app_private.can_review_campaign_participant(uuid, uuid)
   to authenticated, service_role;

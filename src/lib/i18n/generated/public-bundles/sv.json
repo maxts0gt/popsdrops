@@ -6,7 +6,6 @@
     "nav.creators": "Kreatörer",
     "nav.earnings": "Intäkter",
     "nav.profile": "Profil",
-    "nav.messages": "Meddelanden",
     "nav.notifications": "Notiser",
     "nav.settings": "Inställningar",
     "nav.forBrands": "För varumärken",
@@ -68,7 +67,6 @@
     "empty.noData": "Inget här än",
     "empty.noNotifications": "Du är helt uppdaterad",
     "empty.noCampaigns": "Inga kampanjer än",
-    "empty.noMessages": "Inga meddelanden än",
     "time.today": "Idag",
     "time.yesterday": "Igår",
     "time.daysAgo": "för {count} dagar sedan",
@@ -130,7 +128,9 @@
     "format.photoPost": "Bildinlägg",
     "format.reel": "Reel",
     "format.carousel": "Karusell",
-    "format.live": "Livestream"
+    "format.live": "Livestream",
+    "nav.communications": "Kommunikation",
+    "empty.noUpdates": "Inga uppdateringar ännu"
   },
   "marketing.landing": {
     "meta.title": "Kreatörskampanjer utan gränser",

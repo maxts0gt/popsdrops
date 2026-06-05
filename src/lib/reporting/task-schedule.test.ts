@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  createExtraReportTaskDraft,
   createPerPostReportTaskDraft,
   generateReportTaskDrafts,
 } from "./task-schedule";
@@ -148,6 +149,25 @@ describe("generateReportTaskDrafts", () => {
       period_start: null,
       period_end: null,
       due_at: "2026-05-18T23:59:59.999Z",
+      status: "pending",
+    });
+  });
+
+  it("creates an optional extra read without changing the required cadence", () => {
+    expect(
+      createExtraReportTaskDraft({
+        campaignId,
+        campaignMemberId: memberId,
+        readId: "33333333-3333-3333-3333-333333333333",
+        dueAt: "2026-05-19T12:30:00.000Z",
+      }),
+    ).toEqual({
+      campaign_id: campaignId,
+      campaign_member_id: memberId,
+      task_key: "extra:33333333-3333-3333-3333-333333333333",
+      period_start: null,
+      period_end: null,
+      due_at: "2026-05-19T12:30:00.000Z",
       status: "pending",
     });
   });

@@ -81,13 +81,13 @@ export function scoreCampaignFit(
   let score = 0;
   const reasons: MatchReason[] = [];
 
-  // Platform match (40 pts) — binary qualifier, most important
+  // Platform match (40 pts) - binary qualifier, most important
   if (hasOverlap(signals.platforms, campaign.platforms)) {
     score += 40;
     reasons.push("platform");
   }
 
-  // Niche match (35 pts) — scaled by overlap depth
+  // Niche match (35 pts) - scaled by overlap depth
   const nicheOverlapCount = countOverlap(signals.niches, campaign.niches);
   if (nicheOverlapCount > 0) {
     // More overlapping niches = stronger fit (up to 35)
@@ -96,7 +96,7 @@ export function scoreCampaignFit(
     reasons.push("niche");
   }
 
-  // Market match (25 pts) — scaled by overlap
+  // Market match (25 pts) - scaled by overlap
   const marketOverlapCount = countOverlap(signals.markets, campaign.markets);
   if (marketOverlapCount > 0) {
     const marketScore = Math.min(marketOverlapCount * 15, 25);

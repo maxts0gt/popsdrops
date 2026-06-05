@@ -1,8 +1,9 @@
-// DEV ONLY — creates a campaign membership for the dev creator for testing.
+// DEV ONLY - creates a campaign membership for the dev creator for testing.
 // Finds their pending application, accepts it, and creates a campaign_member.
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getDevUserEmail } from "@/lib/dev-users";
 
 export async function GET() {
   if (process.env.NODE_ENV === "production") {
@@ -18,7 +19,7 @@ export async function GET() {
   const { data: creatorProfile } = await supabase
     .from("profiles")
     .select("id")
-    .eq("email", "dev-creator@popsdrops.test")
+    .eq("email", getDevUserEmail("creator"))
     .single();
 
   if (!creatorProfile) {

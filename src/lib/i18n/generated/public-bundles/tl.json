@@ -6,7 +6,6 @@
     "nav.creators": "Mga Creator",
     "nav.earnings": "Mga Kita",
     "nav.profile": "Profile",
-    "nav.messages": "Mga Mensahe",
     "nav.notifications": "Mga Notipikasyon",
     "nav.settings": "Mga Setting",
     "nav.forBrands": "Para sa mga Brand",
@@ -68,7 +67,6 @@
     "empty.noData": "Wala pang laman dito",
     "empty.noNotifications": "Wala kang bagong notipikasyon",
     "empty.noCampaigns": "Wala pang mga kampanya",
-    "empty.noMessages": "Wala pang mga mensahe",
     "time.today": "Ngayong araw",
     "time.yesterday": "Kahapon",
     "time.daysAgo": "{count} araw na ang nakalipas",
@@ -130,7 +128,9 @@
     "format.photoPost": "Photo Post",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Komunikasyon",
+    "empty.noUpdates": "Wala pang update"
   },
   "marketing.landing": {
     "meta.title": "Creator Campaigns na Walang Hangganan",

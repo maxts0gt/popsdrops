@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { getNotificationBellState } from "@/app/actions/social";
 import { createClient } from "@/lib/supabase/client";
 
 export function NotificationBell({ href }: { href: string }) {
@@ -10,33 +11,30 @@ export function NotificationBell({ href }: { href: string }) {
 
   useEffect(() => {
     const supabase = createClient();
+    let isMounted = true;
+    let unsubscribeNotifications: (() => void) | undefined;
 
     async function load() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) return;
+      const bellState = await getNotificationBellState().catch(() => null);
+      if (!isMounted || !bellState) return;
 
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("read", false);
-
-      setUnreadCount(count ?? 0);
+      if (isMounted) setUnreadCount(bellState.unreadCount);
+      if (!isMounted) return;
 
       // Subscribe to new notifications
       const channel = supabase
-        .channel(`bell:${user.id}`)
+        .channel(`bell:${bellState.userId}`)
         .on(
           "postgres_changes",
           {
             event: "INSERT",
             schema: "public",
             table: "notifications",
-            filter: `user_id=eq.${user.id}`,
+            filter: `user_id=eq.${bellState.userId}`,
           },
-          () => setUnreadCount((prev) => prev + 1)
+          () => {
+            if (isMounted) setUnreadCount((prev) => prev + 1);
+          },
         )
         .on(
           "postgres_changes",
@@ -44,26 +42,33 @@ export function NotificationBell({ href }: { href: string }) {
             event: "UPDATE",
             schema: "public",
             table: "notifications",
-            filter: `user_id=eq.${user.id}`,
+            filter: `user_id=eq.${bellState.userId}`,
           },
           () => {
             // Re-fetch count on any update (mark as read)
             supabase
               .from("notifications")
               .select("*", { count: "exact", head: true })
-              .eq("user_id", user.id)
+              .eq("user_id", bellState.userId)
               .eq("read", false)
-              .then(({ count }) => setUnreadCount(count ?? 0));
-          }
+              .then(({ count }) => {
+                if (isMounted) setUnreadCount(count ?? 0);
+              });
+          },
         )
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
+      unsubscribeNotifications = () => {
+        void supabase.removeChannel(channel);
       };
     }
 
-    load();
+    void load();
+
+    return () => {
+      isMounted = false;
+      unsubscribeNotifications?.();
+    };
   }, []);
 
   return (

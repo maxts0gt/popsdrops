@@ -8,40 +8,34 @@ import {
   Section,
   Text,
   Hr,
-  Font,
 } from "@react-email/components";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 
 interface EmailLayoutProps {
   preview: string;
   children: ReactNode;
 }
 
+export type EmailSummaryItem = {
+  label: string;
+  value: ReactNode;
+  multiline?: boolean;
+};
+
 export function EmailLayout({ preview, children }: EmailLayoutProps) {
   return (
     <Html lang="en">
-      <Head>
-        <Font
-          fontFamily="Inter"
-          fallbackFontFamily="Helvetica"
-          webFont={{
-            url: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap",
-            format: "woff2",
-          }}
-        />
-      </Head>
+      <Head />
       <Preview>{preview}</Preview>
       <Body style={body}>
         <Container style={container}>
-          {/* Logo */}
           <Section style={logoSection}>
             <Text style={logoText}>PopsDrops</Text>
+            <Text style={logoSubtext}>Campaign operations</Text>
           </Section>
 
-          {/* Content card */}
           <Section style={card}>{children}</Section>
 
-          {/* Footer */}
           <Section style={footer}>
             <Hr style={divider} />
             <Text style={footerCompany}>
@@ -62,18 +56,38 @@ export function EmailLayout({ preview, children }: EmailLayoutProps) {
   );
 }
 
+export function EmailSummary({ items }: { items: EmailSummaryItem[] }) {
+  return (
+    <Section style={styles.card}>
+      {items.map((item, index) => (
+        <Fragment key={item.label}>
+          <Text style={styles.label}>{item.label}</Text>
+          <Text
+            style={{
+              ...(item.multiline ? styles.valueMultiline : styles.value),
+              margin: index === items.length - 1 ? "0" : "0 0 14px 0",
+            }}
+          >
+            {item.value}
+          </Text>
+        </Fragment>
+      ))}
+    </Section>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Shared component styles for templates
 // ---------------------------------------------------------------------------
 
 export const styles = {
   heading: {
-    fontSize: "20px",
+    fontSize: "22px",
     fontWeight: "600",
     color: "#0F172A",
-    lineHeight: "1.35",
+    lineHeight: "1.3",
     margin: "0 0 20px 0",
-    letterSpacing: "-0.01em",
+    letterSpacing: "0",
   } as const,
 
   paragraph: {
@@ -97,10 +111,10 @@ export const styles = {
     fontSize: "13px",
     fontWeight: "600",
     textDecoration: "none",
-    padding: "12px 32px",
-    borderRadius: "6px",
+    padding: "12px 22px",
+    borderRadius: "8px",
     textAlign: "center" as const,
-    letterSpacing: "0.02em",
+    letterSpacing: "0",
   } as const,
 
   card: {
@@ -126,6 +140,19 @@ export const styles = {
     color: "#0F172A",
     margin: "0",
   } as const,
+
+  valueMultiline: {
+    fontSize: "14px",
+    fontWeight: "400",
+    color: "#334155",
+    lineHeight: "1.6",
+    margin: "0",
+  } as const,
+
+  ctaSection: {
+    textAlign: "center" as const,
+    margin: "28px 0 8px 0",
+  } as const,
 };
 
 // ---------------------------------------------------------------------------
@@ -133,7 +160,7 @@ export const styles = {
 // ---------------------------------------------------------------------------
 
 const body = {
-  backgroundColor: "#FFFFFF",
+  backgroundColor: "#F8FAFC",
   fontFamily:
     "Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif",
   margin: "0",
@@ -141,26 +168,38 @@ const body = {
 };
 
 const container = {
-  maxWidth: "520px",
+  maxWidth: "560px",
   margin: "0 auto",
-  padding: "48px 24px",
+  padding: "48px 24px 40px",
 };
 
 const logoSection = {
-  padding: "0 0 32px 0",
-  textAlign: "center" as const,
+  padding: "0 0 20px 0",
+  textAlign: "left" as const,
 };
 
 const logoText = {
-  fontSize: "16px",
+  fontSize: "17px",
   fontWeight: "600",
   color: "#0F172A",
   margin: "0",
-  letterSpacing: "-0.02em",
+  letterSpacing: "0",
+};
+
+const logoSubtext = {
+  fontSize: "11px",
+  color: "#94A3B8",
+  lineHeight: "1.4",
+  margin: "3px 0 0 0",
+  letterSpacing: "0",
 };
 
 const card = {
-  padding: "0",
+  backgroundColor: "#FFFFFF",
+  border: "1px solid #E2E8F0",
+  borderRadius: "14px",
+  boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+  padding: "32px",
 };
 
 const footer = {

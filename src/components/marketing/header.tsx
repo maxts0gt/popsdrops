@@ -69,7 +69,7 @@ export function MarketingHeader() {
           PopsDrops
         </Link>
 
-        {/* Desktop — right-aligned */}
+        {/* Desktop - right-aligned */}
         <div className="hidden items-center gap-8 ms-auto md:flex">
           {navLinks.map((link) => (
             <Link

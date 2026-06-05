@@ -6,7 +6,6 @@
     "nav.creators": "Creators",
     "nav.earnings": "Thu nhập",
     "nav.profile": "Hồ sơ",
-    "nav.messages": "Tin nhắn",
     "nav.notifications": "Thông báo",
     "nav.settings": "Cài đặt",
     "nav.forBrands": "Cho Thương hiệu",
@@ -68,7 +67,6 @@
     "empty.noData": "Chưa có dữ liệu",
     "empty.noNotifications": "Bạn đã xem hết thông báo",
     "empty.noCampaigns": "Chưa có chiến dịch nào",
-    "empty.noMessages": "Chưa có tin nhắn nào",
     "time.today": "Hôm nay",
     "time.yesterday": "Hôm qua",
     "time.daysAgo": "{count} ngày trước",
@@ -130,7 +128,9 @@
     "format.photoPost": "Bài viết ảnh",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Liên lạc",
+    "empty.noUpdates": "Chưa có cập nhật"
   },
   "marketing.landing": {
     "meta.title": "Chiến dịch Creator không biên giới",

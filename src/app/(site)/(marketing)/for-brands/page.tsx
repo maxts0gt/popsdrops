@@ -59,7 +59,7 @@ export default function ForBrandsPage() {
         </div>
       </section>
 
-      {/* FEATURES — title-only chips */}
+      {/* FEATURES - title-only chips */}
       <section className="pb-16">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -78,7 +78,7 @@ export default function ForBrandsPage() {
         </motion.div>
       </section>
 
-      {/* PAIN POINTS — Why cross-border campaigns fail */}
+      {/* PAIN POINTS - Why cross-border campaigns fail */}
       <section className="border-y border-slate-100 bg-slate-50/50 py-20 sm:py-24">
         <div className="mx-auto max-w-4xl px-6">
           <motion.div {...fade} className="mb-12 text-center">
@@ -108,7 +108,7 @@ export default function ForBrandsPage() {
         </div>
       </section>
 
-      {/* DASHBOARD PREVIEW — the management experience */}
+      {/* DASHBOARD PREVIEW - the management experience */}
       <section className="py-20 sm:py-24">
         <div className="mx-auto max-w-5xl px-6">
           <motion.div {...fade} className="mb-12 text-center">
@@ -136,7 +136,7 @@ export default function ForBrandsPage() {
               {/* Campaign header */}
               <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">Skincare Launch — Q2 2026</p>
+                  <p className="text-sm font-semibold text-slate-900">Skincare Launch - Q2 2026</p>
                   <p className="mt-0.5 text-[11px] text-slate-400">Glow Beauty Co. · 3 markets · 5 platforms</p>
                 </div>
                 <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-semibold text-blue-600">

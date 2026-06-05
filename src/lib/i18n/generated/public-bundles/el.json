@@ -6,7 +6,6 @@
     "nav.creators": "Δημιουργοί",
     "nav.earnings": "Κέρδη",
     "nav.profile": "Προφίλ",
-    "nav.messages": "Μηνύματα",
     "nav.notifications": "Ειδοποιήσεις",
     "nav.settings": "Ρυθμίσεις",
     "nav.forBrands": "Για Brands",
@@ -68,7 +67,6 @@
     "empty.noData": "Δεν υπάρχει περιεχόμενο ακόμα",
     "empty.noNotifications": "Είστε πλήρως ενημερωμένοι",
     "empty.noCampaigns": "Δεν υπάρχουν καμπάνιες ακόμα",
-    "empty.noMessages": "Δεν υπάρχουν μηνύματα ακόμα",
     "time.today": "Σήμερα",
     "time.yesterday": "Χθες",
     "time.daysAgo": "Πριν από {count} ημέρες",
@@ -130,7 +128,9 @@
     "format.photoPost": "Photo Post",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Επικοινωνίες",
+    "empty.noUpdates": "Δεν υπάρχουν ενημερώσεις ακόμα"
   },
   "marketing.landing": {
     "meta.title": "Καμπάνιες Δημιουργών Χωρίς Σύνορα",

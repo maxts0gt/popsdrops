@@ -6,6 +6,25 @@ export type ReportTaskDisplayStatus =
   | "overdue";
 
 const DUE_SOON_HOURS = 48;
+const CREATOR_REPORT_TASK_SUBMISSION_STATUSES = new Set<
+  CampaignReportTaskStatus
+>(["pending", "needs_revision", "missed"]);
+
+export function reportTaskAcceptsCreatorSubmission(
+  status: CampaignReportTaskStatus | string | null | undefined,
+): boolean {
+  return CREATOR_REPORT_TASK_SUBMISSION_STATUSES.has(
+    status as CampaignReportTaskStatus,
+  );
+}
+
+export function assertReportTaskAcceptsCreatorSubmission(
+  status: CampaignReportTaskStatus | string | null | undefined,
+) {
+  if (!reportTaskAcceptsCreatorSubmission(status)) {
+    throw new Error("This report read is already closed.");
+  }
+}
 
 export function shouldMarkReportTaskMissed(input: {
   status: CampaignReportTaskStatus;

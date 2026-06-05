@@ -285,10 +285,10 @@ export default function CampaignsScreen() {
           const detailLabel =
             activeTab === "completed"
               ? t("campaigns.completedOn", {
-                  date: formatCampaignDate(item.completedAt, locale) ?? "—",
+                  date: formatCampaignDate(item.completedAt, locale) ?? "-",
                 })
               : t("campaigns.due", {
-                  date: formatCampaignDate(item.contentDueDate, locale) ?? "—",
+                  date: formatCampaignDate(item.contentDueDate, locale) ?? "-",
                 });
 
           return (

@@ -20,7 +20,7 @@ CREATE TABLE social_connections (
   platform_display_name text,
   platform_avatar_url text,
 
-  -- OAuth tokens — AES-256-GCM encrypted at application layer.
+  -- OAuth tokens - AES-256-GCM encrypted at application layer.
   -- Decryption key lives only in SOCIAL_TOKEN_ENCRYPTION_KEY env var.
   access_token_encrypted text NOT NULL,
   refresh_token_encrypted text,

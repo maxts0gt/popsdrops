@@ -6,7 +6,6 @@
     "nav.creators": "Creatori",
     "nav.earnings": "Venituri",
     "nav.profile": "Profil",
-    "nav.messages": "Mesaje",
     "nav.notifications": "Notificări",
     "nav.settings": "Setări",
     "nav.forBrands": "Pentru Branduri",
@@ -68,7 +67,6 @@
     "empty.noData": "Momentan nu există date",
     "empty.noNotifications": "Ești la zi cu totul",
     "empty.noCampaigns": "Nicio campanie momentan",
-    "empty.noMessages": "Niciun mesaj momentan",
     "time.today": "Astăzi",
     "time.yesterday": "Ieri",
     "time.daysAgo": "acum {count} zile",
@@ -130,7 +128,9 @@
     "format.photoPost": "Postare foto",
     "format.reel": "Reel",
     "format.carousel": "Carusel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Comunicări",
+    "empty.noUpdates": "Nu există actualizări încă"
   },
   "marketing.landing": {
     "meta.title": "Campanii cu creatori fără frontiere",

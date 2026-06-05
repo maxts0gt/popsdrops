@@ -27,15 +27,18 @@ vi.mock("react-native", () => ({
   ),
   Text: ({ children }: { children: React.ReactNode }) => <span>{children}</span>,
   TextInput: ({
+    autoCorrect,
     onChangeText,
     placeholderTextColor,
     value,
     ...props
   }: {
+    autoCorrect?: boolean;
     onChangeText?: (value: string) => void;
     placeholderTextColor?: string;
     value?: string;
   } & Record<string, unknown>) => {
+    void autoCorrect;
     void placeholderTextColor;
 
     return (

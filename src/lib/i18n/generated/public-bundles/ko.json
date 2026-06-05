@@ -6,7 +6,6 @@
     "nav.creators": "크리에이터",
     "nav.earnings": "수익",
     "nav.profile": "프로필",
-    "nav.messages": "메시지",
     "nav.notifications": "알림",
     "nav.settings": "설정",
     "nav.forBrands": "브랜드용",
@@ -68,7 +67,6 @@
     "empty.noData": "표시할 데이터가 없습니다",
     "empty.noNotifications": "모든 알림을 확인하셨습니다",
     "empty.noCampaigns": "진행 중인 캠페인이 없습니다",
-    "empty.noMessages": "메시지가 없습니다",
     "time.today": "오늘",
     "time.yesterday": "어제",
     "time.daysAgo": "{count}일 전",
@@ -130,7 +128,9 @@
     "format.photoPost": "사진 포스트",
     "format.reel": "릴스",
     "format.carousel": "카루셀",
-    "format.live": "라이브 스트리밍"
+    "format.live": "라이브 스트리밍",
+    "nav.communications": "커뮤니케이션",
+    "empty.noUpdates": "아직 업데이트가 없습니다"
   },
   "marketing.landing": {
     "meta.title": "국경 없는 크리에이터 캠페인",

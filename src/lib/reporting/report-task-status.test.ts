@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  assertReportTaskAcceptsCreatorSubmission,
   getReportTaskDisplayStatus,
   getReportTaskMutationForSubmission,
+  reportTaskAcceptsCreatorSubmission,
   shouldMarkReportTaskMissed,
 } from "./report-task-status";
 
@@ -60,5 +62,24 @@ describe("report task status utilities", () => {
       status: "submitted_late",
       submitted_at: "2026-05-12T10:00:00.000Z",
     });
+  });
+
+  it("only accepts creator proof on open report tasks", () => {
+    for (const status of ["pending", "needs_revision", "missed"] as const) {
+      expect(reportTaskAcceptsCreatorSubmission(status)).toBe(true);
+      expect(() => assertReportTaskAcceptsCreatorSubmission(status)).not.toThrow();
+    }
+
+    for (const status of [
+      "submitted",
+      "submitted_late",
+      "verified",
+      "excused",
+    ] as const) {
+      expect(reportTaskAcceptsCreatorSubmission(status)).toBe(false);
+      expect(() => assertReportTaskAcceptsCreatorSubmission(status)).toThrow(
+        "This report read is already closed.",
+      );
+    }
   });
 });

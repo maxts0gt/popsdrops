@@ -1,6 +1,6 @@
 /**
  * Content-shaped skeleton loading cards.
- * Use these instead of spinners — they match the layout the user is about to see.
+ * Use these instead of spinners - they match the layout the user is about to see.
  */
 
 export function SkeletonKPICards({ count = 4 }: { count?: number }) {

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition, useCallback, useMemo } from "react";
-import { ShieldCheck } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -13,9 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { PlatformBadge } from "@/components/platform-icons";
-import { PLATFORM_LABELS, OAUTH_PLATFORMS, type Platform } from "@/lib/constants";
+import { PLATFORM_LABELS, type Platform } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { normalizeCreatorSocialAccount } from "@/lib/creator-socials";
 import { updateCreatorProfile } from "@/app/actions/profile";
@@ -44,6 +42,7 @@ export function ConnectPlatformSheet({
     currentAccount?.followers ? String(currentAccount.followers) : ""
   );
   const [isPending, startTransition] = useTransition();
+
   const normalizedInput = useMemo(() => {
     if (!url.trim()) {
       return { account: null, error: null as string | null };
@@ -149,34 +148,6 @@ export function ConnectPlatformSheet({
         </SheetHeader>
 
         <div className="space-y-4 px-4">
-          {/* OAuth connect option (primary for supported platforms, not shown for already-connected) */}
-          {!currentAccount &&
-            (OAUTH_PLATFORMS as readonly string[]).includes(platform) && (
-              <>
-                <a
-                  href={`/auth/social/connect/${platform}`}
-                  className="flex items-center gap-3 rounded-xl bg-slate-950 p-4 text-white transition-colors hover:bg-slate-800"
-                >
-                  <ShieldCheck className="size-5 shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">
-                      {t("connectSheet.oauthConnect", { platform: platformLabel })}
-                    </p>
-                    <p className="text-xs text-muted-foreground/70">
-                      {t("connectSheet.oauthDescription")}
-                    </p>
-                  </div>
-                </a>
-                <div className="flex items-center gap-3">
-                  <Separator className="flex-1" />
-                  <span className="text-xs text-muted-foreground/70">
-                    {t("connectSheet.orManually")}
-                  </span>
-                  <Separator className="flex-1" />
-                </div>
-              </>
-            )}
-
           <div>
             <Label htmlFor="platform-url" className="mb-1.5 text-xs text-muted-foreground">
               {t("connectSheet.profileUrl")}

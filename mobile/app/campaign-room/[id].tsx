@@ -1,11 +1,10 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   View,
   Text,
   Pressable,
   ScrollView,
   TextInput,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
@@ -14,18 +13,19 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import * as DocumentPicker from "expo-document-picker";
 import {
   ArrowLeft,
   FileText,
   CheckSquare,
   Upload,
-  MessageCircle,
-  Send,
   ExternalLink,
   AlertCircle,
   Check,
   Clock,
+  PenLine,
   RotateCcw,
+  ShieldCheck,
 } from "lucide-react-native";
 import { useI18n } from "../../lib/i18n";
 import { useTheme } from "../../lib/theme-context";
@@ -38,20 +38,33 @@ import {
 } from "../../lib/campaign-room";
 import {
   getDeliverableSubmission,
+  getInitialRoomTab,
+  getLatestPerformanceRead,
+  getOpenReportTask,
   getSelectedDeliverableId,
+  hasAtLeastOneMetric,
+  parseOptionalMetric,
+  type CampaignRoomTab,
 } from "../../lib/campaign-room-state";
 import {
-  loadCampaignMessages,
-  subscribeToCampaignMessages,
-  type ChatMessage,
-} from "../../lib/campaign-chat";
-import {
+  acceptCampaignAgreement,
   submitContent,
   publishContent,
-  sendCampaignMessage,
+  submitPerformance,
+  uploadPerformanceEvidenceFile,
+  type PerformanceEvidenceFile,
 } from "../../lib/campaign-actions";
 
-type RoomTab = "brief" | "tasks" | "submit" | "chat";
+const PROOF_DOCUMENT_PICKER_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "application/pdf",
+  "text/csv",
+  "text/comma-separated-values",
+  "application/csv",
+  "application/vnd.ms-excel",
+] as const;
 
 const PLATFORM_DISPLAY: Record<string, string> = {
   tiktok: "TikTok",
@@ -71,6 +84,31 @@ const FORMAT_DISPLAY: Record<string, string> = {
   live: "Live Stream",
 };
 
+const AGREEMENT_RULE_ORDER = [
+  "role",
+  "disclosure",
+  "claims",
+  "usageRights",
+  "confidentiality",
+  "timeline",
+  "reporting",
+  "corrections",
+] as const;
+
+function getAgreementRuleEntries(
+  rules: NonNullable<CampaignRoomData["agreement"]>["rules"],
+) {
+  const knownEntries = AGREEMENT_RULE_ORDER.flatMap((key) => {
+    const section = rules[key];
+    return section ? [[key, section] as const] : [];
+  });
+  const extraEntries = Object.entries(rules)
+    .filter(([key]) => !(AGREEMENT_RULE_ORDER as readonly string[]).includes(key))
+    .sort(([left], [right]) => left.localeCompare(right));
+
+  return [...knownEntries, ...extraEntries];
+}
+
 export default function CampaignRoomScreen() {
   const { palette } = useTheme();
   const { t, locale } = useI18n();
@@ -80,22 +118,17 @@ export default function CampaignRoomScreen() {
     id: string;
     title: string;
     brandName: string;
+    tab?: string | string[];
   }>();
   const userId = user?.id ?? null;
   const campaignId = typeof params.id === "string" ? params.id : null;
 
-  const [activeTab, setActiveTab] = useState<RoomTab>("brief");
+  const [activeTab, setActiveTab] = useState<CampaignRoomTab>(() =>
+    getInitialRoomTab(params.tab),
+  );
   const [data, setData] = useState<CampaignRoomData | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
-  // Chat state
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [chatInput, setChatInput] = useState("");
-  const [sending, setSending] = useState(false);
-  const [unreadChat, setUnreadChat] = useState(false);
-  const activeTabRef = useRef<RoomTab>("brief");
-  const chatListRef = useRef<FlatList>(null);
 
   // Submit state
   const [selectedDeliverableId, setSelectedDeliverableId] = useState<string | null>(null);
@@ -104,6 +137,16 @@ export default function CampaignRoomScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [publishUrl, setPublishUrl] = useState("");
   const [publishing, setPublishing] = useState(false);
+  const [metricInputs, setMetricInputs] = useState({
+    views: "",
+    likes: "",
+    comments: "",
+    shares: "",
+    saves: "",
+  });
+  const [proofUrl, setProofUrl] = useState("");
+  const [proofFile, setProofFile] = useState<PerformanceEvidenceFile | null>(null);
+  const [submittingPerformance, setSubmittingPerformance] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!userId || !campaignId) return;
@@ -124,11 +167,8 @@ export default function CampaignRoomScreen() {
   }, [loadData]);
 
   useEffect(() => {
-    activeTabRef.current = activeTab;
-    if (activeTab === "chat") {
-      setUnreadChat(false);
-    }
-  }, [activeTab]);
+    setActiveTab(getInitialRoomTab(params.tab));
+  }, [params.tab]);
 
   useEffect(() => {
     if (!data) return;
@@ -137,78 +177,11 @@ export default function CampaignRoomScreen() {
     );
   }, [data]);
 
-  // Load chat messages
-  useEffect(() => {
-    if (!userId || !campaignId) return;
-    void loadCampaignMessages(campaignId, userId).then(setMessages).catch(() => {});
-  }, [campaignId, userId]);
-
-  // Subscribe to realtime chat
-  useEffect(() => {
-    if (!userId || !campaignId) return;
-
-    const channel = subscribeToCampaignMessages(
-      campaignId,
-      userId,
-      (msg) => {
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) return prev;
-          return [...prev, msg];
-        });
-        if (activeTabRef.current !== "chat") {
-          setUnreadChat(true);
-        }
-      },
-    );
-
-    return () => {
-      void channel.unsubscribe();
-    };
-  }, [campaignId, userId]);
-
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadData();
-    if (userId && campaignId) {
-      const msgs = await loadCampaignMessages(campaignId, userId).catch(() => []);
-      setMessages(msgs);
-    }
     setRefreshing(false);
-  }, [campaignId, loadData, userId]);
-
-  const handleSendMessage = useCallback(async () => {
-    if (!chatInput.trim() || !campaignId || !userId) return;
-    const text = chatInput.trim();
-    setSending(true);
-    try {
-      const result = await sendCampaignMessage({
-        campaign_id: campaignId,
-        content: text,
-      });
-      setChatInput("");
-      // Optimistically add to local state (realtime may also deliver it — dedup by id)
-      setMessages((prev) => {
-        if (prev.some((m) => m.id === result.id)) return prev;
-        return [
-          ...prev,
-          {
-            id: result.id,
-            campaignId,
-            senderId: userId,
-            senderName: "You",
-            senderAvatarUrl: null,
-            content: text,
-            createdAt: result.created_at,
-            isOwn: true,
-          },
-        ];
-      });
-    } catch (err) {
-      Alert.alert(t("error.generic"), (err as Error).message);
-    } finally {
-      setSending(false);
-    }
-  }, [campaignId, chatInput, t, userId]);
+  }, [loadData]);
 
   const handleSubmitContent = useCallback(async () => {
     if (!data || !submitUrl.trim()) return;
@@ -253,12 +226,91 @@ export default function CampaignRoomScreen() {
     [publishUrl, loadData, t],
   );
 
-  const tabs: { key: RoomTab; icon: typeof FileText; label: string }[] = [
+  const handlePickProofFile = useCallback(async () => {
+    const result = await DocumentPicker.getDocumentAsync({
+      type: [...PROOF_DOCUMENT_PICKER_TYPES],
+      copyToCacheDirectory: true,
+      multiple: false,
+    });
+
+    if (result.canceled) return;
+    const asset = result.assets[0];
+    if (!asset) return;
+
+    setProofFile({
+      uri: asset.uri,
+      name: asset.name || "performance-proof",
+      mimeType: asset.mimeType ?? null,
+      size: asset.size ?? null,
+    });
+  }, []);
+
+  const handleSubmitPerformance = useCallback(
+    async (submissionId: string, reportTaskId?: string | null) => {
+      if (!hasAtLeastOneMetric(metricInputs)) {
+        Alert.alert(t("error.generic"), t("room.performanceMetricRequired"));
+        return;
+      }
+      if (!proofFile && !proofUrl.trim()) {
+        Alert.alert(t("error.generic"), t("room.performanceProofRequired"));
+        return;
+      }
+      if (proofFile && !reportTaskId) {
+        Alert.alert(t("error.generic"), t("room.performanceProofTaskRequired"));
+        return;
+      }
+
+      setSubmittingPerformance(true);
+      try {
+        const uploadedEvidence = proofFile
+          ? await uploadPerformanceEvidenceFile({
+              reportTaskId: reportTaskId as string,
+              submissionId,
+              file: proofFile,
+            })
+          : null;
+
+        await submitPerformance({
+          submission_id: submissionId,
+          report_task_id: reportTaskId ?? undefined,
+          evidence_id: uploadedEvidence?.id,
+          measurement_type: "final_7d",
+          views: parseOptionalMetric(metricInputs.views),
+          likes: parseOptionalMetric(metricInputs.likes),
+          comments: parseOptionalMetric(metricInputs.comments),
+          shares: parseOptionalMetric(metricInputs.shares),
+          saves: parseOptionalMetric(metricInputs.saves),
+          screenshot_url: (uploadedEvidence?.storageUri ?? proofUrl.trim()) || undefined,
+        });
+        setMetricInputs({
+          views: "",
+          likes: "",
+          comments: "",
+          shares: "",
+          saves: "",
+        });
+        setProofUrl("");
+        setProofFile(null);
+        await loadData();
+      } catch (err) {
+        Alert.alert(t("error.generic"), (err as Error).message);
+      } finally {
+        setSubmittingPerformance(false);
+      }
+    },
+    [loadData, metricInputs, proofFile, proofUrl, t],
+  );
+
+  const tabs: { key: CampaignRoomTab; icon: typeof FileText; label: string }[] = [
     { key: "brief", icon: FileText, label: t("room.brief") },
     { key: "tasks", icon: CheckSquare, label: t("room.tasks") },
     { key: "submit", icon: Upload, label: t("room.submit") },
-    { key: "chat", icon: MessageCircle, label: t("room.chat") },
   ];
+  const isAgreementLocked = Boolean(
+    data?.agreement &&
+      data.agreementStatus.status !== "signed" &&
+      data.agreementStatus.status !== "not_required",
+  );
 
   if (loading) {
     return (
@@ -305,114 +357,354 @@ export default function CampaignRoomScreen() {
         </View>
       </View>
 
-      {/* Tab bar */}
-      <View
-        className="flex-row border-b px-2"
-        style={{ borderColor: palette.borderSubtle }}
-      >
-        {tabs.map((tab) => {
-          const isActive = activeTab === tab.key;
-          const Icon = tab.icon;
-          return (
-            <Pressable
-              key={tab.key}
-              onPress={() => {
-                setActiveTab(tab.key);
-              }}
-              className="flex-1 items-center py-3"
-              style={
-                isActive
-                  ? {
-                      borderBottomWidth: 2,
-                      borderBottomColor: palette.textPrimary,
-                    }
-                  : undefined
-              }
-            >
-              <View className="relative">
-                <Icon
-                  size={18}
-                  color={
-                    isActive ? palette.textPrimary : palette.textMuted
+      {isAgreementLocked && data?.agreement ? (
+        <AgreementGateCard
+          data={data}
+          palette={palette}
+          t={t}
+          onAccepted={loadData}
+        />
+      ) : (
+        <>
+          {/* Tab bar */}
+          <View
+            className="flex-row border-b px-2"
+            style={{ borderColor: palette.borderSubtle }}
+          >
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.key;
+              const Icon = tab.icon;
+              return (
+                <Pressable
+                  key={tab.key}
+                  onPress={() => {
+                    setActiveTab(tab.key);
+                  }}
+                  className="flex-1 items-center py-3"
+                  style={
+                    isActive
+                      ? {
+                          borderBottomWidth: 2,
+                          borderBottomColor: palette.textPrimary,
+                        }
+                      : undefined
                   }
-                  strokeWidth={isActive ? 2 : 1.5}
-                />
-                {tab.key === "chat" && unreadChat ? (
-                  <View
-                    className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: "#EF4444" }}
-                  />
-                ) : null}
-              </View>
+                >
+                  <View className="relative">
+                    <Icon
+                      size={18}
+                      color={
+                        isActive ? palette.textPrimary : palette.textMuted
+                      }
+                      strokeWidth={isActive ? 2 : 1.5}
+                    />
+                  </View>
+                  <Text
+                    className="mt-1 text-[10px]"
+                    style={{
+                      color: isActive ? palette.textPrimary : palette.textMuted,
+                      fontFamily: isActive ? "Inter_600SemiBold" : "Inter_500Medium",
+                    }}
+                  >
+                    {tab.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+
+          {/* Tab content */}
+          {activeTab === "brief" && data ? (
+            <BriefTab
+              brief={data.brief}
+              deliverables={data.deliverables}
+              palette={palette}
+              t={t}
+              locale={locale}
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+            />
+          ) : null}
+
+          {activeTab === "tasks" && data ? (
+            <TasksTab
+              deliverables={data.deliverables}
+              submissions={data.submissions}
+              palette={palette}
+              t={t}
+            />
+          ) : null}
+
+          {activeTab === "submit" && data ? (
+            <SubmitTab
+              data={data}
+              selectedDeliverableId={selectedDeliverableId}
+              onSelectDeliverable={setSelectedDeliverableId}
+              submitUrl={submitUrl}
+              setSubmitUrl={setSubmitUrl}
+              submitCaption={submitCaption}
+              setSubmitCaption={setSubmitCaption}
+              submitting={submitting}
+              onSubmit={handleSubmitContent}
+              publishUrl={publishUrl}
+              setPublishUrl={setPublishUrl}
+              publishing={publishing}
+              onPublish={handlePublish}
+              metricInputs={metricInputs}
+              setMetricInputs={setMetricInputs}
+              proofUrl={proofUrl}
+              setProofUrl={setProofUrl}
+              proofFile={proofFile}
+              onPickProofFile={handlePickProofFile}
+              submittingPerformance={submittingPerformance}
+              onSubmitPerformance={handleSubmitPerformance}
+              palette={palette}
+              t={t}
+            />
+          ) : null}
+        </>
+      )}
+    </SafeAreaView>
+  );
+}
+
+function AgreementGateCard({
+  data,
+  palette,
+  t,
+  onAccepted,
+}: {
+  data: CampaignRoomData;
+  palette: ReturnType<typeof useTheme>["palette"];
+  t: ReturnType<typeof useI18n>["t"];
+  onAccepted: () => Promise<void>;
+}) {
+  const [hasRead, setHasRead] = useState(false);
+  const [typedName, setTypedName] = useState("");
+  const [signing, setSigning] = useState(false);
+  const agreement = data.agreement;
+  const ruleEntries = useMemo(
+    () => (agreement ? getAgreementRuleEntries(agreement.rules) : []),
+    [agreement],
+  );
+  const canSign =
+    hasRead &&
+    agreement != null &&
+    (!agreement.requiresTypedName || typedName.trim().length >= 2);
+
+  const handleSign = useCallback(async () => {
+    if (!agreement || !canSign) return;
+    setSigning(true);
+    try {
+      await acceptCampaignAgreement({
+        agreementId: agreement.id,
+        campaignId: data.brief.id,
+        typedName,
+        acceptedRules: Object.fromEntries(
+          ruleEntries.map(([key]) => [key, true]),
+        ),
+      });
+      await onAccepted();
+    } catch (err) {
+      Alert.alert(t("error.generic"), (err as Error).message);
+    } finally {
+      setSigning(false);
+    }
+  }, [agreement, canSign, data.brief.id, onAccepted, ruleEntries, t, typedName]);
+
+  if (!agreement) return null;
+
+  return (
+    <ScrollView
+      className="flex-1"
+      contentContainerStyle={{ padding: 24, paddingBottom: 40 }}
+    >
+      <View
+        className="rounded-2xl border px-5 py-5"
+        style={{
+          backgroundColor: palette.surface,
+          borderColor: palette.borderSubtle,
+        }}
+      >
+        <View className="flex-row items-start gap-3">
+          <View
+            className="h-10 w-10 items-center justify-center rounded-xl"
+            style={{ backgroundColor: palette.accentSoft }}
+          >
+            <ShieldCheck
+              size={18}
+              color={palette.textTertiary}
+              strokeWidth={1.8}
+            />
+          </View>
+          <View className="flex-1">
+            <Text
+              className="text-base"
+              style={{
+                color: palette.textPrimary,
+                fontFamily: "Inter_600SemiBold",
+              }}
+            >
+              {agreement.title}
+            </Text>
+            <Text
+              className="mt-1 text-xs leading-5"
+              style={{
+                color: palette.textMuted,
+                fontFamily: "Inter_400Regular",
+              }}
+            >
+              {t("room.agreementDetail")}
+            </Text>
+          </View>
+        </View>
+
+        <View className="mt-5 gap-3">
+          {ruleEntries.map(([key, rule]) => (
+            <View
+              key={key}
+              className="rounded-xl border px-4 py-3"
+              style={{
+                borderColor: palette.borderSubtle,
+                backgroundColor: palette.background,
+              }}
+            >
               <Text
-                className="mt-1 text-[10px]"
+                className="text-sm"
                 style={{
-                  color: isActive ? palette.textPrimary : palette.textMuted,
-                  fontFamily: isActive ? "Inter_600SemiBold" : "Inter_500Medium",
+                  color: palette.textPrimary,
+                  fontFamily: "Inter_600SemiBold",
                 }}
               >
-                {tab.label}
+                {rule.title}
               </Text>
-            </Pressable>
-          );
-        })}
+              <Text
+                className="mt-1 text-xs leading-5"
+                style={{
+                  color: palette.textMuted,
+                  fontFamily: "Inter_400Regular",
+                }}
+              >
+                {rule.body}
+              </Text>
+            </View>
+          ))}
+          {agreement.fileName ? (
+            <View
+              className="rounded-xl border px-4 py-3"
+              style={{
+                borderColor: palette.borderSubtle,
+                backgroundColor: palette.background,
+              }}
+            >
+              <Text
+                className="text-xs"
+                style={{
+                  color: palette.textMuted,
+                  fontFamily: "Inter_500Medium",
+                }}
+              >
+                {t("room.agreementFile")}
+              </Text>
+              <Text
+                className="mt-1 text-sm"
+                style={{
+                  color: palette.textPrimary,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
+                {agreement.fileName}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+
+        <Pressable
+          onPress={() => setHasRead((value) => !value)}
+          className="mt-5 flex-row items-start gap-3"
+        >
+          <View
+            className="mt-0.5 h-5 w-5 items-center justify-center rounded border"
+            style={{
+              borderColor: hasRead ? palette.textPrimary : palette.inputBorder,
+              backgroundColor: hasRead ? palette.textPrimary : "transparent",
+            }}
+          >
+            {hasRead ? (
+              <Check size={13} color={palette.background} strokeWidth={2.4} />
+            ) : null}
+          </View>
+          <Text
+            className="flex-1 text-xs leading-5"
+            style={{
+              color: palette.textMuted,
+              fontFamily: "Inter_400Regular",
+            }}
+          >
+            {t("room.agreementReadConfirm")}
+          </Text>
+        </Pressable>
+
+        {agreement.requiresTypedName ? (
+          <View className="mt-5">
+            <Text
+              className="text-xs uppercase tracking-[1.4px]"
+              style={{
+                color: palette.textMuted,
+                fontFamily: "Inter_600SemiBold",
+              }}
+            >
+              {t("room.agreementTypedName")}
+            </Text>
+            <TextInput
+              value={typedName}
+              onChangeText={setTypedName}
+              placeholder={t("room.agreementTypedNamePlaceholder")}
+              placeholderTextColor={palette.textMuted}
+              className="mt-2 rounded-xl border px-4 py-3.5"
+              style={{
+                borderColor: palette.inputBorder,
+                backgroundColor: palette.background,
+                color: palette.textPrimary,
+                fontFamily: "Inter_400Regular",
+                fontSize: 15,
+              }}
+            />
+          </View>
+        ) : null}
+
+        <Pressable
+          onPress={handleSign}
+          disabled={!canSign || signing}
+          className="mt-6 flex-row items-center justify-center gap-2 rounded-xl py-4"
+          style={{
+            backgroundColor: palette.buttonPrimaryBackground,
+            opacity: !canSign || signing ? 0.5 : 1,
+          }}
+        >
+          {signing ? (
+            <ActivityIndicator size="small" color={palette.buttonPrimaryText} />
+          ) : (
+            <>
+              <PenLine
+                size={16}
+                color={palette.buttonPrimaryText}
+                strokeWidth={2}
+              />
+              <Text
+                className="text-sm"
+                style={{
+                  color: palette.buttonPrimaryText,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
+                {t("room.agreementSign")}
+              </Text>
+            </>
+          )}
+        </Pressable>
       </View>
-
-      {/* Tab content */}
-      {activeTab === "brief" && data ? (
-        <BriefTab
-          brief={data.brief}
-          deliverables={data.deliverables}
-          palette={palette}
-          t={t}
-          locale={locale}
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-        />
-      ) : null}
-
-      {activeTab === "tasks" && data ? (
-        <TasksTab
-          deliverables={data.deliverables}
-          submissions={data.submissions}
-          palette={palette}
-          t={t}
-        />
-      ) : null}
-
-      {activeTab === "submit" && data ? (
-        <SubmitTab
-          data={data}
-          selectedDeliverableId={selectedDeliverableId}
-          onSelectDeliverable={setSelectedDeliverableId}
-          submitUrl={submitUrl}
-          setSubmitUrl={setSubmitUrl}
-          submitCaption={submitCaption}
-          setSubmitCaption={setSubmitCaption}
-          submitting={submitting}
-          onSubmit={handleSubmitContent}
-          publishUrl={publishUrl}
-          setPublishUrl={setPublishUrl}
-          publishing={publishing}
-          onPublish={handlePublish}
-          palette={palette}
-          t={t}
-        />
-      ) : null}
-
-      {activeTab === "chat" ? (
-        <ChatTab
-          messages={messages}
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          sending={sending}
-          onSend={handleSendMessage}
-          chatListRef={chatListRef}
-          palette={palette}
-          t={t}
-        />
-      ) : null}
-    </SafeAreaView>
+    </ScrollView>
   );
 }
 
@@ -658,6 +950,40 @@ function TimelineRow({
   );
 }
 
+function MetricRead({
+  label,
+  value,
+  palette,
+}: {
+  label: string;
+  value: number | null;
+  palette: ReturnType<typeof useTheme>["palette"];
+}) {
+  return (
+    <View
+      className="min-w-[132px] flex-1 rounded-xl border px-3 py-3"
+      style={{
+        borderColor: palette.borderSubtle,
+        backgroundColor: palette.background,
+      }}
+    >
+      <Text
+        className="text-[11px]"
+        style={{ color: palette.textMuted, fontFamily: "Inter_500Medium" }}
+        numberOfLines={1}
+      >
+        {label}
+      </Text>
+      <Text
+        className="mt-1 text-sm"
+        style={{ color: palette.textPrimary, fontFamily: "Inter_700Bold" }}
+      >
+        {value == null ? "-" : new Intl.NumberFormat("en").format(value)}
+      </Text>
+    </View>
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Tasks Tab
 // ---------------------------------------------------------------------------
@@ -776,6 +1102,14 @@ function SubmitTab({
   setPublishUrl,
   publishing,
   onPublish,
+  metricInputs,
+  setMetricInputs,
+  proofUrl,
+  setProofUrl,
+  proofFile,
+  onPickProofFile,
+  submittingPerformance,
+  onSubmitPerformance,
   palette,
   t,
 }: {
@@ -792,6 +1126,19 @@ function SubmitTab({
   setPublishUrl: (v: string) => void;
   publishing: boolean;
   onPublish: (submissionId: string) => void;
+  metricInputs: Record<"views" | "likes" | "comments" | "shares" | "saves", string>;
+  setMetricInputs: (
+    value: Record<"views" | "likes" | "comments" | "shares" | "saves", string>,
+  ) => void;
+  proofUrl: string;
+  setProofUrl: (value: string) => void;
+  proofFile: PerformanceEvidenceFile | null;
+  onPickProofFile: () => void;
+  submittingPerformance: boolean;
+  onSubmitPerformance: (
+    submissionId: string,
+    reportTaskId?: string | null,
+  ) => void;
   palette: ReturnType<typeof useTheme>["palette"];
   t: ReturnType<typeof useI18n>["t"];
 }) {
@@ -806,6 +1153,12 @@ function SubmitTab({
   const isApproved = latestSub?.status === "approved";
   const isPublished = latestSub?.status === "published";
   const isSubmitted = latestSub?.status === "submitted";
+  const latestPerformance = getLatestPerformanceRead(
+    latestSub?.id,
+    data.performance,
+  );
+  const openReportTask = getOpenReportTask(data.reportTasks);
+  const performanceNeedsCorrection = openReportTask?.status === "needs_revision";
 
   return (
     <KeyboardAvoidingView
@@ -1121,29 +1474,295 @@ function SubmitTab({
 
         {/* Published confirmation */}
         {isPublished && latestSub ? (
-          <View className="items-center py-8">
-            <Check size={40} color="#10B981" strokeWidth={2} />
-            <Text
-              className="mt-4 text-base"
+          <View>
+            <View className="items-center py-8">
+              <Check size={40} color="#10B981" strokeWidth={2} />
+              <Text
+                className="mt-4 text-base"
+                style={{
+                  color: palette.textPrimary,
+                  fontFamily: "Inter_600SemiBold",
+                }}
+              >
+                {t("room.contentPublished")}
+              </Text>
+              {latestSub.publishedUrl ? (
+                <Text
+                  className="mt-2 text-sm"
+                  style={{
+                    color: palette.textMuted,
+                    fontFamily: "Inter_400Regular",
+                  }}
+                  numberOfLines={1}
+                >
+                  {latestSub.publishedUrl}
+                </Text>
+              ) : null}
+            </View>
+
+            <View
+              className="rounded-2xl border px-4 py-4"
               style={{
-                color: palette.textPrimary,
-                fontFamily: "Inter_600SemiBold",
+                borderColor: palette.borderSubtle,
+                backgroundColor: palette.surface,
               }}
             >
-              {t("room.contentPublished")}
-            </Text>
-            {latestSub.publishedUrl ? (
-              <Text
-                className="mt-2 text-sm"
-                style={{
-                  color: palette.textMuted,
-                  fontFamily: "Inter_400Regular",
-                }}
-                numberOfLines={1}
-              >
-                {latestSub.publishedUrl}
-              </Text>
-            ) : null}
+              <View className="flex-row items-start justify-between gap-3">
+                <View className="flex-1">
+                  <Text
+                    className="text-sm"
+                    style={{
+                      color: palette.textPrimary,
+                      fontFamily: "Inter_600SemiBold",
+                    }}
+                  >
+                    {t("room.performanceProof")}
+                  </Text>
+                  <Text
+                    className="mt-1 text-xs leading-5"
+                    style={{
+                      color: palette.textMuted,
+                      fontFamily: "Inter_400Regular",
+                    }}
+                  >
+                    {performanceNeedsCorrection
+                      ? t("room.performanceCorrectionRequested")
+                      : latestPerformance
+                        ? t("room.performanceSubmitted")
+                        : t("room.performanceProofDetail")}
+                  </Text>
+                </View>
+                {latestPerformance && !performanceNeedsCorrection ? (
+                  <View
+                    className="rounded-full px-3 py-1"
+                    style={{ backgroundColor: palette.accentSoft }}
+                  >
+                    <Text
+                      className="text-xs"
+                      style={{
+                        color: palette.textTertiary,
+                        fontFamily: "Inter_600SemiBold",
+                      }}
+                    >
+                      {t("room.status.submitted")}
+                    </Text>
+                  </View>
+                ) : null}
+              </View>
+
+              {performanceNeedsCorrection && openReportTask.reviewNote ? (
+                <View
+                  className="mt-4 rounded-xl border px-4 py-3"
+                  style={{
+                    borderColor: "#FCD34D",
+                    backgroundColor: "#FFFBEB",
+                  }}
+                >
+                  <View className="flex-row items-start gap-2">
+                    <AlertCircle
+                      size={16}
+                      color="#B45309"
+                      strokeWidth={1.8}
+                    />
+                    <View className="flex-1">
+                      <Text
+                        className="text-xs uppercase tracking-[1px]"
+                        style={{
+                          color: "#92400E",
+                          fontFamily: "Inter_600SemiBold",
+                        }}
+                      >
+                        {t("room.performanceCorrectionRequested")}
+                      </Text>
+                      <Text
+                        className="mt-1.5 text-sm leading-5"
+                        style={{
+                          color: "#78350F",
+                          fontFamily: "Inter_400Regular",
+                        }}
+                      >
+                        {openReportTask.reviewNote}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ) : null}
+
+              {latestPerformance && !performanceNeedsCorrection ? (
+                <View className="mt-4 flex-row flex-wrap gap-2">
+                  <MetricRead
+                    label={t("room.metric.views")}
+                    value={latestPerformance.views}
+                    palette={palette}
+                  />
+                  <MetricRead
+                    label={t("room.metric.likes")}
+                    value={latestPerformance.likes}
+                    palette={palette}
+                  />
+                  <MetricRead
+                    label={t("room.metric.comments")}
+                    value={latestPerformance.comments}
+                    palette={palette}
+                  />
+                  <MetricRead
+                    label={t("room.metric.shares")}
+                    value={latestPerformance.shares}
+                    palette={palette}
+                  />
+                </View>
+              ) : (
+                <>
+                  <View className="mt-4 flex-row flex-wrap gap-2">
+                    {(
+                      [
+                        ["views", t("room.metric.views")],
+                        ["likes", t("room.metric.likes")],
+                        ["comments", t("room.metric.comments")],
+                        ["shares", t("room.metric.shares")],
+                        ["saves", t("room.metric.saves")],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <View key={key} className="w-[31%] min-w-[92px] flex-1">
+                        <Text
+                          className="text-[11px]"
+                          style={{
+                            color: palette.textMuted,
+                            fontFamily: "Inter_500Medium",
+                          }}
+                        >
+                          {label}
+                        </Text>
+                        <TextInput
+                          value={metricInputs[key]}
+                          onChangeText={(value) =>
+                            setMetricInputs({ ...metricInputs, [key]: value })
+                          }
+                          placeholder="0"
+                          placeholderTextColor={palette.textMuted}
+                          keyboardType="number-pad"
+                          className="mt-1 rounded-xl border px-3 py-3 text-sm"
+                          style={{
+                            borderColor: palette.inputBorder,
+                            backgroundColor: palette.background,
+                            color: palette.textPrimary,
+                            fontFamily: "Inter_600SemiBold",
+                          }}
+                        />
+                      </View>
+                    ))}
+                  </View>
+
+                  <View className="mt-4">
+                    <Pressable
+                      onPress={onPickProofFile}
+                      className="flex-row items-center gap-3 rounded-xl border px-4 py-3.5"
+                      style={{
+                        borderColor: proofFile
+                          ? palette.textPrimary
+                          : palette.inputBorder,
+                        backgroundColor: palette.background,
+                      }}
+                    >
+                      <Upload
+                        size={18}
+                        color={palette.textMuted}
+                        strokeWidth={1.7}
+                      />
+                      <View className="flex-1">
+                        <Text
+                          className="text-sm"
+                          style={{
+                            color: palette.textPrimary,
+                            fontFamily: "Inter_600SemiBold",
+                          }}
+                        >
+                          {proofFile
+                            ? t("room.changeProofFile")
+                            : t("room.attachProofFile")}
+                        </Text>
+                        <Text
+                          className="mt-1 text-xs"
+                          style={{
+                            color: palette.textMuted,
+                            fontFamily: "Inter_400Regular",
+                          }}
+                          numberOfLines={1}
+                        >
+                          {proofFile?.name ?? t("room.attachProofFileDetail")}
+                        </Text>
+                      </View>
+                    </Pressable>
+                  </View>
+
+                  <View className="mt-4">
+                    <Text
+                      className="mb-2 text-sm"
+                      style={{
+                        color: palette.textPrimary,
+                        fontFamily: "Inter_600SemiBold",
+                      }}
+                    >
+                      {t("room.proofUrlLabel")}
+                    </Text>
+                    <TextInput
+                      value={proofUrl}
+                      onChangeText={setProofUrl}
+                      placeholder={t("room.proofUrlPlaceholder")}
+                      placeholderTextColor={palette.textMuted}
+                      autoCapitalize="none"
+                      keyboardType="url"
+                      className="rounded-xl border px-4 py-3.5"
+                      style={{
+                        borderColor: palette.inputBorder,
+                        backgroundColor: palette.background,
+                        color: palette.textPrimary,
+                        fontFamily: "Inter_400Regular",
+                        fontSize: 15,
+                      }}
+                    />
+                  </View>
+
+                  <Pressable
+                    onPress={() =>
+                      onSubmitPerformance(latestSub.id, openReportTask?.id)
+                    }
+                    disabled={
+                      submittingPerformance ||
+                      !hasAtLeastOneMetric(metricInputs) ||
+                      (!proofFile && !proofUrl.trim())
+                    }
+                    className="mt-4 items-center rounded-xl py-4"
+                    style={{
+                      backgroundColor: palette.buttonPrimaryBackground,
+                      opacity:
+                        submittingPerformance ||
+                        !hasAtLeastOneMetric(metricInputs) ||
+                        (!proofFile && !proofUrl.trim())
+                          ? 0.5
+                          : 1,
+                    }}
+                  >
+                    {submittingPerformance ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={palette.buttonPrimaryText}
+                      />
+                    ) : (
+                      <Text
+                        className="text-sm"
+                        style={{
+                          color: palette.buttonPrimaryText,
+                          fontFamily: "Inter_600SemiBold",
+                        }}
+                      >
+                        {t("room.submitPerformance")}
+                      </Text>
+                    )}
+                  </Pressable>
+                </>
+              )}
+            </View>
           </View>
         ) : null}
 
@@ -1186,173 +1805,6 @@ function SubmitTab({
           </View>
         ) : null}
       </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Chat Tab
-// ---------------------------------------------------------------------------
-
-function ChatTab({
-  messages,
-  chatInput,
-  setChatInput,
-  sending,
-  onSend,
-  chatListRef,
-  palette,
-  t,
-}: {
-  messages: ChatMessage[];
-  chatInput: string;
-  setChatInput: (v: string) => void;
-  sending: boolean;
-  onSend: () => void;
-  chatListRef: React.RefObject<FlatList | null>;
-  palette: ReturnType<typeof useTheme>["palette"];
-  t: ReturnType<typeof useI18n>["t"];
-}) {
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      className="flex-1"
-      keyboardVerticalOffset={100}
-    >
-      <FlatList
-        ref={chatListRef}
-        data={messages}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={{
-          padding: 16,
-          paddingBottom: 8,
-          flexGrow: 1,
-          justifyContent: messages.length === 0 ? "center" : "flex-end",
-        }}
-        onContentSizeChange={() =>
-          chatListRef.current?.scrollToEnd({ animated: false })
-        }
-        renderItem={({ item }) => (
-          <View
-            className={`mb-3 max-w-[80%] ${item.isOwn ? "self-end" : "self-start"}`}
-          >
-            {!item.isOwn ? (
-              <Text
-                className="mb-1 text-[10px]"
-                style={{
-                  color: palette.textMuted,
-                  fontFamily: "Inter_500Medium",
-                }}
-              >
-                {item.senderName}
-              </Text>
-            ) : null}
-            <View
-              className="rounded-2xl px-4 py-3"
-              style={{
-                backgroundColor: item.isOwn
-                  ? palette.buttonPrimaryBackground
-                  : palette.surface,
-                borderWidth: item.isOwn ? 0 : 1,
-                borderColor: palette.borderSubtle,
-              }}
-            >
-              <Text
-                className="text-sm leading-5"
-                style={{
-                  color: item.isOwn
-                    ? palette.buttonPrimaryText
-                    : palette.textPrimary,
-                  fontFamily: "Inter_400Regular",
-                }}
-              >
-                {item.content}
-              </Text>
-            </View>
-            <Text
-              className={`mt-1 text-[10px] ${item.isOwn ? "text-right" : ""}`}
-              style={{
-                color: palette.textMuted,
-                fontFamily: "Inter_400Regular",
-              }}
-            >
-              {new Date(item.createdAt).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </Text>
-          </View>
-        )}
-        ListEmptyComponent={
-          <View className="items-center">
-            <MessageCircle
-              size={32}
-              color={palette.textMuted}
-              strokeWidth={1.2}
-            />
-            <Text
-              className="mt-3 text-sm"
-              style={{
-                color: palette.textMuted,
-                fontFamily: "Inter_400Regular",
-              }}
-            >
-              {t("room.noMessages")}
-            </Text>
-          </View>
-        }
-      />
-
-      {/* Message input */}
-      <View
-        className="flex-row items-end gap-2 border-t px-4 py-3"
-        style={{
-          borderColor: palette.borderSubtle,
-          backgroundColor: palette.background,
-        }}
-      >
-        <TextInput
-          value={chatInput}
-          onChangeText={setChatInput}
-          placeholder={t("room.messagePlaceholder")}
-          placeholderTextColor={palette.textMuted}
-          multiline
-          maxLength={5000}
-          className="min-h-[40px] max-h-[120px] flex-1 rounded-2xl border px-4 py-2.5"
-          style={{
-            borderColor: palette.inputBorder,
-            backgroundColor: palette.surface,
-            color: palette.textPrimary,
-            fontFamily: "Inter_400Regular",
-            fontSize: 15,
-          }}
-        />
-        <Pressable
-          onPress={onSend}
-          disabled={sending || !chatInput.trim()}
-          className="h-10 w-10 items-center justify-center rounded-full"
-          style={{
-            backgroundColor:
-              chatInput.trim()
-                ? palette.buttonPrimaryBackground
-                : palette.surfaceStrong,
-          }}
-        >
-          {sending ? (
-            <ActivityIndicator size="small" color={palette.buttonPrimaryText} />
-          ) : (
-            <Send
-              size={16}
-              color={
-                chatInput.trim()
-                  ? palette.buttonPrimaryText
-                  : palette.textMuted
-              }
-              strokeWidth={2}
-            />
-          )}
-        </Pressable>
-      </View>
     </KeyboardAvoidingView>
   );
 }

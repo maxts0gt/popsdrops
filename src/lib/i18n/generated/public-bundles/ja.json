@@ -6,7 +6,6 @@
     "nav.creators": "クリエイター",
     "nav.earnings": "収益",
     "nav.profile": "プロフィール",
-    "nav.messages": "メッセージ",
     "nav.notifications": "通知",
     "nav.settings": "設定",
     "nav.forBrands": "ブランド向け",
@@ -68,7 +67,6 @@
     "empty.noData": "データがありません",
     "empty.noNotifications": "すべての通知を確認しました",
     "empty.noCampaigns": "キャンペーンはまだありません",
-    "empty.noMessages": "メッセージはまだありません",
     "time.today": "今日",
     "time.yesterday": "昨日",
     "time.daysAgo": "{count}日前",
@@ -130,7 +128,9 @@
     "format.photoPost": "フォト投稿",
     "format.reel": "リール",
     "format.carousel": "カルーセル",
-    "format.live": "ライブ配信"
+    "format.live": "ライブ配信",
+    "nav.communications": "コミュニケーション",
+    "empty.noUpdates": "まだアップデートはありません"
   },
   "marketing.landing": {
     "meta.title": "国境なきクリエイターキャンペーン",

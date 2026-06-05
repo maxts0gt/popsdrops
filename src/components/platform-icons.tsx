@@ -4,7 +4,9 @@
  * All icons are monochrome-ready but support branded color via className.
  */
 
-import type { Platform } from "@/lib/constants";
+import { Globe2 } from "lucide-react";
+
+import { getPlatformLabel, type Platform } from "../lib/constants";
 
 interface IconProps {
   className?: string;
@@ -50,8 +52,12 @@ export function FacebookIcon({ className = "size-4" }: IconProps) {
   );
 }
 
+export function GenericPlatformIcon({ className = "size-4" }: IconProps) {
+  return <Globe2 className={className} />;
+}
+
 /** Map platform key to its icon component */
-export const PlatformIcon: Record<Platform, React.FC<IconProps>> = {
+const platformIcons: Record<Platform, React.FC<IconProps>> = {
   tiktok: TikTokIcon,
   instagram: InstagramIcon,
   youtube: YouTubeIcon,
@@ -59,12 +65,25 @@ export const PlatformIcon: Record<Platform, React.FC<IconProps>> = {
   facebook: FacebookIcon,
 };
 
+export const PlatformIcon = new Proxy(
+  platformIcons as Record<string, React.FC<IconProps>>,
+  {
+    get(target, platform) {
+      if (typeof platform === "string" && platform in target) {
+        return target[platform];
+      }
+
+      return GenericPlatformIcon;
+    },
+  },
+);
+
 /** Platform icon with branded background pill */
 export function PlatformBadge({
   platform,
   size = "md",
 }: {
-  platform: Platform;
+  platform: string;
   size?: "sm" | "md" | "lg";
 }) {
   const Icon = PlatformIcon[platform];
@@ -76,6 +95,10 @@ export function PlatformBadge({
     youtube: "bg-red-600 text-white",
     facebook: "bg-blue-600 text-white",
   };
+  const bgColor =
+    platform in bgColors
+      ? bgColors[platform as Platform]
+      : "bg-slate-100 text-slate-700 ring-1 ring-slate-200";
 
   const sizes = {
     sm: "size-7 [&_svg]:size-3.5",
@@ -85,7 +108,7 @@ export function PlatformBadge({
 
   return (
     <div
-      className={`flex items-center justify-center rounded-lg ${bgColors[platform]} ${sizes[size]}`}
+      className={`flex items-center justify-center rounded-lg ${bgColor} ${sizes[size]}`}
     >
       <Icon />
     </div>
@@ -96,14 +119,14 @@ export function PlatformBadge({
 export function PlatformChip({
   platform,
 }: {
-  platform: Platform;
+  platform: string;
 }) {
   const Icon = PlatformIcon[platform];
 
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-foreground">
       <Icon className="size-3.5" />
-      {platform === "tiktok" ? "TikTok" : platform === "instagram" ? "Instagram" : platform === "youtube" ? "YouTube" : platform === "snapchat" ? "Snapchat" : "Facebook"}
+      {getPlatformLabel(platform)}
     </span>
   );
 }

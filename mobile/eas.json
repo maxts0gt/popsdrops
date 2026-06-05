@@ -14,22 +14,35 @@
     },
     "preview": {
       "distribution": "internal",
-      "channel": "preview"
+      "channel": "preview",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "autoIncrement": true,
-      "channel": "production"
+      "channel": "production",
+      "ios": {
+        "resourceClass": "m-medium"
+      },
+      "android": {
+        "buildType": "app-bundle"
+      }
     }
   },
   "submit": {
     "production": {
       "ios": {
-        "appleId": "your-apple-id@example.com",
-        "ascAppId": "your-app-store-connect-app-id",
-        "appleTeamId": "your-apple-team-id"
+        "ascAppId": "6773032021",
+        "ascApiKeyPath": "./AuthKey_7JTGSXY564.p8",
+        "ascApiKeyIssuerId": "9b408799-9687-4022-b4df-da13c10799a0",
+        "ascApiKeyId": "7JTGSXY564"
       },
       "android": {
-        "serviceAccountKeyPath": "./google-service-account.json",
+        "serviceAccountKeyPath": "./play-console-service-account.local.json",
         "track": "internal"
       }
     }

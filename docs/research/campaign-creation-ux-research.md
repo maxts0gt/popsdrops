@@ -5,18 +5,18 @@ Research date: 2026-03-31
 ## 1. How Top Platforms Structure Campaign Creation
 
 ### Aspire (aspire.io)
-- **Approach:** Two workflow types — Standard (sequential, one stage at a time) and Flexible (all stages accessible simultaneously)
+- **Approach:** Two workflow types - Standard (sequential, one stage at a time) and Flexible (all stages accessible simultaneously)
 - **Wizard:** Pre-built brief templates with customizable stages. Claims "spin up end-to-end campaigns in minutes"
 - **Customization:** Custom stages beyond defaults, with configurable actions/statuses/forms. Stages can be designated as Prerequisite (sequential) or Flexible (any order)
 - **Automation:** If-then logic for workflows that adapt to performance/engagement/milestones. Multi-step branching workflows
 - **Brief templates:** Include messaging guidelines, deliverables, due dates, content ownership/rights
 - **Integrations:** Gmail, Outlook, PayPal, Shopify, WooCommerce baked into workflow
-- **G2 rating for ease of use:** 8.8/10 — highest among competitors
+- **G2 rating for ease of use:** 8.8/10 - highest among competitors
 - **G2 complaints:** Interface can be "clunky at times," hindering navigation
 
 ### CreatorIQ
-- **Approach:** "Instant campaign set-up" — input requirements, choose modules, follow step-by-step flow
-- **Key pattern:** Everything happens without leaving the campaign page — inviting creators, sharing briefs, approving content
+- **Approach:** "Instant campaign set-up" - input requirements, choose modules, follow step-by-step flow
+- **Key pattern:** Everything happens without leaving the campaign page - inviting creators, sharing briefs, approving content
 - **Creator portal:** Dedicated portal for creators to manage briefs, payments, and collaboration
 - **Strength:** Deep data/analytics, one-sheet exports for client reporting
 - **G2 complaints:** Interface is "overwhelming," learning curve, UI is "not intuitive" and "cluttered"
@@ -24,7 +24,7 @@ Research date: 2026-03-31
 
 ### GRIN
 - **Approach:** End-to-end creator management integrated with eCommerce
-- **Key UX pattern: "Live URLs"** — branded landing pages where creators can see campaign requirements, choose products to promote, fill out shipping/payment info, and submit proposals. This is a standout pattern
+- **Key UX pattern: "Live URLs"** - branded landing pages where creators can see campaign requirements, choose products to promote, fill out shipping/payment info, and submit proposals. This is a standout pattern
 - **Creator dashboard:** Personalized portals to access briefs, upload content for approval, track links
 - **E-commerce integration:** Syncs with Shopify/WooCommerce for inventory, product lists, fulfillment, order tracking
 - **AI:** "Gia" AI assistant automates search, outreach, and routine tasks
@@ -33,7 +33,7 @@ Research date: 2026-03-31
 ### Upfluence
 - **Approach:** Integrated campaign management with CRM and automated workflows
 - **Focus:** E-commerce integration, sales tracking, ROI measurement from creator content
-- **G2 note:** "Robust but complex for beginners" — once configured, works well
+- **G2 note:** "Robust but complex for beginners" - once configured, works well
 - **Strength:** Centralizes outreach, analytics, payment workflows
 
 ### Later (formerly Mavrck)
@@ -43,8 +43,8 @@ Research date: 2026-03-31
 - **Positioning:** Best for mid-market, visual/social-first brands
 
 ### Traackr
-- **Approach:** Campaign setup wizard with feature selection — enable only what you need, skip advanced analytics
-- **Key UX pattern: Modular campaign setup** — choose which features/modules to activate per campaign
+- **Approach:** Campaign setup wizard with feature selection - enable only what you need, skip advanced analytics
+- **Key UX pattern: Modular campaign setup** - choose which features/modules to activate per campaign
 - **Workflows:** Suggested steps you can reorganize, or create your own from scratch
 - **Brief detail:** "Remarkably detailed on content requirements, account for all fees, spell out products creators will receive"
 - **Fee suggestion:** Uses historical data about influencer past performance to suggest appropriate fees
@@ -65,14 +65,14 @@ Research date: 2026-03-31
 
 ---
 
-## 2. Campaign Brief Fields — Comprehensive Structure
+## 2. Campaign Brief Fields - Comprehensive Structure
 
 Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templates:
 
 ### Section 1: Brand & Campaign Overview
 - Campaign name
 - Campaign objective (awareness / engagement / conversions / UGC)
-- Campaign description (2-3 sentences — the "why")
+- Campaign description (2-3 sentences - the "why")
 - Target audience (demographics, psychographics, pain points)
 - Key messaging (2-3 non-negotiable talking points, benefit > feature)
 - Campaign timeline (start date, end date)
@@ -107,7 +107,7 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 - Usage rights duration
 - Exclusivity period and scope
 - FTC disclosure requirements (#ad / #sponsored)
-- AI content disclosure (new for 2026 — FTC requires disclosure of AI tools)
+- AI content disclosure (new for 2026 - FTC requires disclosure of AI tools)
 - Reposting / whitelisting permissions
 - GDPR/privacy compliance notes
 
@@ -141,10 +141,10 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 - **Real examples:** Aircall uses percentage completion wheel; Intercom uses minimal progress bar; Zendesk uses one field per page with step indicator
 
 ### Navigation
-- Clear "Next," "Back," and "Save as Draft" buttons — consistent placement across all steps
+- Clear "Next," "Back," and "Save as Draft" buttons - consistent placement across all steps
 - Allow backward navigation without data loss
 - Skip options for optional steps
-- Never trap users — always provide an exit path
+- Never trap users - always provide an exit path
 
 ### Auto-Save & Draft Behavior (Critical)
 - **Auto-save on blur** (when user leaves a field) + **3 seconds after last keystroke**
@@ -155,8 +155,8 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 - Prevent data loss from network issues or accidental close
 
 ### Validation
-- **Inline validation** — show errors as soon as they occur, at the step where they happen
-- **Actionable error messages** — "Please enter a valid email" not "Invalid input"
+- **Inline validation** - show errors as soon as they occur, at the step where they happen
+- **Actionable error messages** - "Please enter a valid email" not "Invalid input"
 - Never delay validation to a later step
 - Validate per-step before allowing "Next"
 
@@ -172,9 +172,9 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 - Responsive layouts that stack gracefully
 
 ### Real-World SaaS Examples
-- **Zendesk:** 8 steps, one field per page, casual copywriting — maximum simplicity
-- **Motive:** 4 steps with interactive buttons/icons — fast loading
-- **ServiceTitan:** 2 steps, no upfront contact info — lowest friction
+- **Zendesk:** 8 steps, one field per page, casual copywriting - maximum simplicity
+- **Motive:** 4 steps with interactive buttons/icons - fast loading
+- **ServiceTitan:** 2 steps, no upfront contact info - lowest friction
 - **Aircall:** Percentage wheel, accordion design for grouped questions
 - **Intercom:** Progress bar, minimalist, blue gradient background
 
@@ -193,7 +193,7 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 - Write brief in brand's language (typically English)
 - Auto-translate to creator's preferred language on delivery
 - Creators should be able to suggest local idioms/edits (feedback loop)
-- Campaign hashtags and CTAs need localization, not just translation — transcreation
+- Campaign hashtags and CTAs need localization, not just translation - transcreation
 - Platform names (TikTok, Instagram) and metrics (CPM, CPE) stay in English
 
 ### Content Localization UX Patterns
@@ -204,17 +204,17 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 
 ### Patterns from Major Platforms
 - **Notion:** Dual-language labeling in language selector (current language + target language name). Supports regional variants (Spanish-Spain vs Spanish-LatAm)
-- **Canva:** 100+ languages, 7 Spanish variants — extreme granularity for regional differences
+- **Canva:** 100+ languages, 7 Spanish variants - extreme granularity for regional differences
 - **Figma localization plugins:** Push source text to translation platform, translators work with screenshots + context, push back to design. The visual context is key
 
 ### Key Principles for PopsDrops
-1. **Brief is authored in English** (brand side) — structured form, not free-text document
-2. **Brief is auto-translated** when creator views it — using existing Gemini translation infrastructure
-3. **Per-platform deliverables are structured data**, not prose — translates cleanly
-4. **Do's/Don'ts as structured list items**, not paragraphs — easier to translate, harder to misinterpret
-5. **Mood board / visual references are universal** — images don't need translation
-6. **Numbers, dates, currencies formatted via Intl APIs** — respect creator's locale
-7. **Creator can view brief in any language** — same "any language, zero config" approach as rest of platform
+1. **Brief is authored in English** (brand side) - structured form, not free-text document
+2. **Brief is auto-translated** when creator views it - using existing Gemini translation infrastructure
+3. **Per-platform deliverables are structured data**, not prose - translates cleanly
+4. **Do's/Don'ts as structured list items**, not paragraphs - easier to translate, harder to misinterpret
+5. **Mood board / visual references are universal** - images don't need translation
+6. **Numbers, dates, currencies formatted via Intl APIs** - respect creator's locale
+7. **Creator can view brief in any language** - same "any language, zero config" approach as rest of platform
 
 ---
 
@@ -223,32 +223,32 @@ Based on Aspire, Modash, inBeat, Meltwater, InfluenceFlow, and Upfluence templat
 ### From Creator Community Research
 
 **Top frustrations with briefs:**
-1. **Not enough context** — Creators get partial briefs, don't understand the "why" behind the campaign
-2. **Too prescriptive** — Rigid scripts that feel inauthentic. Brands don't trust creators' format knowledge
-3. **Too long** — 4+ page briefs lose creator engagement. Nobody reads them
+1. **Not enough context** - Creators get partial briefs, don't understand the "why" behind the campaign
+2. **Too prescriptive** - Rigid scripts that feel inauthentic. Brands don't trust creators' format knowledge
+3. **Too long** - 4+ page briefs lose creator engagement. Nobody reads them
 4. **Treated as distribution channels**, not co-creators of value
-5. **Flat fees misaligned with performance expectations** — held to KPIs but paid flat
-6. **One-off transactional arrangements** — no context for audience, feels forced
-7. **Marketing jargon** — Creators aren't familiar with terms like "CTR" or "earned media value"
+5. **Flat fees misaligned with performance expectations** - held to KPIs but paid flat
+6. **One-off transactional arrangements** - no context for audience, feels forced
+7. **Marketing jargon** - Creators aren't familiar with terms like "CTR" or "earned media value"
 
 **What creators actually need:**
-1. **Why this campaign exists** — the story, not just the brief
-2. **Clear, specific deliverables** — "2 Reels + 2 Stories, posted Jan 21-30, drafts 1 week prior"
-3. **Creative freedom with guardrails** — Do's/Don'ts, not scripts. "Steer direction, but how they tell it is up to them"
-4. **Visual inspiration** — mood boards, past examples, brand aesthetic references
-5. **Simple language** — benefit-focused, not feature-focused. "Detects snoring and inclines" not "automatic incline based on sound detection"
-6. **Full campaign timeline** — when to submit, when to expect feedback, when to post
-7. **Clear payment terms** — amount, method, schedule, conditions
-8. **Early involvement** — "a seat in planning, not just execution"
-9. **Performance-based upside** — bonus for exceeding KPIs, not just flat fee
+1. **Why this campaign exists** - the story, not just the brief
+2. **Clear, specific deliverables** - "2 Reels + 2 Stories, posted Jan 21-30, drafts 1 week prior"
+3. **Creative freedom with guardrails** - Do's/Don'ts, not scripts. "Steer direction, but how they tell it is up to them"
+4. **Visual inspiration** - mood boards, past examples, brand aesthetic references
+5. **Simple language** - benefit-focused, not feature-focused. "Detects snoring and inclines" not "automatic incline based on sound detection"
+6. **Full campaign timeline** - when to submit, when to expect feedback, when to post
+7. **Clear payment terms** - amount, method, schedule, conditions
+8. **Early involvement** - "a seat in planning, not just execution"
+9. **Performance-based upside** - bonus for exceeding KPIs, not just flat fee
 
 ### Brief Effectiveness Principles
-- **Shorter is better** — distill to what matters for storytelling
-- **One primary KPI** — don't overwhelm with metrics
-- **Benefit over feature** — always
-- **Trust the creator** — they know their audience better than you
-- **Iterate** — update briefs based on performance data from previous campaigns
-- **Platform-specific** — TikTok brief should be different from YouTube brief (authenticity vs. production value)
+- **Shorter is better** - distill to what matters for storytelling
+- **One primary KPI** - don't overwhelm with metrics
+- **Benefit over feature** - always
+- **Trust the creator** - they know their audience better than you
+- **Iterate** - update briefs based on performance data from previous campaigns
+- **Platform-specific** - TikTok brief should be different from YouTube brief (authenticity vs. production value)
 
 ---
 
@@ -261,21 +261,21 @@ Based on all research, here's the recommended structure:
 **Step 1: Campaign Basics** (the "what")
 - Campaign name
 - Objective (select: awareness / engagement / conversions / UGC)
-- Description (2-3 sentences — the story)
+- Description (2-3 sentences - the story)
 - Target markets (countries/regions)
 - Campaign timeline (start/end dates)
 
 **Step 2: Target Creators** (the "who")
 - Creator tier preferences (New, Rising, Established, Top)
-- Platforms (TikTok, Instagram, Snapchat, YouTube, Facebook — multi-select)
+- Platforms (TikTok, Instagram, Snapchat, YouTube, Facebook - multi-select)
 - Niche categories (multi-select from standardized list)
 - Minimum follower/engagement thresholds (optional, smart defaults from objective)
 - Languages (auto-suggested from target markets)
 - Budget range per creator
 
-**Step 3: Deliverables** (the "how" — per-platform)
+**Step 3: Deliverables** (the "how" - per-platform)
 - For each selected platform, show a card:
-  - Content format (Reel, Story, Feed Post, Short, Long-form — platform-specific options)
+  - Content format (Reel, Story, Feed Post, Short, Long-form - platform-specific options)
   - Number of posts per format
   - Video length range
   - Draft deadline
@@ -285,11 +285,11 @@ Based on all research, here's the recommended structure:
 - Max revision rounds (default: 2)
 
 **Step 4: Creative Brief** (the "feel")
-- Key messages (structured list, max 3 — benefit-focused)
+- Key messages (structured list, max 3 - benefit-focused)
 - Do's (structured list)
 - Don'ts (structured list)
 - Mood board / reference upload (images, links to existing content)
-- Brand voice notes (optional — short text)
+- Brand voice notes (optional - short text)
 - Product details (name, key differentiators, links)
 - Promo code / affiliate link (optional)
 - Caption requirements (required hashtags, @mentions, CTA)
@@ -299,7 +299,7 @@ Based on all research, here's the recommended structure:
 - Rate per deliverable or total budget
 - Payment schedule (e.g., 50/50, 100% on completion)
 - Product gifting details (if applicable)
-- Performance bonus (optional — ties to KPI)
+- Performance bonus (optional - ties to KPI)
 - FTC / legal disclosures (auto-populated based on markets)
 
 **Review & Publish**
@@ -310,16 +310,16 @@ Based on all research, here's the recommended structure:
 
 ### UX Patterns to Implement
 
-1. **Auto-save on every field change** — "Saved" indicator with timestamp in header
-2. **Step labels in sidebar** (not just numbers) — always visible, clickable for non-linear navigation
-3. **Smart defaults** — pre-fill from brand profile, previous campaigns, and objective selection
-4. **Conditional fields** — show platform-specific options only for selected platforms
-5. **Inline validation** — validate on blur, block "Next" only for required fields
-6. **Brief preview** — show how creator will see it, updated in real-time as brand fills in fields
-7. **Per-platform deliverable cards** — visual, not a table. Each platform gets its own card with relevant format options
-8. **Structured lists** for Do's/Don'ts/Key Messages — not free-text paragraphs. Easier to translate, harder to misinterpret
-9. **"Save as Template"** — save completed brief as template for future campaigns
-10. **Modular activation** (Traackr pattern) — toggle optional sections on/off (e.g., skip product gifting if not applicable)
+1. **Auto-save on every field change** - "Saved" indicator with timestamp in header
+2. **Step labels in sidebar** (not just numbers) - always visible, clickable for non-linear navigation
+3. **Smart defaults** - pre-fill from brand profile, previous campaigns, and objective selection
+4. **Conditional fields** - show platform-specific options only for selected platforms
+5. **Inline validation** - validate on blur, block "Next" only for required fields
+6. **Brief preview** - show how creator will see it, updated in real-time as brand fills in fields
+7. **Per-platform deliverable cards** - visual, not a table. Each platform gets its own card with relevant format options
+8. **Structured lists** for Do's/Don'ts/Key Messages - not free-text paragraphs. Easier to translate, harder to misinterpret
+9. **"Save as Template"** - save completed brief as template for future campaigns
+10. **Modular activation** (Traackr pattern) - toggle optional sections on/off (e.g., skip product gifting if not applicable)
 
 ---
 

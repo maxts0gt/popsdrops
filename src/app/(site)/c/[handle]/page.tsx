@@ -23,10 +23,10 @@ import type { Platform, Niche } from "@/lib/constants";
 import type { SocialAccount, RateCard, CreatorTier } from "@/types/database";
 
 // =============================================================================
-// Public Creator Media Kit — the single-player-mode product.
+// Public Creator Media Kit - the single-player-mode product.
 // This is the page creators share in their social bios.
 // SEO-optimized, server-rendered, no auth required.
-// Queries Supabase by slug — zero hardcoded data.
+// Queries Supabase by slug - zero hardcoded data.
 // =============================================================================
 
 // ---------------------------------------------------------------------------
@@ -191,23 +191,23 @@ export async function generateMetadata({
   const nicheNames = (creator.niches || [])
     .map((n: string) => NICHE_LABELS[n as Niche] || n)
     .join(", ");
-  const description = `${name} — ${nicheNames} creator with ${totalFollowers} followers. View media kit, rates, and stats.`;
+  const description = `${name} - ${nicheNames} creator with ${totalFollowers} followers. View media kit, rates, and stats.`;
 
   return {
-    title: `${name} — Media Kit`,
+    title: `${name} - Media Kit`,
     description,
     alternates: {
       canonical: `https://www.popsdrops.com/c/${creator.slug}`,
     },
     openGraph: {
-      title: `${name} — Creator Media Kit`,
+      title: `${name} - Creator Media Kit`,
       description,
       type: "profile",
       url: `https://www.popsdrops.com/c/${creator.slug}`,
     },
     twitter: {
       card: "summary",
-      title: `${name} — Media Kit`,
+      title: `${name} - Media Kit`,
       description,
     },
   };
@@ -331,7 +331,7 @@ export default async function CreatorMediaKitPage({
           />
           <StatCard
             icon={<Star className="size-4 text-amber-500" />}
-            value={creator.rating?.toFixed(1) || "—"}
+            value={creator.rating?.toFixed(1) || "-"}
             label={`${creator.review_count || 0} reviews`}
           />
           <StatCard
@@ -354,7 +354,7 @@ export default async function CreatorMediaKitPage({
               value={
                 creator.avg_engagement_rate > 0
                   ? `${Number(creator.avg_engagement_rate).toFixed(1)}%`
-                  : "—"
+                  : "-"
               }
               label="Avg ER"
             />

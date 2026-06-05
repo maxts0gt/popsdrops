@@ -6,7 +6,6 @@
     "nav.creators": "Kreatorlar",
     "nav.earnings": "Daromadlar",
     "nav.profile": "Profil",
-    "nav.messages": "Xabarlar",
     "nav.notifications": "Bildirishnomalar",
     "nav.settings": "Sozlamalar",
     "nav.forBrands": "Brendlar uchun",
@@ -68,7 +67,6 @@
     "empty.noData": "Hozircha maʼlumot yoʻq",
     "empty.noNotifications": "Barcha bildirishnomalarni koʻrib chiqdingiz",
     "empty.noCampaigns": "Hozircha kampaniyalar yoʻq",
-    "empty.noMessages": "Hozircha xabarlar yoʻq",
     "time.today": "Bugun",
     "time.yesterday": "Kecha",
     "time.daysAgo": "{count} kun oldin",
@@ -130,7 +128,9 @@
     "format.photoPost": "Foto post",
     "format.reel": "Reel",
     "format.carousel": "Karusel",
-    "format.live": "Jonli efir"
+    "format.live": "Jonli efir",
+    "nav.communications": "Aloqa",
+    "empty.noUpdates": "Hozircha yangilanishlar yo‘q"
   },
   "marketing.landing": {
     "meta.title": "Chegarasiz kreator kampaniyalari",

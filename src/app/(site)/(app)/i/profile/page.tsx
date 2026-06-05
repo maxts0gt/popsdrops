@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   BadgeCheck,
   Camera,
@@ -12,21 +12,23 @@ import {
   Circle,
   Copy,
   ExternalLink,
+  FileText,
   Globe,
-  Link2,
   LogOut,
   Mail,
   MapPin,
   Pencil,
   ShieldCheck,
   Star,
-  Unlink,
   Users,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { NotificationEmailPreferencesPanel } from "@/components/shared/notification-email-preferences-panel";
+import { MfaSettingsPanel } from "@/components/security/mfa-settings-panel";
+import { PrivacyControlsPanel } from "@/components/security/privacy-controls-panel";
 import { PlatformBadge, PlatformIcon } from "@/components/platform-icons";
 import {
   EditBioSheet,
@@ -39,19 +41,17 @@ import {
 } from "@/components/profile";
 import {
   PLATFORM_LABELS,
-  OAUTH_PLATFORMS,
   LANGUAGE_LABELS,
   NICHE_KEYS,
   FORMAT_KEYS,
   getMarketLabel,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getBrowserUser } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { updateAvatar } from "@/app/actions/profile";
-import { getSocialConnections, disconnectSocialAccount } from "@/app/actions/metrics";
 import type { Platform, Niche, Language, ContentFormat } from "@/lib/constants";
-import type { SocialAccount, RateCard, CreatorTier, PlatformType } from "@/types/database";
+import type { SocialAccount, RateCard, CreatorTier } from "@/types/database";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,19 +61,6 @@ interface ProfileData {
   full_name: string;
   avatar_url: string | null;
   email: string;
-}
-
-interface SocialConnection {
-  id: string;
-  platform: string;
-  platform_username: string | null;
-  platform_display_name: string | null;
-  platform_avatar_url: string | null;
-  status: string;
-  followers_count: number | null;
-  followers_updated_at: string | null;
-  token_expires_at: string | null;
-  error_message: string | null;
 }
 
 interface CreatorData {
@@ -109,6 +96,15 @@ const PLATFORM_KEYS: Platform[] = [
   "youtube",
   "facebook",
 ];
+
+function isProfilePlatform(value: string | null): value is Platform {
+  return Boolean(value && PLATFORM_KEYS.includes(value as Platform));
+}
+
+function getSafeReturnTo(value: string | null): string | null {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return null;
+  return value;
+}
 
 function formatFollowers(count: number): string {
   if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
@@ -176,15 +172,13 @@ function getCompleteness(profile: ProfileData, creator: CreatorData, labels: Rec
 export default function ProfilePage() {
   const { t } = useTranslation("creator.profile");
   const { locale, t: tGlobal } = useI18n();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [creator, setCreator] = useState<CreatorData | null>(null);
-  const [socialConnections, setSocialConnections] = useState<SocialConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [disconnecting, setDisconnecting] = useState<string | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -196,49 +190,26 @@ export default function ProfilePage() {
   const [languagesOpen, setLanguagesOpen] = useState(false);
   const [slugOpen, setSlugOpen] = useState(false);
   const [connectPlatform, setConnectPlatform] = useState<Platform | null>(null);
+  const requestedPlatformParam = searchParams.get("platform");
+  const requestedPlatform = isProfilePlatform(requestedPlatformParam)
+    ? requestedPlatformParam
+    : null;
+  const returnToPath = getSafeReturnTo(searchParams.get("returnTo"));
 
-  // Handle OAuth callback success/error params
   useEffect(() => {
-    const connected = searchParams.get("connected");
-    const socialError = searchParams.get("social_error");
-
-    if (connected) {
-      const label = PLATFORM_LABELS[connected as Platform] || connected;
-      toast.success(t("social.connectedToast", { platform: label }), {
-        description: t("social.connectedDetail"),
-      });
-      // Clean URL params
-      const url = new URL(window.location.href);
-      url.searchParams.delete("connected");
-      router.replace(url.pathname, { scroll: false });
-    }
-
-    if (socialError) {
-      const messages: Record<string, string> = {
-        unsupported_platform: t("social.error.unsupported"),
-        missing_params: t("social.error.missingParams"),
-        invalid_state: t("social.error.invalidState"),
-        storage_failed: t("social.error.storageFailed"),
-      };
-      toast.error(t("social.connectionFailed"), {
-        description: messages[socialError] || socialError,
-      });
-      const url = new URL(window.location.href);
-      url.searchParams.delete("social_error");
-      router.replace(url.pathname, { scroll: false });
-    }
-  }, [searchParams, router, t]);
+    if (requestedPlatform) setConnectPlatform(requestedPlatform);
+  }, [requestedPlatform]);
 
   useEffect(() => {
     async function load() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getBrowserUser();
 
       if (!user) return;
 
-      const [profileRes, creatorRes, connections] = await Promise.all([
+      const [profileRes, creatorRes] = await Promise.all([
         supabase
           .from("profiles")
           .select("full_name, avatar_url, email")
@@ -249,41 +220,14 @@ export default function ProfilePage() {
           .select("*")
           .eq("profile_id", user.id)
           .single(),
-        getSocialConnections(),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
       if (creatorRes.data) setCreator(creatorRes.data as unknown as CreatorData);
-      setSocialConnections((connections || []) as unknown as SocialConnection[]);
       setLoading(false);
     }
     load();
   }, []);
-
-  /** Get the OAuth connection for a platform (if any) */
-  const getConnection = (platform: Platform): SocialConnection | null =>
-    socialConnections.find((c) => c.platform === platform) || null;
-
-  /** Whether a platform supports OAuth connect */
-  const isOAuthSupported = (platform: Platform): boolean =>
-    (OAUTH_PLATFORMS as readonly string[]).includes(platform);
-
-  /** Disconnect OAuth and clear creator profile data */
-  const handleOAuthDisconnect = async (platform: Platform) => {
-    setDisconnecting(platform);
-    try {
-      await disconnectSocialAccount(platform as PlatformType);
-      setSocialConnections((prev) => prev.filter((c) => c.platform !== platform));
-      setCreator((prev) => (prev ? { ...prev, [platform]: null } : prev));
-      toast.success(t("social.disconnected", { platform: PLATFORM_LABELS[platform] }));
-    } catch (err) {
-      toast.error(t("social.error.disconnectFailed"), {
-        description: err instanceof Error ? err.message : t("social.error.tryAgain"),
-      });
-    } finally {
-      setDisconnecting(null);
-    }
-  };
 
   const copyLink = () => {
     if (!creator) return;
@@ -316,7 +260,7 @@ export default function ProfilePage() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getBrowserUser();
       if (!user) return;
 
       const ext = file.name.split(".").pop() || "jpg";
@@ -592,32 +536,22 @@ export default function ProfilePage() {
         <CardContent className="space-y-2">
           {PLATFORM_KEYS.map((platform) => {
             const account = creator[platform] as SocialAccount | null;
-            const connection = getConnection(platform);
-            const oauthSupported = isOAuthSupported(platform);
-            const isConnectedViaOAuth = !!connection && connection.status === "active";
-            const isExpired = connection?.status === "expired";
-            const hasError = connection?.status === "error";
 
             return (
               <div
                 key={platform}
                 className="rounded-xl ring-1 ring-border/50 transition-colors"
               >
-                {/* Main row */}
                 <div className="flex items-center gap-3 p-3">
                   <PlatformBadge platform={platform} size="sm" />
 
-                  {/* Connected state */}
                   {account ? (
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
                         <span className="text-sm font-medium text-foreground">
                           {PLATFORM_LABELS[platform]}
                         </span>
-                        {isConnectedViaOAuth && (
-                          <ShieldCheck className="size-3.5 text-emerald-500" />
-                        )}
-                        {account.verified && !isConnectedViaOAuth && (
+                        {account.verified && (
                           <BadgeCheck className="size-3.5 text-blue-500" />
                         )}
                       </div>
@@ -626,19 +560,9 @@ export default function ProfilePage() {
                           {formatFollowers(account.followers)}
                         </span>
                         <span className="truncate">{account.handle}</span>
-                        {isConnectedViaOAuth && (
-                          <span className="rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-600">
+                        {account.verified && (
+                          <span className="rounded-full bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
                             {t("social.verified")}
-                          </span>
-                        )}
-                        {isExpired && (
-                          <span className="rounded-full bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 text-[10px] font-medium text-amber-600">
-                            {t("social.expired")}
-                          </span>
-                        )}
-                        {hasError && (
-                          <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-600">
-                            {t("social.error")}
                           </span>
                         )}
                       </div>
@@ -663,25 +587,7 @@ export default function ProfilePage() {
                       >
                         <Pencil className="size-3.5" />
                       </button>
-                      {/* Disconnect OAuth */}
-                      {isConnectedViaOAuth && (
-                        <button
-                          onClick={() => handleOAuthDisconnect(platform)}
-                          disabled={disconnecting === platform}
-                          className="rounded-lg p-1.5 text-muted-foreground/70 transition-colors hover:bg-red-50 dark:hover:bg-red-950 hover:text-red-500"
-                          title={t("social.disconnect")}
-                        >
-                          <Unlink className="size-3.5" />
-                        </button>
-                      )}
                     </div>
-                  ) : oauthSupported ? (
-                    <a
-                      href={`/auth/social/connect/${platform}`}
-                      className="shrink-0 rounded-full bg-primary px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-primary/80"
-                    >
-                      {t("social.connect")}
-                    </a>
                   ) : (
                     <button
                       onClick={() => setConnectPlatform(platform)}
@@ -691,32 +597,6 @@ export default function ProfilePage() {
                     </button>
                   )}
                 </div>
-
-                {/* Re-authenticate banner for expired/error connections */}
-                {account && oauthSupported && (isExpired || hasError) && (
-                  <div className="border-t border-border/50 px-3 py-2">
-                    <a
-                      href={`/auth/social/connect/${platform}`}
-                      className="flex items-center gap-2 text-xs font-medium text-amber-600 transition-colors hover:text-amber-700"
-                    >
-                      <Link2 className="size-3" />
-                      {t("social.reauthenticate")}
-                    </a>
-                  </div>
-                )}
-
-                {/* OAuth upsell for manually-connected accounts */}
-                {account && oauthSupported && !connection && (
-                  <div className="border-t border-border/50 px-3 py-2">
-                    <a
-                      href={`/auth/social/connect/${platform}`}
-                      className="flex items-center gap-2 text-xs text-muted-foreground/70 transition-colors hover:text-muted-foreground"
-                    >
-                      <ShieldCheck className="size-3" />
-                      {t("social.verifyWith", { platform: PLATFORM_LABELS[platform] })}
-                    </a>
-                  </div>
-                )}
               </div>
             );
           })}
@@ -856,6 +736,42 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
 
+      {/* ---- Email Preferences ---- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{tGlobal("settings", "section.notifications")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <NotificationEmailPreferencesPanel />
+        </CardContent>
+      </Card>
+
+      {/* ---- Security ---- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <ShieldCheck className="size-4 text-muted-foreground/70" />
+            {tGlobal("settings", "section.security")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MfaSettingsPanel />
+        </CardContent>
+      </Card>
+
+      {/* ---- Privacy ---- */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-sm">
+            <FileText className="size-4 text-muted-foreground/70" />
+            {tGlobal("settings", "section.privacy")}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <PrivacyControlsPanel />
+        </CardContent>
+      </Card>
+
       {/* ---- Account ---- */}
       <Card>
         <CardHeader>
@@ -947,6 +863,7 @@ export default function ProfilePage() {
 
       {connectPlatform && (
         <ConnectPlatformSheet
+          key={connectPlatform}
           open={!!connectPlatform}
           onOpenChange={(open) => {
             if (!open) setConnectPlatform(null);
@@ -955,11 +872,12 @@ export default function ProfilePage() {
           currentAccount={
             (creator[connectPlatform] as SocialAccount | null) || null
           }
-          onSaved={(platform, account) =>
+          onSaved={(platform, account) => {
             setCreator((prev) =>
               prev ? { ...prev, [platform]: account } : prev
-            )
-          }
+            );
+            if (account && returnToPath) router.push(returnToPath);
+          }}
         />
       )}
     </div>

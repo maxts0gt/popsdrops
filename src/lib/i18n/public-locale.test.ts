@@ -46,11 +46,13 @@ describe("public locale routing", () => {
     expect(isPublicPath("/")).toBe(true);
     expect(isPublicPath("/ko/for-brands")).toBe(true);
     expect(isPublicPath("/terms")).toBe(true);
+    expect(isPublicPath("/support")).toBe(true);
     expect(isPublicPath("/login")).toBe(true);
     expect(isPublicPath("/auth/callback")).toBe(true);
     expect(isPublicPath("/c/jane-doe")).toBe(true);
     expect(isPublicPath("/apply/campaign-1")).toBe(true);
     expect(isPublicPath("/reports/share/pd_rpt_test")).toBe(true);
+    expect(isPublicPath("/team/invitations/invite-1")).toBe(true);
     expect(isPublicPath("/b/home")).toBe(false);
   });
 
@@ -64,6 +66,7 @@ describe("public locale routing", () => {
     expect(resolvePublicLocaleRouting("/ko/for-brands", "", "en")).toBeNull();
 
     expect(resolvePublicLocaleRouting("/terms", "", "ko")).toBeNull();
+    expect(resolvePublicLocaleRouting("/support", "", "ko")).toBeNull();
   });
 
   it("builds public navigation hrefs for localizable marketing pages only", () => {

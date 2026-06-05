@@ -1,5 +1,5 @@
 import { Link, Section, Text } from "@react-email/components";
-import { EmailLayout, styles } from "./layout";
+import { EmailLayout, EmailSummary, styles } from "./layout";
 
 interface RevisionRequestedProps {
   creatorName: string;
@@ -9,6 +9,7 @@ interface RevisionRequestedProps {
 }
 
 export function RevisionRequestedEmail({
+  creatorName = "Creator",
   campaignTitle = "Campaign",
   feedback = "Please adjust the intro.",
   campaignUrl = "https://popsdrops.com",
@@ -17,19 +18,17 @@ export function RevisionRequestedEmail({
     <EmailLayout preview={`Changes requested: ${campaignTitle}`}>
       <Text style={styles.heading}>Changes requested.</Text>
       <Text style={styles.paragraph}>
-        The brand has reviewed your submission and provided feedback.
+        {creatorName}, the brand reviewed your submission and requested a
+        specific update.
       </Text>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Campaign</Text>
-        <Text style={styles.value}>{campaignTitle}</Text>
-      </Section>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Feedback</Text>
-        <Text style={{ ...styles.paragraph, margin: "4px 0 0 0" }}>
-          {feedback}
-        </Text>
-      </Section>
-      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
+      <EmailSummary
+        items={[
+          { label: "Campaign", value: campaignTitle },
+          { label: "Feedback", value: feedback, multiline: true },
+          { label: "Next action", value: "View feedback" },
+        ]}
+      />
+      <Section style={styles.ctaSection}>
         <Link href={campaignUrl} style={styles.button}>
           View feedback
         </Link>

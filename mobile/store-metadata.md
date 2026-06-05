@@ -1,43 +1,38 @@
-# PopsDrops — App Store Metadata
+# PopsDrops - App Store Metadata
 
 ## App Name
 PopsDrops
 
 ## Subtitle (iOS, 30 chars max)
-Creator Campaign Platform
+Private Creator Campaigns
 
 ## Short Description (Android, 80 chars max)
-Run cross-border influencer campaigns with vetted creators worldwide.
+Manage invited brand campaigns, proof, and payment status worldwide.
 
 ## Full Description (Both Stores)
 
-PopsDrops connects global brands with vetted micro-creators for cross-border influencer campaigns.
+PopsDrops is a private campaign workspace for creators invited into global brand collaborations.
 
-For Creators:
-- Discover paid campaign opportunities from global brands
-- Receive briefs auto-translated to your language
-- Submit content, track revisions, and manage approvals in one place
-- Build your professional media kit and rate card
-- Track earnings and payment status across campaigns
+For creators:
+- Review private campaign briefs in your language
+- Confirm campaign rules before locked materials unlock
+- Submit content, live URLs, screenshots, and performance proof
+- Track correction requests, approvals, and payment status
+- Keep every brand handoff in one calm, secure place
 
-For Brands:
-- Launch influencer campaigns in markets you can't reach alone
-- Find vetted creators matched by AI to your brief
-- Review and approve content with a structured revision workflow
-- Get intelligence reports with real performance data and benchmarks
+For brand teams, PopsDrops keeps campaign setup, creator instructions, proof, reporting, and spend in a structured web workspace. The mobile app is built for creators on the move.
 
-Key Features:
-- AI-powered campaign matching based on your profile, niche, and market
-- Auto-translated briefs — work in your language, always
-- Platform-specific performance metrics (TikTok, Instagram, Snapchat, YouTube, Facebook)
-- Professional creator profiles with verified social accounts
-- Structured campaign lifecycle from brief to final report
-- Rate benchmarks so creators know their worth
+Creator tools:
+- Translated briefs for cross-border campaigns
+- Evidence-first reporting with confirmed performance proof
+- Platform-specific metrics for TikTok, Instagram, Snapchat, YouTube, and Facebook
+- Professional profile and rate card
+- Clear campaign status from invite to final report
 
-PopsDrops is free for creators. Always.
+PopsDrops is free for creators.
 
 ## Keywords (iOS, 100 chars max)
-influencer,creator,campaigns,marketing,brand,cross-border,global,micro-creator,content,collaboration
+creator,campaign,brand,proof,briefs,marketing,global,paid,content,collaboration
 
 ## Category
 Primary: Business
@@ -53,7 +48,7 @@ https://popsdrops.com/privacy
 https://popsdrops.com/terms
 
 ## Support URL
-https://popsdrops.com/contact
+https://popsdrops.com/support
 
 ## Marketing URL
 https://popsdrops.com
@@ -74,11 +69,11 @@ All user-generated content is uploaded by authenticated users under our Terms of
 ## Screenshots Required
 
 ### iPhone 6.7" (1290 x 2796)
-1. Login screen — dark, premium brand introduction
-2. Home tab — daily briefing with action items and matched campaigns
-3. Discover tab — campaign discovery feed with filters
-4. Campaign detail — brief, deliverables, apply flow
-5. Profile tab — creator media kit with rate card
+1. Login screen - dark, premium brand introduction
+2. Home tab - daily briefing with action items and matched campaigns
+3. Discover tab - campaign discovery feed with filters
+4. Campaign detail - brief, deliverables, apply flow
+5. Profile tab - creator media kit with rate card
 
 ### iPhone 6.5" (1284 x 2778)
 Same 5 screens as above
@@ -91,4 +86,4 @@ Same 5 screens as above
 
 ## Localization
 Primary: English
-The app supports any language via AI translation. Users can select their preferred language in Settings after login.
+The app supports translated campaign briefs. Users can select their preferred language in Settings after login.

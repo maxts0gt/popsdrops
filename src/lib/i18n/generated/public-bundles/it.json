@@ -6,7 +6,6 @@
     "nav.creators": "Creator",
     "nav.earnings": "Guadagni",
     "nav.profile": "Profilo",
-    "nav.messages": "Messaggi",
     "nav.notifications": "Notifiche",
     "nav.settings": "Impostazioni",
     "nav.forBrands": "Per i Brand",
@@ -68,7 +67,6 @@
     "empty.noData": "Ancora nulla qui",
     "empty.noNotifications": "Sei in pari con tutto",
     "empty.noCampaigns": "Nessuna campagna presente",
-    "empty.noMessages": "Nessun messaggio presente",
     "time.today": "Oggi",
     "time.yesterday": "Ieri",
     "time.daysAgo": "{count} giorni fa",
@@ -130,7 +128,9 @@
     "format.photoPost": "Post fotografico",
     "format.reel": "Reel",
     "format.carousel": "Carosello",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Comunicazioni",
+    "empty.noUpdates": "Nessun aggiornamento al momento"
   },
   "marketing.landing": {
     "meta.title": "Campagne Creator senza frontiere",

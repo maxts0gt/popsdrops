@@ -5,7 +5,7 @@
 CREATE SCHEMA IF NOT EXISTS app_private;
 
 REVOKE ALL ON SCHEMA app_private FROM PUBLIC;
-GRANT USAGE ON SCHEMA app_private TO anon, authenticated, service_role;
+GRANT USAGE ON SCHEMA app_private TO authenticated, service_role;
 
 CREATE OR REPLACE FUNCTION app_private.current_user_is_admin()
 RETURNS boolean
@@ -875,4 +875,4 @@ CREATE POLICY campaign_evidence_objects_delete
   );
 
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA app_private
-  TO anon, authenticated, service_role;
+  TO authenticated, service_role;

@@ -5,19 +5,38 @@ import {
   getMarketLabel,
   getPlatformLabel,
 } from "@/lib/constants";
-import type {
-  ReportExportCreator,
-  ReportExportData,
-  ReportExportMetric,
-  ReportExportSection,
-  ReportExportTrustItem,
+import { CAMPAIGN_ASSET_BUCKET_ID } from "@/lib/campaigns/creative-kit-upload";
+import {
+  buildReportLeadershipHandoff,
+  buildReportExportStory,
+  buildReportProofReviewProvenance,
+  type ReportExportCreator,
+  type ReportExportData,
+  type ReportExportMetric,
+  type ReportExportRecommendation,
+  type ReportExportSection,
+  type ReportExportTrustItem,
 } from "@/lib/reporting/report-export";
 import {
+  buildReportCompositionExportData,
+  type ReportBuilderChartModeId,
+  type ReportBuilderPresentation,
+  type ReportBuilderPresetSelectionId,
+} from "@/lib/reporting/report-builder";
+import {
+  formatReportChannelCount,
+  formatReportReadCount,
+} from "@/lib/reporting/report-count-labels";
+import {
+  expandReportReadByMetricPlatforms,
   buildAllPlatformReportMetrics,
   buildPlatformReportMetrics,
   buildReportCompletionMetric,
   buildReportEvidenceMetric,
+  getAcceptedReportReads,
   getAvailableReportPlatforms,
+  getMetricValueSourceType,
+  partitionReportPlatforms,
   type CampaignReportRead,
   type CampaignReportTask,
   type PlatformReportMetrics,
@@ -28,13 +47,28 @@ import {
   hashReportShareToken,
   isReportShareTokenShape,
 } from "@/lib/reporting/report-share-links";
+import type { PerformanceAiExtractionStatus } from "@/types/database";
 
 interface CampaignRow {
   id: string;
+  brand_id: string;
   title: string;
+  platforms: string[] | null;
   total_spend: number | null;
   posting_window_start: string | null;
   posting_window_end: string | null;
+}
+
+interface CampaignReportPlanGoalRow {
+  report_template_id: string | null;
+  report_preset_id: string | null;
+  report_chart_mode_id: string | null;
+  report_block_ids: string[] | null;
+  report_presentation: ReportBuilderPresentation | null;
+}
+
+interface BuildCampaignSharedReportOptions {
+  applyCampaignComposition?: boolean;
 }
 
 interface SharedMemberPerformance {
@@ -49,6 +83,17 @@ interface SharedMemberPerformance {
   er: number;
   cpe: number;
   rating: number;
+}
+
+interface CampaignReportImageAssetRow {
+  bucket_id: string | null;
+  storage_path: string | null;
+  title: string | null;
+}
+
+interface CampaignReportImage {
+  signedUrl: string;
+  title: string | null;
 }
 
 export interface SharedReportLinkMeta {
@@ -78,18 +123,71 @@ function formatNumber(value: number): string {
 function formatDate(value: string | null): string {
   if (!value) return "-";
 
-  return new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, "0")}/${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
 }
 
 function dateRange(campaign: CampaignRow): string {
-  return `${formatDate(campaign.posting_window_start)} to ${formatDate(campaign.posting_window_end)}`;
+  return `${formatDate(campaign.posting_window_start)} - ${formatDate(campaign.posting_window_end)}`;
 }
 
-function engagementCount(row: Record<string, number | null>): number {
+const CAMPAIGN_REPORT_IMAGE_SIGNED_URL_TTL_SECONDS = 60 * 60 * 24 * 7;
+
+async function loadCampaignReportImage(
+  supabase: ReturnType<typeof createAdminClient>,
+  campaignId: string,
+): Promise<CampaignReportImage | null> {
+  const selectColumns = "title, bucket_id, storage_path";
+  const readyImageQuery = () =>
+    supabase
+      .from("campaign_assets")
+      .select(selectColumns)
+      .eq("campaign_id", campaignId)
+      .eq("status", "ready")
+      .like("mime_type", "image/%")
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+  const { data: preferredRows } = await readyImageQuery().eq(
+    "asset_type",
+    "product_image",
+  );
+  const { data: fallbackRows } =
+    preferredRows && preferredRows.length > 0
+      ? { data: null }
+      : await readyImageQuery();
+  const asset = ((preferredRows?.[0] ?? fallbackRows?.[0] ?? null) as
+    | CampaignReportImageAssetRow
+    | null);
+
+  if (!asset?.storage_path) return null;
+
+  const { data } = await supabase.storage
+    .from(asset.bucket_id || CAMPAIGN_ASSET_BUCKET_ID)
+    .createSignedUrl(
+      asset.storage_path,
+      CAMPAIGN_REPORT_IMAGE_SIGNED_URL_TTL_SECONDS,
+    );
+
+  if (!data?.signedUrl) return null;
+
+  return {
+    signedUrl: data.signedUrl,
+    title: asset.title ?? null,
+  };
+}
+
+function engagementCount(row: {
+  likes?: number | null;
+  comments?: number | null;
+  shares?: number | null;
+  saves?: number | null;
+  clicks?: number | null;
+}): number {
   return (
     numberValue(row.likes) +
     numberValue(row.comments) +
@@ -184,19 +282,23 @@ function buildMetricConfigs({
 
 function buildTrustItems(evidence: ReportEvidenceMetric): ReportExportTrustItem[] {
   const dataWindow = evidence.dataWindow
-    ? `${formatDate(`${evidence.dataWindow.start}T00:00:00.000Z`)} ~ ${formatDate(`${evidence.dataWindow.end}T00:00:00.000Z`)}`
+    ? `${formatDate(`${evidence.dataWindow.start}T00:00:00.000Z`)} - ${formatDate(`${evidence.dataWindow.end}T00:00:00.000Z`)}`
     : "None";
-  const reportStatus = evidence.totalTasks > 0
-    ? `${evidence.submittedTasks}/${evidence.totalTasks} submitted`
+  const reportStatus = buildSharedReportStatusValue(evidence);
+  const sourceValue = evidence.sourceLabels.length > 0
+    ? evidence.sourceLabels.join(", ")
     : "None";
+  const sourceDetail = buildSourceDetail(evidence, sourceValue);
 
   return [
     {
+      key: "evidence_backed_reads",
       label: "Evidence-backed reads",
       value: `${evidence.evidenceBackedReads}/${evidence.totalReads}`,
       detail: "Native analytics screenshots",
     },
     {
+      key: "verified_reads",
       label: "Verified reads",
       value: `${evidence.verifiedReads}/${evidence.totalReads}`,
       detail: evidence.confidence === "verified"
@@ -204,27 +306,237 @@ function buildTrustItems(evidence: ReportEvidenceMetric): ReportExportTrustItem[
         : "Supported by source evidence",
     },
     {
+      key: "data_window",
       label: "Data window",
       value: dataWindow,
       detail: "Platform read dates",
     },
     {
+      key: "report_status",
       label: "Report status",
-      value: reportStatus,
-      detail: "Creator reporting tasks",
+      value: reportStatus.value,
+      detail: reportStatus.detail,
+    },
+    {
+      key: "data_source",
+      label: "Data source",
+      value: sourceValue,
+      detail: sourceDetail,
     },
   ];
 }
 
-async function buildCampaignSharedReport(campaignId: string): Promise<ReportExportData | null> {
+function buildSourceDetail(
+  evidence: ReportEvidenceMetric,
+  sourceValue: string,
+): string {
+  const sourceText = sourceValue.toLowerCase();
+
+  if (
+    sourceText.includes("brand-reviewed proof") ||
+    (evidence.totalReads > 0 && evidence.verifiedReads >= evidence.totalReads)
+  ) {
+    return "Creator evidence reviewed by brand";
+  }
+
+  if (
+    sourceText.includes("creator-entered proof") ||
+    (evidence.totalReads > 0 && evidence.verifiedReads < evidence.totalReads)
+  ) {
+    return "Creator-submitted values awaiting brand review";
+  }
+
+  return "Evidence path into PopsDrops";
+}
+
+function buildSharedReportStatusValue(
+  evidence: ReportEvidenceMetric,
+): { value: string; detail: string } {
+  const submittedDetail = evidence.totalTasks > 0
+    ? `${evidence.submittedTasks}/${evidence.totalTasks} submitted`
+    : "Creator reporting tasks";
+
+  if (evidence.totalTasks === 0) {
+    return {
+      value: "None",
+      detail: "Creator reporting tasks",
+    };
+  }
+
+  if (evidence.missedTasks > 0) {
+    return {
+      value: `${evidence.missedTasks} missed`,
+      detail: submittedDetail,
+    };
+  }
+
+  if (evidence.correctionRequestedReads > 0) {
+    return {
+      value: `${evidence.correctionRequestedReads} correction requested`,
+      detail: submittedDetail,
+    };
+  }
+
+  if (evidence.missingEvidenceReads > 0) {
+    return {
+      value: `${evidence.missingEvidenceReads} missing proof`,
+      detail: submittedDetail,
+    };
+  }
+
+  if (evidence.pendingReviewReads > 0) {
+    return {
+      value: `${evidence.pendingReviewReads} awaiting review`,
+      detail: submittedDetail,
+    };
+  }
+
+  return {
+    value: "Ready for review",
+    detail: submittedDetail,
+  };
+}
+
+function getLatestSharedReportProofReview(
+  evidenceRows: Array<{
+    reviewed_at: string | null;
+    reviewed_by: string | null;
+    verification_status: string | null;
+  }>,
+): { reviewedAt: string | null; reviewerRecorded: boolean } {
+  const reviewedEvidenceRows = evidenceRows.filter(
+    (evidence) => evidence.reviewed_at && evidence.verification_status === "verified",
+  );
+  const reviewedAt = reviewedEvidenceRows
+    .map((evidence) => evidence.reviewed_at)
+    .filter((value): value is string => Boolean(value))
+    .toSorted((first, second) => new Date(second).getTime() - new Date(first).getTime())[0] ??
+    null;
+
+  return {
+    reviewedAt,
+    reviewerRecorded: reviewedEvidenceRows.some((evidence) => Boolean(evidence.reviewed_by)),
+  };
+}
+
+function buildRecommendations({
+  allMetrics,
+  performers,
+  platformMetrics,
+}: {
+  allMetrics: PlatformReportMetrics;
+  performers: SharedMemberPerformance[];
+  platformMetrics: Array<{ platform: string; metrics: PlatformReportMetrics }>;
+}): ReportExportRecommendation[] {
+  const recommendations: ReportExportRecommendation[] = [];
+  const topCreator = performers
+    .filter((creator) => creator.views > 0)
+    .toSorted((first, second) => second.views - first.views)[0];
+
+  if (topCreator) {
+    recommendations.push({
+      title: "Top creator",
+      value: topCreator.name,
+      detail: `${formatNumber(topCreator.views)} views on ${getPlatformLabel(topCreator.platform || "")}`,
+    });
+  }
+
+  const bestChannel = platformMetrics
+    .filter((item) => item.metrics.readCount > 0 && item.metrics.views > 0)
+    .toSorted(
+      (first, second) =>
+        second.metrics.engagementRate - first.metrics.engagementRate ||
+        second.metrics.views - first.metrics.views,
+    )[0];
+
+  if (bestChannel) {
+    recommendations.push({
+      title: "Best channel",
+      value: getPlatformLabel(bestChannel.platform),
+      detail: `${bestChannel.metrics.engagementRate.toFixed(1)}% engagement rate across ${
+        bestChannel.metrics.readCount === 1
+          ? "1 read"
+          : `${bestChannel.metrics.readCount} reads`
+      }`,
+    });
+  }
+
+  if (allMetrics.cpe > 0) {
+    recommendations.push({
+      title: "Efficiency",
+      value: formatCurrency(allMetrics.cpe, "en", "USD", 2),
+      detail: `${formatCurrency(allMetrics.spend, "en")} verified spend`,
+    });
+  }
+
+  return recommendations.slice(0, 3);
+}
+
+async function loadSharedReportCompositionTemplate({
+  brandId,
+  templateId,
+  supabase,
+}: {
+  brandId: string;
+  templateId: string | null | undefined;
+  supabase: ReturnType<typeof createAdminClient>;
+}) {
+  if (!templateId) return null;
+
+  const { data } = await supabase
+    .from("report_composition_templates")
+    .select("id, name, description, report_presentation")
+    .eq("id", templateId)
+    .eq("brand_id", brandId)
+    .maybeSingle();
+
+  if (!data) return null;
+
+  return {
+    id: data.id as string,
+    name: data.name as string,
+    description: data.description as string | null,
+    presentation: data.report_presentation as ReportBuilderPresentation | null,
+  };
+}
+
+export async function buildCampaignSharedReport(
+  campaignId: string,
+  options: BuildCampaignSharedReportOptions = {},
+): Promise<ReportExportData | null> {
+  const shouldApplyCampaignComposition = options.applyCampaignComposition ?? true;
   const supabase = createAdminClient();
   const { data: campaign } = await supabase
     .from("campaigns")
-    .select("id, title, total_spend, posting_window_start, posting_window_end")
+    .select("id, brand_id, title, platforms, total_spend, posting_window_start, posting_window_end")
     .eq("id", campaignId)
     .single();
 
   if (!campaign) return null;
+
+  const campaignImage = await loadCampaignReportImage(supabase, campaignId);
+
+  const { data: reportPlanData } = await supabase
+    .from("campaign_reporting_plans")
+    .select("report_template_id, report_preset_id, report_chart_mode_id, report_block_ids, report_presentation")
+    .eq("campaign_id", campaignId)
+    .maybeSingle();
+  const reportPlan = reportPlanData as CampaignReportPlanGoalRow | null;
+  const reportTemplate = await loadSharedReportCompositionTemplate({
+    brandId: campaign.brand_id,
+    templateId: reportPlan?.report_template_id,
+    supabase,
+  });
+
+  const { data: reportingRequirements } = await supabase
+    .from("campaign_reporting_requirements")
+    .select("platform, platform_label")
+    .eq("campaign_id", campaignId);
+  const reportingPlatformLabels = new Map(
+    (reportingRequirements || [])
+      .filter((row) => row.platform && row.platform_label)
+      .map((row) => [row.platform as string, row.platform_label as string]),
+  );
 
   const { data: members } = await supabase
     .from("campaign_members")
@@ -269,21 +581,94 @@ async function buildCampaignSharedReport(campaignId: string): Promise<ReportExpo
       .from("content_submissions")
       .select(
         `id, campaign_member_id, platform,
-         content_performance ( measurement_type, reported_at, views, likes, comments, shares, saves, clicks, screenshot_url, verification_status )`,
+         content_performance (
+           id, report_task_id, measurement_type, reported_at, views, likes, comments, shares, saves, clicks, screenshot_url, verification_status,
+           content_performance_metric_values ( platform, source_type, metric_key, metric_label, metric_value, confirmed_by_creator )
+         )`,
       )
       .in("campaign_member_id", memberIds);
     submissions = (data ?? []) as Record<string, unknown>[];
   }
 
-  const reportReads: CampaignReportRead[] = [];
-  const latestPerformanceBySubmission = new Map<
+  const performanceIds = submissions.flatMap((submission) => {
+    const performanceRows = Array.isArray(submission.content_performance)
+      ? submission.content_performance
+      : submission.content_performance
+        ? [submission.content_performance]
+        : [];
+
+    return performanceRows
+      .map((row) => (row as Record<string, unknown>).id as string | null)
+      .filter(Boolean) as string[];
+  });
+  const aiStatusByPerformanceId = new Map<string, PerformanceAiExtractionStatus>();
+  const evidenceByPerformanceId = new Map<
     string,
     {
-      memberId: string;
-      platform: string | null;
-      row: Record<string, number | string | null>;
+      id: string;
+      performance_id: string;
+      reviewed_at: string | null;
+      reviewed_by: string | null;
+      verification_status: string | null;
     }
   >();
+
+  if (performanceIds.length > 0) {
+    const { data: evidences } = await supabase
+      .from("content_performance_evidence")
+      .select("id, performance_id, verification_status, reviewed_at, reviewed_by")
+      .in("performance_id", performanceIds)
+      .order("created_at", { ascending: false });
+
+    for (const evidence of evidences ?? []) {
+      if (
+        evidence.performance_id &&
+        evidence.id &&
+        !evidenceByPerformanceId.has(evidence.performance_id)
+      ) {
+        evidenceByPerformanceId.set(evidence.performance_id, {
+          id: evidence.id,
+          performance_id: evidence.performance_id,
+          reviewed_at: evidence.reviewed_at ?? null,
+          reviewed_by: evidence.reviewed_by ?? null,
+          verification_status: evidence.verification_status ?? null,
+        });
+      }
+    }
+
+    const evidenceIds = Array.from(evidenceByPerformanceId.values()).map(
+      (evidence) => evidence.id,
+    );
+
+    if (evidenceIds.length > 0) {
+      const { data: aiExtractions } = await supabase
+        .from("content_performance_ai_extractions")
+        .select("evidence_id, status, created_at")
+        .in("evidence_id", evidenceIds)
+        .order("created_at", { ascending: false });
+
+      const aiStatusByEvidenceId = new Map<string, PerformanceAiExtractionStatus>();
+
+      for (const extraction of aiExtractions ?? []) {
+        const evidenceId = extraction.evidence_id;
+        if (evidenceId && !aiStatusByEvidenceId.has(evidenceId)) {
+          aiStatusByEvidenceId.set(
+            evidenceId,
+            extraction.status as PerformanceAiExtractionStatus,
+          );
+        }
+      }
+
+      for (const [performanceId, evidence] of evidenceByPerformanceId) {
+        const aiExtractionStatus = aiStatusByEvidenceId.get(evidence.id);
+        if (aiExtractionStatus) {
+          aiStatusByPerformanceId.set(performanceId, aiExtractionStatus);
+        }
+      }
+    }
+  }
+
+  const reportReads: CampaignReportRead[] = [];
 
   for (const submission of submissions) {
     const performanceRows = Array.isArray(submission.content_performance)
@@ -295,12 +680,18 @@ async function buildCampaignSharedReport(campaignId: string): Promise<ReportExpo
     const memberId = submission.campaign_member_id as string;
     const platform = submission.platform as string | null;
 
-    for (const row of performanceRows as Array<Record<string, number | string | null>>) {
+    for (const row of performanceRows as Array<Record<string, unknown>>) {
+      const performanceId = row.id as string | null;
       const reportedAt = (row.reported_at as string | null) || new Date().toISOString();
+      const metricValues = Array.isArray(row.content_performance_metric_values)
+        ? row.content_performance_metric_values
+        : [];
+      const evidence = performanceId ? evidenceByPerformanceId.get(performanceId) : null;
 
-      reportReads.push({
+      const read: CampaignReportRead = {
         campaignMemberId: memberId,
         submissionId,
+        reportTaskId: row.report_task_id as string | null,
         platform,
         reportedAt,
         views: row.views as number | null,
@@ -311,15 +702,16 @@ async function buildCampaignSharedReport(campaignId: string): Promise<ReportExpo
         clicks: row.clicks as number | null,
         screenshotUrl: row.screenshot_url as string | null,
         verificationStatus: row.verification_status as string | null,
-      });
+        evidenceVerificationStatus: evidence?.verification_status ?? null,
+        evidenceReviewedAt: evidence?.reviewed_at ?? null,
+        evidenceReviewedBy: evidence?.reviewed_by ?? null,
+        aiExtractionStatus: performanceId
+          ? aiStatusByPerformanceId.get(performanceId) ?? null
+          : null,
+        sourceType: getMetricValueSourceType(metricValues),
+      };
 
-      const current = latestPerformanceBySubmission.get(submissionId);
-      if (
-        !current ||
-        new Date(reportedAt).getTime() > new Date(current.row.reported_at as string).getTime()
-      ) {
-        latestPerformanceBySubmission.set(submissionId, { memberId, platform, row });
-      }
+      reportReads.push(...expandReportReadByMetricPlatforms(read, metricValues));
     }
   }
 
@@ -328,63 +720,110 @@ async function buildCampaignSharedReport(campaignId: string): Promise<ReportExpo
     status: task.status || "pending",
     submittedAt: task.submitted_at,
   })) satisfies CampaignReportTask[];
-  const availablePlatforms = getAvailableReportPlatforms(reportReads);
+  const trustedReportReads = getAcceptedReportReads(reportReads);
+  const availablePlatforms = getAvailableReportPlatforms(trustedReportReads);
+  const {
+    campaignPlatforms: campaignChannelPlatforms,
+    proofSourcePlatforms,
+  } = partitionReportPlatforms({
+    availablePlatforms,
+    campaignPlatforms: campaign.platforms,
+  });
+  const campaignChannelReads = trustedReportReads.filter(
+    (read) => read.platform && campaignChannelPlatforms.includes(read.platform),
+  );
   const completionMetric = buildReportCompletionMetric(reportTasks);
   const evidenceMetric = buildReportEvidenceMetric({
     reads: reportReads,
     tasks: reportTasks,
   });
-  const allMetrics = buildAllPlatformReportMetrics({ reads: reportReads, memberRates });
+  const allMetrics = buildAllPlatformReportMetrics({ reads: campaignChannelReads, memberRates });
+  const platformMetrics = campaignChannelPlatforms.map((platform) => ({
+    platform,
+    metrics: buildPlatformReportMetrics({
+      reads: campaignChannelReads,
+      memberRates,
+      platform,
+    }),
+  }));
+  const proofSourceMetrics = proofSourcePlatforms.map((platform) => ({
+    platform,
+    metrics: buildPlatformReportMetrics({
+      reads: trustedReportReads,
+      memberRates,
+      platform,
+    }),
+  }));
   const allCards = buildMetricConfigs({
     metrics: allMetrics,
     completion: completionMetric,
-    readDetail: `${availablePlatforms.length} channels`,
+    readDetail: formatReportChannelCount(campaignChannelPlatforms.length),
     platformDetail: "All Channels",
   });
   const sections: ReportExportSection[] = [
     {
       title: "All Channels",
       detail: "Compared by channel.",
+      sourceGroup: "campaign_channel",
       metrics: allCards.filter((metric) => metric.key !== "reports"),
     },
-    ...availablePlatforms.map((platform) => {
-      const metrics = buildPlatformReportMetrics({
-        reads: reportReads,
-        memberRates,
-        platform,
-      });
-
-      return {
-        title: getPlatformLabel(platform),
+    ...platformMetrics.map((item) => ({
+        title: getPlatformLabel(item.platform),
         detail: "Platform-native metrics",
+        sourceGroup: "campaign_channel" as const,
         metrics: buildMetricConfigs({
-          metrics,
+          metrics: item.metrics,
           completion: completionMetric,
-          readDetail: metrics.readCount === 1 ? "1 read" : `${metrics.readCount} reads`,
-          platformDetail: getPlatformLabel(platform),
+          readDetail: formatReportReadCount(item.metrics.readCount),
+          platformDetail: getPlatformLabel(item.platform),
         }).filter((metric) => metric.key !== "reports"),
-      };
-    }),
+    })),
+    ...proofSourceMetrics.map((item) => ({
+      title: reportingPlatformLabels.get(item.platform) || getPlatformLabel(item.platform),
+      detail: "Supporting evidence only. Not mixed into campaign channel totals.",
+      sourceGroup: "proof_source" as const,
+      metrics: buildMetricConfigs({
+        metrics: item.metrics,
+        completion: completionMetric,
+        readDetail: formatReportReadCount(item.metrics.readCount),
+        platformDetail: reportingPlatformLabels.get(item.platform) || getPlatformLabel(item.platform),
+      }).filter((metric) => metric.key !== "reports" && metric.key !== "cpe"),
+    })),
   ];
   const performanceByMemberPlatform = new Map<
     string,
     { views: number; engagements: number; platform: string | null }
   >();
+  const latestTrustedReadBySubmission = new Map<string, CampaignReportRead>();
 
-  for (const performance of latestPerformanceBySubmission.values()) {
-    const key = `${performance.memberId}:${performance.platform || "unknown"}`;
+  for (const read of trustedReportReads) {
+    const key =
+      read.submissionId
+        ? `${read.submissionId}:${read.platform || "unknown"}`
+        :
+      `${read.campaignMemberId}:${read.platform || "unknown"}:${read.reportedAt}`;
+    const current = latestTrustedReadBySubmission.get(key);
+
+    if (
+      !current ||
+      new Date(read.reportedAt).getTime() >= new Date(current.reportedAt).getTime()
+    ) {
+      latestTrustedReadBySubmission.set(key, read);
+    }
+  }
+
+  for (const read of latestTrustedReadBySubmission.values()) {
+    const key = `${read.campaignMemberId}:${read.platform || "unknown"}`;
     const existing = performanceByMemberPlatform.get(key) ?? {
       views: 0,
       engagements: 0,
-      platform: performance.platform,
+      platform: read.platform,
     };
 
     performanceByMemberPlatform.set(key, {
-      views: existing.views + numberValue(performance.row.views as number | null),
-      engagements:
-        existing.engagements +
-        engagementCount(performance.row as Record<string, number | null>),
-      platform: performance.platform || existing.platform,
+      views: existing.views + numberValue(read.views),
+      engagements: existing.engagements + engagementCount(read),
+      platform: read.platform || existing.platform,
     });
   }
 
@@ -431,19 +870,65 @@ async function buildCampaignSharedReport(campaignId: string): Promise<ReportExpo
     spent: creator.rate != null ? formatCurrency(creator.rate, "en") : "-",
     rating: creator.rating > 0 ? creator.rating.toFixed(1) : "-",
   }));
+  const latestProofReview = getLatestSharedReportProofReview(
+    Array.from(evidenceByPerformanceId.values()),
+  );
 
-  return {
+  const baseReport: ReportExportData = {
     campaignTitle: campaign.title,
     dateRange: dateRange(campaign),
     generatedAt: new Date().toISOString(),
+    campaignImageAlt: campaignImage?.title ?? null,
+    campaignImageUrl: campaignImage?.signedUrl ?? null,
+    proofReview: buildReportProofReviewProvenance({
+      reviewedAt: evidenceMetric.latestReviewedAt ?? latestProofReview.reviewedAt,
+      reviewerRecorded: Boolean(evidenceMetric.reviewerRecorded) ||
+        latestProofReview.reviewerRecorded,
+    }),
     kpis: allCards.map((card) => ({
+      key: card.key,
       label: card.label,
       value: card.value,
       detail: card.detail,
     })),
     trust: buildTrustItems(evidenceMetric),
+    recommendations: buildRecommendations({
+      allMetrics,
+      performers,
+      platformMetrics,
+    }),
     sections,
     creators,
+  };
+  const baseReportWithLeadershipHandoff: ReportExportData = {
+    ...baseReport,
+    leadershipHandoff: buildReportLeadershipHandoff(baseReport),
+  };
+
+  if (!shouldApplyCampaignComposition) {
+    return {
+      ...baseReportWithLeadershipHandoff,
+      story: buildReportExportStory(baseReportWithLeadershipHandoff),
+    };
+  }
+
+  const composedReport = buildReportCompositionExportData(baseReportWithLeadershipHandoff, {
+    blockIds: reportPlan?.report_block_ids,
+    chartModeId: reportPlan?.report_chart_mode_id as
+      | ReportBuilderChartModeId
+      | null
+      | undefined,
+    presetId: reportPlan?.report_preset_id as
+      | ReportBuilderPresetSelectionId
+      | null
+      | undefined,
+    presentation: reportPlan?.report_presentation,
+    template: reportTemplate,
+  });
+
+  return {
+    ...composedReport,
+    story: buildReportExportStory(composedReport),
   };
 }
 

@@ -6,7 +6,6 @@
     "nav.creators": "Pencipta",
     "nav.earnings": "Pendapatan",
     "nav.profile": "Profil",
-    "nav.messages": "Mesej",
     "nav.notifications": "Notifikasi",
     "nav.settings": "Tetapan",
     "nav.forBrands": "Untuk Jenama",
@@ -68,7 +67,6 @@
     "empty.noData": "Tiada maklumat di sini",
     "empty.noNotifications": "Semua notifikasi telah dibaca",
     "empty.noCampaigns": "Tiada kempen lagi",
-    "empty.noMessages": "Tiada mesej lagi",
     "time.today": "Hari ini",
     "time.yesterday": "Semalam",
     "time.daysAgo": "{count} hari lalu",
@@ -130,7 +128,9 @@
     "format.photoPost": "Hantaran Foto",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Siaran Langsung"
+    "format.live": "Siaran Langsung",
+    "nav.communications": "Komunikasi",
+    "empty.noUpdates": "Tiada kemas kini lagi"
   },
   "marketing.landing": {
     "meta.title": "Kempen Pencipta Tanpa Sempadan",

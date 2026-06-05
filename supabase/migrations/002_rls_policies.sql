@@ -239,7 +239,7 @@ CREATE POLICY campaign_members_select_brand ON campaign_members
 CREATE POLICY campaign_members_select_own ON campaign_members
   FOR SELECT USING (creator_id = (SELECT auth.uid()));
 
--- No direct INSERT for users — service role only (via accept application flow)
+-- No direct INSERT for users - service role only (via accept application flow)
 -- Brand can update payment status
 CREATE POLICY campaign_members_update_brand ON campaign_members
   FOR UPDATE USING (is_campaign_brand(campaign_id));
@@ -422,7 +422,7 @@ CREATE POLICY notifications_admin ON notifications
 -- NOTIFICATION_QUEUE
 -- ============================================================
 
--- No direct access for users — service role only
+-- No direct access for users - service role only
 -- Admin can view for debugging
 CREATE POLICY notification_queue_admin ON notification_queue
   FOR SELECT USING (

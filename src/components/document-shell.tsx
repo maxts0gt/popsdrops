@@ -1,5 +1,4 @@
 import { Cairo, Inter } from "next/font/google";
-import { ThemeProvider } from "next-themes";
 
 import { getDocumentI18n } from "@/lib/i18n/document";
 
@@ -28,18 +27,12 @@ export function DocumentShell({
     <html
       lang={lang}
       dir={dir}
+      data-scroll-behavior="smooth"
       className={`${inter.variable} ${cairo.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-sans">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          forcedTheme="light"
-          disableTransitionOnChange
-        >
-          {children}
-        </ThemeProvider>
+        {children}
       </body>
     </html>
   );

@@ -6,7 +6,6 @@
     "nav.creators": "Créateurs",
     "nav.earnings": "Revenus",
     "nav.profile": "Profil",
-    "nav.messages": "Messages",
     "nav.notifications": "Notifications",
     "nav.settings": "Paramètres",
     "nav.forBrands": "Pour les marques",
@@ -68,7 +67,6 @@
     "empty.noData": "Rien à afficher pour le moment",
     "empty.noNotifications": "Vous êtes à jour",
     "empty.noCampaigns": "Aucune campagne pour le moment",
-    "empty.noMessages": "Aucun message pour le moment",
     "time.today": "Aujourd'hui",
     "time.yesterday": "Hier",
     "time.daysAgo": "Il y a {count} jours",
@@ -130,7 +128,9 @@
     "format.photoPost": "Publication photo",
     "format.reel": "Reel",
     "format.carousel": "Carrousel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Communications",
+    "empty.noUpdates": "Aucune mise à jour pour le moment"
   },
   "marketing.landing": {
     "meta.title": "Campagnes créateurs sans frontières",

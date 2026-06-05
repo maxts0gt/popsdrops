@@ -272,7 +272,7 @@ export function EditSlugSheet({
         <SheetHeader>
           <SheetTitle>Profile URL</SheetTitle>
           <SheetDescription>
-            Your unique media kit link. 3–30 characters, lowercase.
+            Your unique media kit link. 3 to 30 characters, lowercase.
           </SheetDescription>
         </SheetHeader>
 
@@ -296,7 +296,7 @@ export function EditSlugSheet({
           </div>
           {slug && !isValid && (
             <p className="mt-1 text-xs text-red-500">
-              Must be 3–30 characters
+              Must be 3 to 30 characters
             </p>
           )}
         </div>

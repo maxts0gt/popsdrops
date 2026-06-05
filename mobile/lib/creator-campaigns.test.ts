@@ -12,7 +12,7 @@ import {
 const creatorSignals: CreatorCampaignSignals = {
   platforms: ["instagram", "tiktok"],
   niches: ["beauty", "lifestyle"],
-  markets: ["france", "uae"],
+  markets: ["fr", "ae"],
 };
 
 const campaigns: DiscoverCampaignRecord[] = [
@@ -22,7 +22,7 @@ const campaigns: DiscoverCampaignRecord[] = [
     brandName: "Maison Luxe",
     platforms: ["instagram"],
     niches: ["beauty"],
-    markets: ["france"],
+    markets: ["fr"],
     budgetMin: 600,
     budgetMax: 900,
     budgetCurrency: "USD",
@@ -35,7 +35,7 @@ const campaigns: DiscoverCampaignRecord[] = [
     brandName: "Voyage House",
     platforms: ["tiktok"],
     niches: ["travel"],
-    markets: ["japan"],
+    markets: ["jp"],
     budgetMin: 400,
     budgetMax: 550,
     budgetCurrency: "USD",
@@ -48,7 +48,7 @@ const campaigns: DiscoverCampaignRecord[] = [
     brandName: "Existing Brand",
     platforms: ["instagram"],
     niches: ["beauty"],
-    markets: ["france"],
+    markets: ["fr"],
     budgetMin: 300,
     budgetMax: 450,
     budgetCurrency: "USD",

@@ -13,9 +13,9 @@
 **Core Identity:**
 - Display name, bio/about, profile photo
 - City + country (Collabstr, Aspire, all platforms)
-- Languages spoken (critical for cross-border — underserved on most platforms)
+- Languages spoken (critical for cross-border - underserved on most platforms)
 - Niche/category tags (Klear uses 60,000+ topic areas; most platforms use 20-50 categories)
-- Gender, age range, ethnicity (optional, used for matching — Insense, Popular Pays)
+- Gender, age range, ethnicity (optional, used for matching - Insense, Popular Pays)
 
 **Social Accounts (universal across all platforms):**
 - Instagram (Business or Creator account required for API access)
@@ -23,7 +23,7 @@
 - YouTube
 - Snapchat (CreatorIQ supports authentication)
 - Facebook
-- X/Twitter, Pinterest, Twitch (some platforms — typically view-only, no API auth)
+- X/Twitter, Pinterest, Twitch (some platforms - typically view-only, no API auth)
 - Blog URL (CreatorIQ)
 
 **Key insight:** CreatorIQ distinguishes between "adding" an account (display only) and "authenticating" it (API-connected, real-time first-party data). Authentication is supported only for Instagram, Facebook, TikTok, YouTube, Snapchat, and blogs. Re-authentication required every 90 days per platform rules.
@@ -34,10 +34,10 @@
 - Past brand collaborations (Aspire)
 
 **Business Information:**
-- Payment details (bank/PayPal — collected during onboarding on GRIN, CreatorIQ)
+- Payment details (bank/PayPal - collected during onboarding on GRIN, CreatorIQ)
 - Tax forms (CreatorIQ collects W-9/W-8BEN during onboarding)
-- Shipping address (GRIN — for product seeding campaigns)
-- Sizing information (CreatorIQ — fashion brands)
+- Shipping address (GRIN - for product seeding campaigns)
+- Sizing information (CreatorIQ - fashion brands)
 
 ### Multi-Platform Social Account Handling
 
@@ -48,20 +48,20 @@
 4. Public data shown: follower count, engagement rate, recent posts
 5. Authenticated data shown: audience demographics, true reach, story performance, growth trends
 
-**Aspire approach:** Linking social accounts "unlocks more opportunities" — gamifying authentication as a benefit to the creator, not a requirement.
+**Aspire approach:** Linking social accounts "unlocks more opportunities" - gamifying authentication as a benefit to the creator, not a requirement.
 
 **Klear/Meltwater:** Creators who authenticate see "enhanced trust with brands, faster approvals, and effortless campaign tracking." They frame it as a competitive advantage.
 
 ### Profile Completeness
 
 **Common completeness tiers:**
-1. **Basic** — Name, photo, one social account linked → can browse but low visibility
-2. **Standard** — Bio, 2+ social accounts authenticated, location, niche tags → visible in search
-3. **Complete** — Rate card, portfolio samples, payment info, all active accounts linked → featured/prioritized in recommendations
+1. **Basic** - Name, photo, one social account linked → can browse but low visibility
+2. **Standard** - Bio, 2+ social accounts authenticated, location, niche tags → visible in search
+3. **Complete** - Rate card, portfolio samples, payment info, all active accounts linked → featured/prioritized in recommendations
 
 **Aspire:** Minimum 1,000 followers on any network to see any campaigns. Profile completeness determines which campaigns appear.
 
-**Collabstr:** Profiles go through a review process to verify identity and quality before going live. Completeness directly affects search ranking — "as you begin to complete orders successfully, you will rank higher."
+**Collabstr:** Profiles go through a review process to verify identity and quality before going live. Completeness directly affects search ranking - "as you begin to complete orders successfully, you will rank higher."
 
 **PopsDrops implication:** Our "quality threshold" concept aligns perfectly. The two-tier visibility (exists but invisible to brands / visible in search) matches the Aspire model. Progressive disclosure of profile fields is industry standard.
 
@@ -70,7 +70,7 @@
 **Standard media kit sections:**
 - Creator name, photo, bio
 - Platform follower counts + engagement rates
-- Audience demographics (age, gender, location breakdown — requires authentication)
+- Audience demographics (age, gender, location breakdown - requires authentication)
 - Top-performing content examples (3-5 pieces)
 - Niche/category tags
 - Rate card (per platform, per content type)
@@ -81,7 +81,7 @@
 
 ### Rate Card Structure
 
-**Industry standard structure — per platform, per content type:**
+**Industry standard structure - per platform, per content type:**
 
 | Platform | Content Types |
 |----------|--------------|
@@ -92,26 +92,26 @@
 | Facebook | Post, Reel, Story, Live |
 
 **Pricing modifiers (additive):**
-- Usage rights (brand can reuse for paid ads) — +50-100% premium
-- Exclusivity (no competitor collabs for X days) — +20-50% premium
-- Whitelisting / spark ads (brand runs creator's post as ad) — separate fee
-- Rush delivery — premium
-- Revision rounds (beyond included) — per revision
+- Usage rights (brand can reuse for paid ads) - +50-100% premium
+- Exclusivity (no competitor collabs for X days) - +20-50% premium
+- Whitelisting / spark ads (brand runs creator's post as ad) - separate fee
+- Rush delivery - premium
+- Revision rounds (beyond included) - per revision
 
-**Collabstr model:** Creators list predefined "packages" — e.g., "1 TikTok Video - $150" or "3 Instagram Stories - $200." Brands purchase directly. Minimum $50.
+**Collabstr model:** Creators list predefined "packages" - e.g., "1 TikTok Video - $150" or "3 Instagram Stories - $200." Brands purchase directly. Minimum $50.
 
-**impact.com model:** Creators set preferred payment models on their profile — flat fee, performance-based (commission), or hybrid. Brands see this before engaging.
+**impact.com model:** Creators set preferred payment models on their profile - flat fee, performance-based (commission), or hybrid. Brands see this before engaging.
 
 **PopsDrops implication:** Rate card should be per-platform, per-content-format. Include modifiers for usage rights and exclusivity. Allow both fixed rates and flexible/negotiable indicators.
 
 ### Profile Verification
 
 **Methods across platforms:**
-1. **OAuth authentication** — Proving account ownership by connecting via platform API (universal)
-2. **Manual review** — Platform staff reviews profile quality (Collabstr)
-3. **Audience quality analysis** — AI-driven fake follower detection (HypeAuditor, Klear)
-4. **Government ID verification** — Meta Verified model (not common on marketing platforms)
-5. **Brand safety scoring** — Automated content analysis for brand alignment (Klear)
+1. **OAuth authentication** - Proving account ownership by connecting via platform API (universal)
+2. **Manual review** - Platform staff reviews profile quality (Collabstr)
+3. **Audience quality analysis** - AI-driven fake follower detection (HypeAuditor, Klear)
+4. **Government ID verification** - Meta Verified model (not common on marketing platforms)
+5. **Brand safety scoring** - Automated content analysis for brand alignment (Klear)
 
 **89% of audiences trust verified creators more than unverified ones** (2026 data). Verification badges are powerful trust signals.
 
@@ -125,7 +125,7 @@
 
 1. **Browse/Marketplace (creator-initiated):**
    - Aspire: Creators browse a marketplace feed, newest campaigns at top. Filter by niche, platform, follower requirements.
-   - Collabstr: Brands find creators (reverse model — creators don't browse campaigns).
+   - Collabstr: Brands find creators (reverse model - creators don't browse campaigns).
    - TikTok Creator Marketplace: "Open campaigns" that creators can search and apply to.
    - Popular Pays: Creators browse available "gigs."
 
@@ -141,7 +141,7 @@
    - Upfluence: AI scans 12M+ creators, prioritizes those with "brand affinity" for 7x higher collaboration rates.
    - impact.com: Real-time creator search with live audience metrics and engagement trends.
 
-**Key insight:** The #paid Handraise model is the most creator-friendly — creators receive pre-matched opportunities, write a pitch explaining why they're a fit, and brands choose from opted-in creators. Each creator shares a custom message + creative strategy. Recommended creators get a checkmark badge.
+**Key insight:** The #paid Handraise model is the most creator-friendly - creators receive pre-matched opportunities, write a pitch explaining why they're a fit, and brands choose from opted-in creators. Each creator shares a custom message + creative strategy. Recommended creators get a checkmark badge.
 
 ### Campaign Card vs. Detail Page Information
 
@@ -166,11 +166,11 @@
 
 ### Geographic/Language Targeting
 
-**Current state:** Most platforms filter by creator location (city/country). Language targeting is minimal — typically inferred from location, not explicitly collected.
+**Current state:** Most platforms filter by creator location (city/country). Language targeting is minimal - typically inferred from location, not explicitly collected.
 
 **Gap in the market:** No major platform handles true cross-border, multilingual campaign matching well. This is where PopsDrops has a significant differentiation opportunity. Platforms like CreatorIQ focus on creator location, not creator language capabilities or market reach.
 
-**Multicultural agencies** fill this gap manually — coordinating campaigns across languages/markets through human coordination rather than platform features.
+**Multicultural agencies** fill this gap manually - coordinating campaigns across languages/markets through human coordination rather than platform features.
 
 ### Filters That Matter Most for Creators
 
@@ -189,29 +189,29 @@
 
 ### How Creators Apply
 
-**Model 1 — Marketplace Application (Aspire, Popular Pays, Insense):**
+**Model 1 - Marketplace Application (Aspire, Popular Pays, Insense):**
 - Creator reads brief
 - Submits: proposed rate + pitch message + optional portfolio samples
 - Brand reviews applications, accepts/rejects
 - Aspire: Zero commission from creators
 
-**Model 2 — Handraise/Opt-in (#paid):**
+**Model 2 - Handraise/Opt-in (#paid):**
 - Platform pushes matched campaigns to creators
 - Creator "raises hand" with custom message explaining fit + creative strategy
 - Brand selects from handraises
 - Some creators marked as "Recommended" (checkmark) based on audience overlap
 
-**Model 3 — Direct Purchase (Collabstr):**
+**Model 3 - Direct Purchase (Collabstr):**
 - Brand purchases creator's predefined package
-- No application needed — creator accepts or declines the order
+- No application needed - creator accepts or declines the order
 - Minimum $50 per collaboration
 
-**Model 4 — Invitation + Proposal (GRIN):**
+**Model 4 - Invitation + Proposal (GRIN):**
 - Brand sends invitation via branded landing page (Live URL)
 - Creator views requirements, selects products, submits proposal with payment info
 - More controlled flow, brand-initiated
 
-**Model 5 — Open Campaign + Invitation Hybrid (TikTok Creator Marketplace):**
+**Model 5 - Open Campaign + Invitation Hybrid (TikTok Creator Marketplace):**
 - Brands invite specific creators, OR creators apply to open campaigns
 - Negotiation happens in-app after initial match
 - Content submitted for brand approval before posting
@@ -219,11 +219,11 @@
 ### Typical Application Form
 
 **Standard fields across platforms:**
-- **Proposed rate** — what the creator wants to be paid
-- **Pitch message** — why they're a good fit (1-3 paragraphs)
-- **Content idea** — brief description of their creative approach
-- **Product preferences** — which products they'd want to feature (for product seeding)
-- **Portfolio links** — relevant past work
+- **Proposed rate** - what the creator wants to be paid
+- **Pitch message** - why they're a good fit (1-3 paragraphs)
+- **Content idea** - brief description of their creative approach
+- **Product preferences** - which products they'd want to feature (for product seeding)
+- **Portfolio links** - relevant past work
 
 **Key insight:** The best applications are lightweight. Aspire and #paid keep it to rate + pitch. Heavy application forms reduce creator participation.
 
@@ -250,12 +250,12 @@ Most platforms do NOT show creators how many others applied (reduces quality of 
 ### Application Status Tracking
 
 **Standard states:**
-1. **Submitted** — application sent
-2. **Under Review** — brand is reviewing
-3. **Shortlisted** — brand is considering (not all platforms show this)
-4. **Accepted** — creator selected, contract begins
-5. **Rejected** — not selected (some platforms don't notify)
-6. **Withdrawn** — creator pulled application
+1. **Submitted** - application sent
+2. **Under Review** - brand is reviewing
+3. **Shortlisted** - brand is considering (not all platforms show this)
+4. **Accepted** - creator selected, contract begins
+5. **Rejected** - not selected (some platforms don't notify)
+6. **Withdrawn** - creator pulled application
 
 **Best practice:** Clear status indicators on the creator dashboard with timeline. Email notifications at each transition.
 
@@ -266,16 +266,16 @@ Most platforms do NOT show creators how many others applied (reduces quality of 
 ### Brief Structure (Best Practices)
 
 **Insense UGC brief template (industry gold standard):**
-1. **Product details** — photo, USPs, description, delivery info
-2. **Creator requirements** — location, category, gender, age, followers, engagement rate, screening question
-3. **Creative assets** — media type, content type (testimonial/unboxing/demo/review/how-to)
-4. **Deliverables** — exact specs (e.g., "1 raw 60s testimonial video, ~10 B-rolls, 4 CTAs")
-5. **Timeline** — e.g., "5 days after receiving product"
-6. **Key messaging** — required talking points, product features to highlight
-7. **Do's and don'ts** — things to include/avoid
-8. **Mood board / reference content** — visual direction
-9. **Disclosure requirements** — FTC/legal hashtags
-10. **Posting instructions** — platform-specific requirements
+1. **Product details** - photo, USPs, description, delivery info
+2. **Creator requirements** - location, category, gender, age, followers, engagement rate, screening question
+3. **Creative assets** - media type, content type (testimonial/unboxing/demo/review/how-to)
+4. **Deliverables** - exact specs (e.g., "1 raw 60s testimonial video, ~10 B-rolls, 4 CTAs")
+5. **Timeline** - e.g., "5 days after receiving product"
+6. **Key messaging** - required talking points, product features to highlight
+7. **Do's and don'ts** - things to include/avoid
+8. **Mood board / reference content** - visual direction
+9. **Disclosure requirements** - FTC/legal hashtags
+10. **Posting instructions** - platform-specific requirements
 
 **Popular Pays brief includes:** content creation needs, posting timeline, posting instructions, legal information.
 
@@ -291,28 +291,28 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 
 **Detailed flow (synthesized from all platforms):**
 
-1. **Creator uploads content** — video, images, or story sets to the platform
-2. **Brand receives notification** — content pending review
-3. **Brand reviews** — approves, requests revisions, or rejects
+1. **Creator uploads content** - video, images, or story sets to the platform
+2. **Brand receives notification** - content pending review
+3. **Brand reviews** - approves, requests revisions, or rejects
 4. **If revisions needed:**
    - Brand leaves specific feedback (inline annotations on content preferred)
    - Creator receives notification with revision notes
    - Creator uploads revised version (versioned: v1, v2, v3)
    - Side-by-side comparison available for reviewer
-5. **Final approval** — brand confirms content is ready
-6. **Creator posts** (if organic posting required) — or content is downloaded by brand (for UGC/ads)
-7. **Creator confirms posting** — submits post link
-8. **Payment triggered** — upon approval/posting confirmation
+5. **Final approval** - brand confirms content is ready
+6. **Creator posts** (if organic posting required) - or content is downloaded by brand (for UGC/ads)
+7. **Creator confirms posting** - submits post link
+8. **Payment triggered** - upon approval/posting confirmation
 
 ### Revision Handling
 
 **Best practices from research:**
-- **Maximum revision rounds** — typically 2-3 included in base rate (additional = extra fee)
-- **Specific feedback required** — not "make it better" but "the logo needs to be visible at 0:03"
-- **Inline annotations** — reviewers point to specific moments in video or areas in image
-- **Version control** — clear naming (v1, v2, v3), side-by-side comparison
-- **SLA for review** — 4-8 hours typical, 24-48 hour maximum before auto-escalation
-- **Traffic light indicators** — red (overdue), yellow (pending), green (approved)
+- **Maximum revision rounds** - typically 2-3 included in base rate (additional = extra fee)
+- **Specific feedback required** - not "make it better" but "the logo needs to be visible at 0:03"
+- **Inline annotations** - reviewers point to specific moments in video or areas in image
+- **Version control** - clear naming (v1, v2, v3), side-by-side comparison
+- **SLA for review** - 4-8 hours typical, 24-48 hour maximum before auto-escalation
+- **Traffic light indicators** - red (overdue), yellow (pending), green (approved)
 
 **Key finding:** Teams using structured approval workflows report 40% faster content delivery. Companies with formal workflows catch 73% more compliance issues.
 
@@ -354,10 +354,10 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 ### Payment Status Display
 
 **Standard payment states (across platforms):**
-1. **Pending** — campaign not yet complete
-2. **Processing** — payment initiated by brand
-3. **Paid** — funds received
-4. (Some platforms add) **Invoiced** — invoice generated/sent
+1. **Pending** - campaign not yet complete
+2. **Processing** - payment initiated by brand
+3. **Paid** - funds received
+4. (Some platforms add) **Invoiced** - invoice generated/sent
 
 **Key UX patterns:**
 - Dashboard widget showing total earnings, pending amounts, and recent payments
@@ -369,18 +369,18 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 
 **What creators see:**
 - Expected payment date (typically NET 30 from content approval)
-- impact.com: "fastest payouts in the industry — processed within 30 days (even faster for flat-fee contracts)"
+- impact.com: "fastest payouts in the industry - processed within 30 days (even faster for flat-fee contracts)"
 - Status indicators at each stage: content approved → invoice generated → payment processing → paid
 - Historical payment timeline (average days from approval to payment)
 
 ### Invoice Generation
 
 **Three models:**
-1. **Platform auto-generates** — Modash: "creators can generate invoices automatically, fewer steps = faster payouts"
-2. **Creator uploads own invoice** — traditional model, more friction
-3. **Hybrid** — platform pre-fills invoice, creator reviews and submits
+1. **Platform auto-generates** - Modash: "creators can generate invoices automatically, fewer steps = faster payouts"
+2. **Creator uploads own invoice** - traditional model, more friction
+3. **Hybrid** - platform pre-fills invoice, creator reviews and submits
 
-**Modern platforms prefer auto-generation** — reduces friction, ensures correct formatting, speeds up payment cycles.
+**Modern platforms prefer auto-generation** - reduces friction, ensures correct formatting, speeds up payment cycles.
 
 ### Earnings Analytics
 
@@ -401,35 +401,35 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 
 ### What Top Dashboards Prioritize
 
-**Research consensus — creator dashboards should surface (in priority order):**
+**Research consensus - creator dashboards should surface (in priority order):**
 
-1. **Action items / tasks requiring attention** — #1 priority
+1. **Action items / tasks requiring attention** - #1 priority
    - Content pending revision
    - New campaign invitations
    - Upcoming deadlines
    - Pending application responses
 
-2. **Active campaigns status** — at a glance
+2. **Active campaigns status** - at a glance
    - Campaign name + brand
    - Current phase (draft/review/approved/posted)
    - Next deadline
    - Payment status
 
-3. **Key metrics** — big bold numbers
+3. **Key metrics** - big bold numbers
    - Total earnings (lifetime + this month)
    - Active campaigns count
    - Pending payments
    - Profile views / impressions
 
-4. **New opportunities** — campaign recommendations
+4. **New opportunities** - campaign recommendations
    - Matched campaigns
    - New invitations
 
 ### Task-Based UX Patterns
 
-**Later Influence:** "Add Campaign to My Task List" — adds reminders to a Tasks panel alongside other to-dos. Task panel shows pending reviews, upcoming deadlines.
+**Later Influence:** "Add Campaign to My Task List" - adds reminders to a Tasks panel alongside other to-dos. Task panel shows pending reviews, upcoming deadlines.
 
-**Best practice:** The dashboard is NOT a data dashboard — it's a **task list**. The primary question creators ask is: "What do I need to do right now?"
+**Best practice:** The dashboard is NOT a data dashboard - it's a **task list**. The primary question creators ask is: "What do I need to do right now?"
 
 **Recommended structure:**
 - **Top section:** Action items with urgency indicators (overdue in red, due soon in yellow)
@@ -461,7 +461,7 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 **Delivery channels:**
 - In-app notification center (badge count)
 - Email notifications (configurable per type)
-- Push notifications (mobile — for urgent items only)
+- Push notifications (mobile - for urgent items only)
 
 **5 or fewer cards on initial dashboard view** is the UX best practice. Less than 5 seconds to find key information.
 
@@ -479,7 +479,7 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 
 **GRIN:** Primarily desktop. Creator portal (Live URLs) is mobile-responsive for viewing briefs and submitting proposals.
 
-**TikTok Creator Marketplace:** Fully native within TikTok app. Browse campaigns, receive invitations, negotiate, submit content — all in-app.
+**TikTok Creator Marketplace:** Fully native within TikTok app. Browse campaigns, receive invitations, negotiate, submit content - all in-app.
 
 ### Mobile vs. Desktop Actions
 
@@ -528,11 +528,11 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 - **Strength:** Enterprise-grade. Unified creator portal replaces scattered links and one-time codes. Single login for everything.
 - **Creator fields:** General info, mailing address, tax forms, interests (self-identified), payment options, sizing info (for fashion).
 - **Authentication:** Instagram, Facebook, TikTok, YouTube, Snapchat, Blogs. Re-auth every 90 days.
-- **Discovery shift:** Filters now prioritize creator attributes (location, age, gender) over follower demographics — reflecting algorithm-driven reach.
+- **Discovery shift:** Filters now prioritize creator attributes (location, age, gender) over follower demographics - reflecting algorithm-driven reach.
 - **Weakness:** Enterprise complexity. Not designed for marketplace model.
 
 ### GRIN
-- **Strength:** Live URLs — branded landing pages where creators see requirements, choose products, submit proposals, enter payment/shipping info. One cohesive branded experience.
+- **Strength:** Live URLs - branded landing pages where creators see requirements, choose products, submit proposals, enter payment/shipping info. One cohesive branded experience.
 - **Content library:** Auto-pulls all creator content, filterable by creator, metrics, color palette.
 - **Creator experience:** Portal-based. Creators access briefs, links, upload content for approval.
 - **Weakness:** More brand-centric than creator-centric. Messaging UX criticized (email-style, not chat bubbles).
@@ -541,11 +541,11 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 - **Strength:** Largest open marketplace (1M+ creators, 170M+ in database). Zero commission from creators, ever.
 - **Creator flow:** Sign up → build profile → connect socials → browse daily campaigns → apply with rate + pitch → negotiate → get paid.
 - **Minimum bar:** 1,000 followers on any network to see campaigns.
-- **Key differentiator:** "Automated payment system — creators never have to chase down payments."
+- **Key differentiator:** "Automated payment system - creators never have to chase down payments."
 
 ### Upfluence
 - **Strength:** 12M+ creator database. AI-driven "brand affinity" matching (7x higher collaboration rates).
-- **Creator-facing:** White-label ambassador signup pages — brands create customized landing pages for creator applications.
+- **Creator-facing:** White-label ambassador signup pages - brands create customized landing pages for creator applications.
 - **Affiliate integration:** Commission-free affiliate management. Automated invoicing.
 - **Weakness:** More brand-tool than creator-marketplace.
 
@@ -559,13 +559,13 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 - **Strength:** Handraise model is the most innovative creator-side UX.
 - **How it works:** Platform learns campaign goals → matches creators → creators opt in with custom pitch + creative strategy → brands choose. Recommended creators get a checkmark.
 - **Payment:** Automatic upon campaign completion.
-- **Key insight:** Creators don't apply blind — they're pre-matched, then choose to raise their hand. This is the ideal creator experience.
+- **Key insight:** Creators don't apply blind - they're pre-matched, then choose to raise their hand. This is the ideal creator experience.
 
 ### Collabstr
 - **Strength:** Simplest creator setup. Profile = storefront. Packages = menu of services.
 - **Creator setup:** Profile + predefined packages (per platform, per content type, with price). Free to join, 15% transaction fee on completed orders.
 - **Discovery:** Search ranking improves with successful order completion. Gamified quality signal.
-- **Weakness:** No campaign marketplace — brands find creators, not vice versa. Limited for active creator job-seeking.
+- **Weakness:** No campaign marketplace - brands find creators, not vice versa. Limited for active creator job-seeking.
 
 ### Insense
 - **Strength:** Best brief template structure for UGC. Very structured: product details → creator requirements → creative assets → deliverables → timeline.
@@ -604,7 +604,7 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 ### 2. Campaign Discovery
 - **Hybrid model:** Browse marketplace (Aspire-style) + AI-matched recommendations (#paid Handraise-style) + direct brand invitations.
 - **Cards show:** Brand, title, platform(s), content type, compensation range, deadline, spots remaining.
-- **Language/market targeting** is our key differentiator — no major platform does this well.
+- **Language/market targeting** is our key differentiator - no major platform does this well.
 
 ### 3. Application Flow
 - **Keep it lightweight:** Rate + pitch message + optional content idea. No lengthy forms.
@@ -640,9 +640,9 @@ Draft Submission → Initial Review → Revision Request → Final Approval → 
 ### 8. Cross-Border Differentiator
 - **No platform handles multilingual matching well.** This is PopsDrops' biggest opportunity.
 - **Language capabilities on creator profiles** (not just location).
-- **Market reach** — which audiences can this creator actually reach?
-- **Auto-translated briefs** — creator reads brief in their language, brand writes in theirs.
-- **Cross-market campaign support** — one campaign, multiple markets, coordinated delivery.
+- **Market reach** - which audiences can this creator actually reach?
+- **Auto-translated briefs** - creator reads brief in their language, brand writes in theirs.
+- **Cross-market campaign support** - one campaign, multiple markets, coordinated delivery.
 
 ---
 

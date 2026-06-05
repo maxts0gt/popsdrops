@@ -6,7 +6,6 @@
     "nav.creators": "صناع المحتوى",
     "nav.earnings": "الأرباح",
     "nav.profile": "الملف الشخصي",
-    "nav.messages": "الرسائل",
     "nav.notifications": "التنبيهات",
     "nav.settings": "الإعدادات",
     "nav.forBrands": "للعلامات التجارية",
@@ -68,7 +67,6 @@
     "empty.noData": "لا توجد بيانات حالياً",
     "empty.noNotifications": "أنت مطلع على كل شيء",
     "empty.noCampaigns": "لا توجد حملات حالياً",
-    "empty.noMessages": "لا توجد رسائل حالياً",
     "time.today": "اليوم",
     "time.yesterday": "أمس",
     "time.daysAgo": "منذ {count} أيام",
@@ -130,7 +128,9 @@
     "format.photoPost": "منشور صورة",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "بث مباشر"
+    "format.live": "بث مباشر",
+    "nav.communications": "التواصل",
+    "empty.noUpdates": "لا توجد تحديثات بعد"
   },
   "marketing.landing": {
     "meta.title": "حملات صناع المحتوى بلا حدود",

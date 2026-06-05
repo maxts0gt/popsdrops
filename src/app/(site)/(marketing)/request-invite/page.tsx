@@ -19,6 +19,8 @@ import {
   PLATFORM_LABELS,
   INDUSTRIES,
   INDUSTRY_LABELS,
+  CAMPAIGN_MARKETS,
+  MARKET_SCOPE_LABELS,
   MARKETS,
   MARKET_LABELS,
 } from "@/lib/constants";
@@ -39,6 +41,11 @@ const FOLLOWER_RANGES = [
   { value: "100k_500k", labelKey: "followers.100k500k" },
   { value: "500k_plus", labelKey: "followers.500kPlus" },
 ] as const;
+
+const MARKET_ACCESS_LABELS: Record<string, string> = {
+  ...MARKET_SCOPE_LABELS,
+  ...MARKET_LABELS,
+};
 
 export default function RequestInvitePage() {
   return (
@@ -80,6 +87,7 @@ function RequestInvitePageContent({
   // Brand fields
   const [companyName, setCompanyName] = useState("");
   const [industry, setIndustry] = useState("");
+  const [targetMarket, setTargetMarket] = useState("");
   const [website, setWebsite] = useState("");
   const [budgetRange, setBudgetRange] = useState("");
 
@@ -105,6 +113,7 @@ function RequestInvitePageContent({
         ...base,
         type: "brand" as const,
         company_name: companyName,
+        markets: targetMarket ? [targetMarket as typeof CAMPAIGN_MARKETS[number]] : [],
         industry: industry as typeof INDUSTRIES[number] || undefined,
         website: website || undefined,
         budget_range: (budgetRange as "under_5k" | "5k_25k" | "25k_100k" | "100k_plus") || undefined,
@@ -288,6 +297,25 @@ function RequestInvitePageContent({
                   </select>
                 </div>
                 <div>
+                  <Label htmlFor="targetMarket">{t("brand.targetMarket")}</Label>
+                  <select
+                    id="targetMarket"
+                    value={targetMarket}
+                    onChange={(e) => setTargetMarket(e.target.value)}
+                    required
+                    className="mt-1.5 w-full rounded-lg border border-border bg-card px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">{t("brand.targetMarket.placeholder")}</option>
+                    {CAMPAIGN_MARKETS.map((m) => (
+                      <option key={m} value={m}>
+                        {MARKET_ACCESS_LABELS[m] ?? m}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
                   <Label htmlFor="budgetRange">{t("brand.budgetRange")}</Label>
                   <select
                     id="budgetRange"
@@ -303,17 +331,17 @@ function RequestInvitePageContent({
                     ))}
                   </select>
                 </div>
-              </div>
-              <div>
-                <Label htmlFor="website">{t("brand.website")}</Label>
-                <Input
-                  id="website"
-                  type="url"
-                  value={website}
-                  onChange={(e) => setWebsite(e.target.value)}
-                  placeholder={t("brand.website.placeholder")}
-                  className="mt-1.5"
-                />
+                <div>
+                  <Label htmlFor="website">{t("brand.website")}</Label>
+                  <Input
+                    id="website"
+                    type="url"
+                    value={website}
+                    onChange={(e) => setWebsite(e.target.value)}
+                    placeholder={t("brand.website.placeholder")}
+                    className="mt-1.5"
+                  />
+                </div>
               </div>
             </motion.div>
           ) : (
@@ -433,6 +461,18 @@ function RequestInvitePageContent({
             </>
           )}
         </Button>
+
+        <p className="text-center text-xs leading-5 text-muted-foreground/70">
+          {t("legal.notice")}{" "}
+          <Link href="/terms" className="font-medium text-foreground hover:underline">
+            {t("legal.terms")}
+          </Link>{" "}
+          {t("legal.and")}{" "}
+          <Link href="/privacy" className="font-medium text-foreground hover:underline">
+            {t("legal.privacy")}
+          </Link>
+          .
+        </p>
 
         <p className="text-center text-xs text-muted-foreground/70">
           {t("haveAccess")}{" "}

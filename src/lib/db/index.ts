@@ -18,37 +18,21 @@ export {
   listCampaigns,
   listBrandCampaigns,
   listCreatorCampaigns,
-  createCampaign,
-  updateCampaign,
-  updateCampaignStatus,
   getMatchingCampaigns,
 } from "./campaigns";
 
 export {
-  submitApplication,
   getApplication,
   listCampaignApplications,
   listCreatorApplications,
-  acceptApplication,
-  rejectApplication,
-  counterOffer,
-  withdrawApplication,
-  respondToCounterOffer,
 } from "./applications";
 
 export {
-  submitContent,
   getSubmission,
   listCampaignSubmissions,
   listMemberSubmissions,
-  approveContent,
-  requestRevision,
-  publishContent,
-  submitPerformance,
   getPerformanceData,
 } from "./content";
-
-export { sendMessage, listMessages } from "./messages";
 
 export {
   createNotification,

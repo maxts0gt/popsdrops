@@ -46,6 +46,18 @@ const reportingAccountRequirementEnum = z.enum([
   "business_or_creator_account_required",
   "brand_defined",
 ]);
+const campaignRecruitmentVisibilityEnum = z.enum([
+  "private_invite",
+  "shortlist_invite",
+  "open_applications",
+]);
+const PRIVATE_CAMPAIGN_MAX_SELF_SERVE_CREATORS = 100;
+const agreementGateModeEnum = z.enum([
+  "rules_acknowledgement",
+  "typed_signature",
+  "brand_agreement",
+  "rules_and_brand_agreement",
+]);
 
 const slugRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
 
@@ -199,6 +211,7 @@ export const createCampaignSchema = z
       .string()
       .min(3, "Title must be at least 3 characters")
       .max(200, "Title must be 200 characters or less"),
+    recruitment_visibility: campaignRecruitmentVisibilityEnum.default("private_invite"),
     brief_description: z
       .string()
       .min(10, "Brief must be at least 10 characters")
@@ -206,6 +219,7 @@ export const createCampaignSchema = z
     brief_requirements: z.string().max(3000).optional(),
     brief_dos: z.string().max(2000).optional(),
     brief_donts: z.string().max(2000).optional(),
+    compliance_notes: z.string().max(3000).optional(),
     platforms: z
       .array(platformEnum)
       .min(1, "Select at least 1 platform")
@@ -217,7 +231,11 @@ export const createCampaignSchema = z
       .max(5, "Select up to 5 niches"),
     budget_min: z.coerce.number().min(0, "Budget cannot be negative"),
     budget_max: z.coerce.number().min(0, "Budget cannot be negative"),
-    max_creators: z.coerce.number().int().min(1).max(50),
+    max_creators: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(PRIVATE_CAMPAIGN_MAX_SELF_SERVE_CREATORS),
     application_deadline: z.string().date("Enter a valid date (YYYY-MM-DD)"),
     content_due_date: z.string().date("Enter a valid date (YYYY-MM-DD)"),
     performance_due_date: z.string().date("Enter a valid date (YYYY-MM-DD)").optional(),
@@ -240,12 +258,110 @@ export const createCampaignSchema = z
   .refine((data) => data.budget_max >= data.budget_min, {
     message: "Maximum budget must be greater than or equal to minimum budget",
     path: ["budget_max"],
+  })
+  .superRefine((data, ctx) => {
+    if (data.application_deadline > data.content_due_date) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Applications must close on or before the content due date",
+        path: ["application_deadline"],
+      });
+    }
+
+    if (
+      data.posting_window_start &&
+      data.posting_window_end &&
+      data.posting_window_start > data.posting_window_end
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Posting end date must be on or after posting start date",
+        path: ["posting_window_end"],
+      });
+    }
+
+    if (data.posting_window_end && data.content_due_date > data.posting_window_end) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Content due date must be on or before posting ends",
+        path: ["content_due_date"],
+      });
+    }
+
+    if (
+      data.performance_due_date &&
+      data.posting_window_end &&
+      data.performance_due_date < data.posting_window_end
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Performance data must be due on or after posting ends",
+        path: ["performance_due_date"],
+      });
+    }
+
+    if (
+      data.performance_due_date &&
+      !data.posting_window_end &&
+      data.performance_due_date < data.content_due_date
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Performance data must be due on or after content is due",
+        path: ["performance_due_date"],
+      });
+    }
   });
 
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 
 // ---------------------------------------------------------------------------
-// 6. Submit Application
+// 6. Campaign Agreement Gate
+// ---------------------------------------------------------------------------
+
+export const agreementRuleSectionSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+  body: z.string().trim().min(1).max(1200),
+});
+
+export const upsertCampaignAgreementDraftSchema = z.object({
+  campaignId: uuidLike,
+  gateMode: agreementGateModeEnum,
+  title: z.string().trim().min(3).max(120),
+  rules: z.record(
+    z.string().trim().min(1).max(60),
+    agreementRuleSectionSchema,
+  ),
+  agreementBody: z.string().trim().max(20_000).optional().nullable(),
+  previewEnabled: z.boolean().default(false),
+  previewSummary: z.record(z.string(), z.string()).default({}),
+  requiresTypedName: z.boolean().default(true),
+  fileName: z.string().trim().max(220).optional().nullable(),
+  fileMimeType: z.literal("application/pdf").optional().nullable(),
+  fileSizeBytes: z.coerce.number().int().positive().optional().nullable(),
+  fileSha256: z.string().regex(/^[a-f0-9]{64}$/).optional().nullable(),
+});
+
+export const publishCampaignAgreementSchema = z.object({
+  agreementId: uuidLike,
+});
+
+export const acceptCampaignAgreementSchema = z.object({
+  agreementId: uuidLike,
+  campaignId: uuidLike,
+  typedName: z.string().trim().min(2).max(120),
+  acceptedRules: z.record(z.string(), z.boolean()).default({}),
+});
+
+export type UpsertCampaignAgreementDraftInput = z.infer<
+  typeof upsertCampaignAgreementDraftSchema
+>;
+export type AcceptCampaignAgreementInput = z.infer<
+  typeof acceptCampaignAgreementSchema
+>;
+
+// ---------------------------------------------------------------------------
+// 7. Submit Application
 // ---------------------------------------------------------------------------
 
 export const submitApplicationSchema = z.object({
@@ -260,7 +376,7 @@ export const submitApplicationSchema = z.object({
 export type SubmitApplicationInput = z.infer<typeof submitApplicationSchema>;
 
 // ---------------------------------------------------------------------------
-// 7. Counter Offer
+// 8. Counter Offer
 // ---------------------------------------------------------------------------
 
 export const counterOfferSchema = z.object({
@@ -272,7 +388,7 @@ export const counterOfferSchema = z.object({
 export type CounterOfferInput = z.infer<typeof counterOfferSchema>;
 
 // ---------------------------------------------------------------------------
-// 8. Submit Content
+// 9. Submit Content
 // ---------------------------------------------------------------------------
 
 export const submitContentSchema = z.object({
@@ -286,7 +402,7 @@ export const submitContentSchema = z.object({
 export type SubmitContentInput = z.infer<typeof submitContentSchema>;
 
 // ---------------------------------------------------------------------------
-// 9. Content Feedback
+// 10. Content Feedback
 // ---------------------------------------------------------------------------
 
 export const contentFeedbackSchema = z.object({
@@ -300,45 +416,58 @@ export const contentFeedbackSchema = z.object({
 export type ContentFeedbackInput = z.infer<typeof contentFeedbackSchema>;
 
 // ---------------------------------------------------------------------------
-// 10. Submit Performance
+// 11. Submit Performance
 // ---------------------------------------------------------------------------
 
-export const submitPerformanceSchema = z.object({
-  submission_id: uuidLike,
-  report_task_id: uuidLike.optional(),
-  evidence_id: uuidLike.optional(),
-  measurement_type: z.enum(["initial_48h", "final_7d", "extended_30d"]),
-  views: z.coerce.number().int().nonnegative().optional(),
-  reach: z.coerce.number().int().nonnegative().optional(),
-  impressions: z.coerce.number().int().nonnegative().optional(),
-  likes: z.coerce.number().int().nonnegative().optional(),
-  comments: z.coerce.number().int().nonnegative().optional(),
-  shares: z.coerce.number().int().nonnegative().optional(),
-  saves: z.coerce.number().int().nonnegative().optional(),
-  sends: z.coerce.number().int().nonnegative().optional(),
-  screenshots: z.coerce.number().int().nonnegative().optional(),
-  replies: z.coerce.number().int().nonnegative().optional(),
-  clicks: z.coerce.number().int().nonnegative().optional(),
-  completion_rate: z.coerce.number().min(0).max(100).optional(),
-  avg_watch_time_seconds: z.coerce.number().nonnegative().optional(),
-  subscriber_gains: z.coerce.number().int().nonnegative().optional(),
-  screenshot_url: z
-    .string()
-    .refine(
-      (value) =>
-        value === "" ||
-        value.startsWith("campaign-evidence/") ||
-        z.string().url().safeParse(value).success,
-      "Enter a valid evidence URL",
-    )
-    .optional(),
-  metric_values: z.array(performanceMetricValueSchema).max(40).optional(),
-});
+export const submitPerformanceSchema = z
+  .object({
+    submission_id: uuidLike,
+    report_task_id: uuidLike.optional(),
+    evidence_id: uuidLike.optional(),
+    ai_extraction_id: uuidLike.optional(),
+    ai_extraction_edited: z.boolean().optional(),
+    measurement_type: z.enum(["initial_48h", "final_7d", "extended_30d"]),
+    views: z.coerce.number().int().nonnegative().optional(),
+    reach: z.coerce.number().int().nonnegative().optional(),
+    impressions: z.coerce.number().int().nonnegative().optional(),
+    likes: z.coerce.number().int().nonnegative().optional(),
+    comments: z.coerce.number().int().nonnegative().optional(),
+    shares: z.coerce.number().int().nonnegative().optional(),
+    saves: z.coerce.number().int().nonnegative().optional(),
+    sends: z.coerce.number().int().nonnegative().optional(),
+    screenshots: z.coerce.number().int().nonnegative().optional(),
+    replies: z.coerce.number().int().nonnegative().optional(),
+    clicks: z.coerce.number().int().nonnegative().optional(),
+    completion_rate: z.coerce.number().min(0).max(100).optional(),
+    avg_watch_time_seconds: z.coerce.number().nonnegative().optional(),
+    subscriber_gains: z.coerce.number().int().nonnegative().optional(),
+    screenshot_url: z
+      .string()
+      .refine(
+        (value) =>
+          value === "" ||
+          value.startsWith("campaign-evidence/") ||
+          z.string().url().safeParse(value).success,
+        "Enter a valid evidence URL",
+      )
+      .optional(),
+    metric_values: z.array(performanceMetricValueSchema).max(40).optional(),
+  })
+  .superRefine((value, ctx) => {
+    const hasProofLink = Boolean(value.screenshot_url?.trim());
+    if (value.report_task_id && !value.evidence_id && !hasProofLink) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["screenshot_url"],
+        message: "Proof link or evidence file is required",
+      });
+    }
+  });
 
 export type SubmitPerformanceInput = z.infer<typeof submitPerformanceSchema>;
 
 // ---------------------------------------------------------------------------
-// 11. Submit Review
+// 12. Submit Review
 // ---------------------------------------------------------------------------
 
 export const submitReviewSchema = z.object({
@@ -349,20 +478,6 @@ export const submitReviewSchema = z.object({
 });
 
 export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;
-
-// ---------------------------------------------------------------------------
-// 12. Send Message
-// ---------------------------------------------------------------------------
-
-export const sendMessageSchema = z.object({
-  campaign_id: uuidLike,
-  content: z
-    .string()
-    .min(1, "Message cannot be empty")
-    .max(5000, "Message must be 5,000 characters or less"),
-});
-
-export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
 // ---------------------------------------------------------------------------
 // 13. Update Creator Profile
@@ -394,7 +509,7 @@ export type UpdateCreatorProfileInput = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
-// 14. Update Brand Profile
+// 15. Update Brand Profile
 // ---------------------------------------------------------------------------
 
 export const updateBrandProfileSchema = z.object({
@@ -412,7 +527,7 @@ export const updateBrandProfileSchema = z.object({
 export type UpdateBrandProfileInput = z.infer<typeof updateBrandProfileSchema>;
 
 // ---------------------------------------------------------------------------
-// 15. Approve Profile (Admin)
+// 16. Approve Profile (Admin)
 // ---------------------------------------------------------------------------
 
 export const approveProfileSchema = z.object({
@@ -422,7 +537,7 @@ export const approveProfileSchema = z.object({
 export type ApproveProfileInput = z.infer<typeof approveProfileSchema>;
 
 // ---------------------------------------------------------------------------
-// 16. Reject Profile (Admin)
+// 17. Reject Profile (Admin)
 // ---------------------------------------------------------------------------
 
 export const rejectProfileSchema = z.object({
@@ -436,7 +551,7 @@ export const rejectProfileSchema = z.object({
 export type RejectProfileInput = z.infer<typeof rejectProfileSchema>;
 
 // ---------------------------------------------------------------------------
-// 17. Waitlist Request (pre-auth, public form)
+// 18. Waitlist Request (pre-auth, public form)
 // ---------------------------------------------------------------------------
 
 const waitlistBaseSchema = z.object({

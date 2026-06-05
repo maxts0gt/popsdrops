@@ -1,6 +1,15 @@
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+
+@source "../**/*.{js,jsx,ts,tsx,mdx}";
+@source not "../../.next";
+@source not "../../output";
+@source not "../../coverage";
+@source not "../../mobile/.expo";
+@source not "../../mobile/dist";
+@source not "../../mobile/android";
+@source not "../../mobile/ios";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -52,10 +61,9 @@
 /*
   PopsDrops Design System
   Brand: Slate-900 #0F172A (monochrome)
-  Primary: Teal-600 #0D9488
-  Accent: Amber-500 #F59E0B
+  Accents: Teal-600 #0D9488 and Amber-500 #F59E0B for atmosphere only
   Surface: White
-  Philosophy: Premium, global, minimal. "Modern Souq" — international with soul.
+  Philosophy: Premium, global, minimal. Refined confidence.
 */
 :root {
   --background: #FFFFFF;
@@ -95,7 +103,7 @@
 /*
   Dark mode: "Chanel Noir"
   Pure black. Crisp white. Maximum contrast. Stark luxury.
-  Elegance through restraint — like chanel.com.
+  Elegance through restraint - like chanel.com.
 */
 .dark {
   --background: #000000;
@@ -152,7 +160,7 @@
     font-family: var(--font-cairo), var(--font-inter), sans-serif;
   }
 
-  /* Ensure logical properties work — use these instead of physical ones:
+  /* Ensure logical properties work - use these instead of physical ones:
    *   ms-* (margin-inline-start) instead of ml-*
    *   me-* (margin-inline-end)   instead of mr-*
    *   ps-* (padding-inline-start) instead of pl-*

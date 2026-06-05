@@ -51,12 +51,15 @@ export function buildCreatorProfileViewModel(
   const connectedPlatforms = PLATFORMS.filter(
     (platform) => input.creator.socialAccounts[platform],
   );
+  const rawCompleteness = Math.max(0, input.creator.profileCompleteness);
+  const completenessPercent = Math.min(
+    100,
+    Math.round(rawCompleteness <= 1 ? rawCompleteness * 100 : rawCompleteness),
+  );
 
   return {
     displayName: input.profile.fullName.trim() || input.profile.email,
-    completenessPercent: Math.round(
-      Math.max(0, input.creator.profileCompleteness) * 100,
-    ),
+    completenessPercent,
     connectedPlatforms,
     unconnectedPlatforms: PLATFORMS.filter(
       (platform) => !connectedPlatforms.includes(platform),

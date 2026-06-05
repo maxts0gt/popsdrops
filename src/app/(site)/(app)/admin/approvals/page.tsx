@@ -3,22 +3,16 @@
 import { useState, useEffect } from "react";
 import {
   ShieldCheck,
-  ChevronDown,
-  ChevronUp,
   ExternalLink,
   Clock,
-  MapPin,
   CheckCircle,
   XCircle,
   AlertTriangle,
   Globe,
-  Building2,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -27,12 +21,21 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { PLATFORM_LABELS, NICHE_LABELS, getMarketLabel } from "@/lib/constants";
+import {
+  INDUSTRY_LABELS,
+  PLATFORM_LABELS,
+  getMarketLabel,
+} from "@/lib/constants";
 import { useI18n } from "@/lib/i18n/context";
-import type { Platform, Niche, Market } from "@/lib/constants";
+import type { Industry, Platform, Market } from "@/lib/constants";
 import { createClient } from "@/lib/supabase/client";
 import { getSingleRelation } from "@/lib/supabase/relations";
-import { approveProfile, rejectProfile } from "@/app/actions/admin";
+import {
+  approveProfile,
+  approveWaitlistRequest,
+  rejectProfile,
+  rejectWaitlistRequest,
+} from "@/app/actions/admin";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
@@ -70,9 +73,41 @@ interface PendingProfile {
   waitlist_reason?: string | null;
 }
 
+interface PendingAccessRequest {
+  id: string;
+  type: "brand" | "creator";
+  email: string;
+  full_name: string;
+  company_name: string | null;
+  industry: string | null;
+  website: string | null;
+  budget_range: string | null;
+  social_url: string | null;
+  social_platform: Platform | null;
+  follower_range: string | null;
+  markets: string[];
+  reason: string | null;
+  created_at: string;
+}
+
 type PendingProfileRecord = Omit<PendingProfile, "creator_profile" | "brand_profile"> & {
   creator_profiles?: PendingProfile["creator_profile"] | PendingProfile["creator_profile"][];
   brand_profiles?: PendingProfile["brand_profile"] | PendingProfile["brand_profile"][];
+};
+
+const ACCESS_BUDGET_LABELS: Record<string, string> = {
+  under_5k: "Under $5K",
+  "5k_25k": "$5K to $25K",
+  "25k_100k": "$25K to $100K",
+  "100k_plus": "$100K+",
+};
+
+const ACCESS_FOLLOWER_LABELS: Record<string, string> = {
+  under_10k: "Under 10K",
+  "10k_50k": "10K to 50K",
+  "50k_100k": "50K to 100K",
+  "100k_500k": "100K to 500K",
+  "500k_plus": "500K+",
 };
 
 async function fetchPendingProfiles(): Promise<PendingProfile[]> {
@@ -120,6 +155,35 @@ async function fetchPendingProfiles(): Promise<PendingProfile[]> {
   });
 }
 
+async function fetchPendingAccessRequests(): Promise<PendingAccessRequest[]> {
+  const supabase = createClient();
+
+  const { data } = await supabase
+    .from("waitlist")
+    .select(
+      `
+      id,
+      type,
+      email,
+      full_name,
+      company_name,
+      industry,
+      website,
+      budget_range,
+      social_url,
+      social_platform,
+      follower_range,
+      markets,
+      reason,
+      created_at
+    `,
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  return (data ?? []) as PendingAccessRequest[];
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -165,13 +229,6 @@ function getFollowerCount(profile: PendingProfile["creator_profile"], platform: 
   return data?.followers ?? null;
 }
 
-function formatFollowers(count: number | null): string {
-  if (count === null || count === undefined) return "";
-  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
-  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
-  return String(count);
-}
-
 function getRedFlags(profile: PendingProfile): string[] {
   const flags: string[] = [];
   const cp = profile.creator_profile;
@@ -211,258 +268,208 @@ function getRedFlags(profile: PendingProfile): string[] {
   return flags;
 }
 
-// ---------------------------------------------------------------------------
-// ApplicantCard
-// ---------------------------------------------------------------------------
+function getAccessRequestTitle(request: PendingAccessRequest) {
+  if (request.type === "brand") {
+    return request.company_name || request.full_name;
+  }
 
-function ApplicantCard({
-  profile,
-  locale,
-  onAction,
-  selected,
-  onToggle,
+  return request.full_name;
+}
+
+type SortDirection = "asc" | "desc";
+type SortState<Key extends string> = { key: Key; direction: SortDirection };
+type AccessSortKey = "request" | "type" | "market" | "waiting";
+type ProfileSortKey = "applicant" | "role" | "signal" | "waiting";
+
+function toggleSort<Key extends string>(
+  current: SortState<Key>,
+  key: Key,
+): SortState<Key> {
+  if (current.key !== key) return { key, direction: "asc" };
+  return { key, direction: current.direction === "asc" ? "desc" : "asc" };
+}
+
+function getAriaSort<Key extends string>(
+  sort: SortState<Key>,
+  key: Key,
+): "ascending" | "descending" | "none" {
+  if (sort.key !== key) return "none";
+  return sort.direction === "asc" ? "ascending" : "descending";
+}
+
+function compareText(a: string, b: string) {
+  return a.localeCompare(b, undefined, { sensitivity: "base" });
+}
+
+function sortMultiplier(direction: SortDirection) {
+  return direction === "asc" ? 1 : -1;
+}
+
+function formatWaitingLabel(hours: number) {
+  if (hours < 1) return "New";
+  if (hours === 1) return "1h";
+  if (hours < 48) return `${hours}h`;
+  const days = Math.floor(hours / 24);
+  return `${days}d`;
+}
+
+function formatSubmittedAt(dateStr: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    day: "numeric",
+    month: "short",
+  }).format(new Date(dateStr));
+}
+
+function getAccessMarketSummary(request: PendingAccessRequest, locale: string) {
+  if (request.markets.length === 0) return "No market";
+  return request.markets.map((m) => getMarketLabel(m as Market, locale)).join(", ");
+}
+
+function getAccessSignal(request: PendingAccessRequest) {
+  if (request.type === "brand") {
+    return request.budget_range
+      ? ACCESS_BUDGET_LABELS[request.budget_range] ?? request.budget_range
+      : request.industry
+        ? INDUSTRY_LABELS[request.industry as Industry] ?? request.industry
+        : "Brand request";
+  }
+
+  return request.follower_range
+    ? ACCESS_FOLLOWER_LABELS[request.follower_range] ?? request.follower_range
+    : request.social_platform
+      ? PLATFORM_LABELS[request.social_platform]
+      : "Creator request";
+}
+
+function sortAccessRequests(
+  requests: PendingAccessRequest[],
+  sort: SortState<AccessSortKey>,
+  locale: string,
+) {
+  const direction = sortMultiplier(sort.direction);
+
+  return [...requests].sort((a, b) => {
+    let result = 0;
+    if (sort.key === "request") {
+      result = compareText(getAccessRequestTitle(a), getAccessRequestTitle(b));
+    } else if (sort.key === "type") {
+      result = compareText(a.type, b.type);
+    } else if (sort.key === "market") {
+      result = compareText(
+        getAccessMarketSummary(a, locale),
+        getAccessMarketSummary(b, locale),
+      );
+    } else {
+      result = hoursAgo(a.created_at) - hoursAgo(b.created_at);
+    }
+
+    if (result === 0) {
+      result = compareText(a.email, b.email);
+    }
+
+    return result * direction;
+  });
+}
+
+function getProfileTitle(profile: PendingProfile) {
+  if (profile.role === "brand") {
+    return profile.brand_profile?.company_name || profile.full_name;
+  }
+
+  return profile.full_name;
+}
+
+function getProfileMarketSummary(profile: PendingProfile, locale: string) {
+  if (profile.role === "brand") {
+    const markets = profile.brand_profile?.target_markets ?? [];
+    if (markets.length === 0) return "No market";
+    return markets.map((m) => getMarketLabel(m as Market, locale)).join(", ");
+  }
+
+  if (!profile.creator_profile?.primary_market) return "No market";
+  return getMarketLabel(profile.creator_profile.primary_market as Market, locale);
+}
+
+function getProfileSignal(profile: PendingProfile, locale: string) {
+  if (profile.role === "brand") {
+    return [
+      profile.brand_profile?.industry
+        ? INDUSTRY_LABELS[profile.brand_profile.industry as Industry] ??
+          profile.brand_profile.industry
+        : null,
+      getProfileMarketSummary(profile, locale),
+    ].filter(Boolean).join(" · ");
+  }
+
+  const platforms = getConnectedPlatforms(profile.creator_profile);
+  const flags = getRedFlags(profile);
+
+  if (flags.length > 0) return flags.join(", ");
+  if (platforms.length > 0) {
+    return platforms.map((p) => PLATFORM_LABELS[p]).join(", ");
+  }
+  return getProfileMarketSummary(profile, locale);
+}
+
+function sortProfiles(
+  profiles: PendingProfile[],
+  sort: SortState<ProfileSortKey>,
+  locale: string,
+) {
+  const direction = sortMultiplier(sort.direction);
+
+  return [...profiles].sort((a, b) => {
+    let result = 0;
+    if (sort.key === "applicant") {
+      result = compareText(getProfileTitle(a), getProfileTitle(b));
+    } else if (sort.key === "role") {
+      result = compareText(a.role, b.role);
+    } else if (sort.key === "signal") {
+      result = compareText(getProfileSignal(a, locale), getProfileSignal(b, locale));
+    } else {
+      result = hoursAgo(a.created_at) - hoursAgo(b.created_at);
+    }
+
+    if (result === 0) {
+      result = compareText(a.email, b.email);
+    }
+
+    return result * direction;
+  });
+}
+
+function SortableHeader<Key extends string>({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  className = "",
 }: {
-  profile: PendingProfile;
-  locale: string;
-  onAction: () => void;
-  selected: boolean;
-  onToggle: (id: string) => void;
+  label: string;
+  sortKey: Key;
+  sort: SortState<Key>;
+  onSort: (key: Key) => void;
+  className?: string;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState("");
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const hours = hoursAgo(profile.created_at);
-  const isOverdue = hours > 24;
-  const cp = profile.creator_profile;
-  const bp = profile.brand_profile;
-  const socialLinks = getSocialLinks(cp);
-  const platforms = getConnectedPlatforms(cp);
-  const redFlags = profile.role === "creator" ? getRedFlags(profile) : [];
-
-  async function handleApprove() {
-    setActionLoading(true);
-    try {
-      await approveProfile(profile.id);
-      toast.success(`${profile.full_name} approved`);
-      onAction();
-    } catch {
-      toast.error("Failed to approve");
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  async function handleReject() {
-    if (!rejectReason.trim()) return;
-    setActionLoading(true);
-    try {
-      await rejectProfile(profile.id, rejectReason.trim());
-      toast.success(`${profile.full_name} rejected`);
-      setRejectDialogOpen(false);
-      onAction();
-    } catch {
-      toast.error("Failed to reject");
-    } finally {
-      setActionLoading(false);
-    }
-  }
+  const active = sort.key === sortKey;
 
   return (
-    <>
-      <Card className={isOverdue ? "border-amber-200" : ""}>
-        <CardContent>
-          <div className="flex items-start justify-between">
-            <div className="flex gap-3">
-              <input
-                type="checkbox"
-                checked={selected}
-                onChange={() => onToggle(profile.id)}
-                className="mt-1 size-4 rounded border-border accent-slate-900"
-              />
-              <Avatar size="lg">
-                <AvatarFallback>{getInitials(profile.full_name)}</AvatarFallback>
-              </Avatar>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-foreground">{profile.full_name}</h3>
-                  <Badge variant="secondary" className="text-xs">
-                    {profile.role === "creator" ? "Creator" : "Brand"}
-                  </Badge>
-                  {isOverdue && (
-                    <Badge variant="destructive" className="text-xs">
-                      <AlertTriangle className="me-1 size-3" /> Overdue
-                    </Badge>
-                  )}
-                </div>
-                <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                  {cp?.primary_market && (
-                    <>
-                      <MapPin className="size-3" /> {getMarketLabel(cp.primary_market as Market, locale)}
-                      <span className="text-muted-foreground/50">|</span>
-                    </>
-                  )}
-                  {profile.email}
-                </div>
-                <div className="mt-1 flex items-center gap-2 text-xs">
-                  <Clock className={`size-3 ${isOverdue ? "text-amber-500" : "text-muted-foreground/70"}`} />
-                  <span className={isOverdue ? "font-medium text-amber-600" : "text-muted-foreground"}>
-                    Waiting {hours}h
-                  </span>
-                </div>
-                {redFlags.length > 0 && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    {redFlags.map((flag) => (
-                      <span key={flag} className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700">
-                        <AlertTriangle className="size-3" /> {flag}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="rounded-lg p-1 text-muted-foreground/70 hover:bg-muted hover:text-muted-foreground"
-            >
-              {expanded ? <ChevronUp className="size-5" /> : <ChevronDown className="size-5" />}
-            </button>
-          </div>
-
-          {expanded && (
-            <div className="mt-4 space-y-4 border-t border-border/50 pt-4">
-              {/* Creator details */}
-              {profile.role === "creator" && cp && (
-                <div className="space-y-3">
-                  {cp.bio && <p className="text-sm text-muted-foreground">{cp.bio}</p>}
-                  <div className="flex flex-wrap gap-2">
-                    {platforms.map((p) => (
-                      <span key={p} className="rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground">
-                        {PLATFORM_LABELS[p]} {formatFollowers(getFollowerCount(cp, p))}
-                      </span>
-                    ))}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {cp.niches?.map((n) => (
-                      <Badge key={n} variant="secondary" className="text-xs">
-                        {NICHE_LABELS[n as Niche] ?? n}
-                      </Badge>
-                    ))}
-                  </div>
-                  {socialLinks.length > 0 && (
-                    <div className="flex gap-3">
-                      {socialLinks.map((link) => (
-                        <a
-                          key={link.platform}
-                          href={link.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-                        >
-                          <ExternalLink className="size-3" /> {link.platform}
-                        </a>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Brand details */}
-              {profile.role === "brand" && bp && (
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Building2 className="size-3.5" /> {bp.company_name}
-                  </div>
-                  {bp.website && (
-                    <a
-                      href={bp.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 rounded-md bg-muted px-2.5 py-1 text-xs font-medium text-foreground hover:bg-muted/80"
-                    >
-                      <Globe className="size-3.5" />
-                      {bp.website.replace(/^https?:\/\//, "").replace(/\/$/, "")}
-                      <ExternalLink className="size-3" />
-                    </a>
-                  )}
-                  {bp.industry && <p className="text-muted-foreground">Industry: {bp.industry}</p>}
-                  {bp.target_markets && bp.target_markets.length > 0 && (
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="text-xs text-muted-foreground/70">
-                        {bp.target_markets.length} target {bp.target_markets.length === 1 ? "market" : "markets"}:
-                      </span>
-                      {bp.target_markets.map((m) => (
-                        <Badge key={m} variant="secondary" className="text-xs">
-                          {getMarketLabel(m as Market, locale)}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                  {profile.waitlist_reason && (
-                    <div className="rounded-md bg-muted/50 px-3 py-2">
-                      <p className="mb-0.5 text-xs font-medium text-muted-foreground/70">Reason for joining</p>
-                      <p className="text-sm text-foreground">{profile.waitlist_reason}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="flex items-center gap-2 border-t border-border/50 pt-3">
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setRejectDialogOpen(true)}
-                  disabled={actionLoading}
-                >
-                  <XCircle className="size-3.5" /> Reject
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleApprove}
-                  disabled={actionLoading}
-                >
-                  <CheckCircle className="size-3.5" /> Approve
-                </Button>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Reject Dialog */}
-      <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Reject {profile.full_name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Provide a reason for rejection. This will be sent to the user.
-            </p>
-            <Textarea
-              rows={3}
-              placeholder="Reason for rejection..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleReject}
-              disabled={actionLoading || !rejectReason.trim()}
-            >
-              Confirm Rejection
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+    <th
+      scope="col"
+      aria-sort={getAriaSort(sort, sortKey)}
+      className={`px-4 py-3 text-start text-xs font-semibold text-muted-foreground ${className}`}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        className="inline-flex items-center gap-1 rounded-md text-start hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-900/20"
+      >
+        {label}
+        <span className="inline-flex w-3 justify-center text-[10px] text-muted-foreground">
+          {active ? (sort.direction === "asc" ? "↑" : "↓") : ""}
+        </span>
+      </button>
+    </th>
   );
 }
 
@@ -472,6 +479,7 @@ function ApplicantCard({
 
 export default function AdminApprovalsPage() {
   const { locale } = useI18n();
+  const [accessRequests, setAccessRequests] = useState<PendingAccessRequest[]>([]);
   const [profiles, setProfiles] = useState<PendingProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -480,17 +488,26 @@ export default function AdminApprovalsPage() {
   const [bulkRejectOpen, setBulkRejectOpen] = useState(false);
   const [bulkRejectReason, setBulkRejectReason] = useState("");
 
-  async function loadProfiles() {
+  async function loadApprovals() {
     setLoading(true);
-    setProfiles(await fetchPendingProfiles());
+    const [nextAccessRequests, nextProfiles] = await Promise.all([
+      fetchPendingAccessRequests(),
+      fetchPendingProfiles(),
+    ]);
+    setAccessRequests(nextAccessRequests);
+    setProfiles(nextProfiles);
     setLoading(false);
   }
 
   useEffect(() => {
     let cancelled = false;
 
-    void fetchPendingProfiles().then((nextProfiles) => {
+    void Promise.all([
+      fetchPendingAccessRequests(),
+      fetchPendingProfiles(),
+    ]).then(([nextAccessRequests, nextProfiles]) => {
       if (cancelled) return;
+      setAccessRequests(nextAccessRequests);
       setProfiles(nextProfiles);
       setLoading(false);
     });
@@ -503,6 +520,10 @@ export default function AdminApprovalsPage() {
   const creators = profiles.filter((p) => p.role === "creator");
   const brands = profiles.filter((p) => p.role === "brand");
   const overdue = profiles.filter((p) => hoursAgo(p.created_at) > 24);
+  const overdueAccessRequests = accessRequests.filter(
+    (request) => hoursAgo(request.created_at) > 24,
+  );
+  const totalPending = accessRequests.length + profiles.length;
 
   const currentProfiles =
     activeTab === "creators" ? creators :
@@ -538,7 +559,7 @@ export default function AdminApprovalsPage() {
 
     toast.success(`${succeeded} approved${failed > 0 ? `, ${failed} failed` : ""}`);
     setSelectedIds(new Set());
-    loadProfiles();
+    loadApprovals();
     setBulkLoading(false);
   }
 
@@ -561,7 +582,7 @@ export default function AdminApprovalsPage() {
     setSelectedIds(new Set());
     setBulkRejectOpen(false);
     setBulkRejectReason("");
-    loadProfiles();
+    loadApprovals();
     setBulkLoading(false);
   }
 
@@ -579,11 +600,35 @@ export default function AdminApprovalsPage() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Approval Queue</h1>
+        <h1 className="text-2xl font-bold text-foreground">Access Review</h1>
         <p className="text-sm text-muted-foreground">
-          {profiles.length} pending{overdue.length > 0 ? ` · ${overdue.length} overdue` : ""}
+          {totalPending} pending
+          {overdue.length + overdueAccessRequests.length > 0
+            ? ` · ${overdue.length + overdueAccessRequests.length} overdue`
+            : ""}
         </p>
       </div>
+
+      <section className="mb-8">
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              Access requests
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Public requests waiting for private platform access.
+            </p>
+          </div>
+          {accessRequests.length > 0 && (
+            <Badge variant="secondary">{accessRequests.length}</Badge>
+          )}
+        </div>
+        <AccessRequestList
+          requests={accessRequests}
+          locale={locale}
+          onAction={loadApprovals}
+        />
+      </section>
 
       <Tabs
         value={activeTab}
@@ -593,14 +638,19 @@ export default function AdminApprovalsPage() {
         }}
       >
         <div className="mb-6 flex items-center justify-between">
-          <TabsList variant="line">
-            <TabsTrigger value="all">All ({profiles.length})</TabsTrigger>
-            <TabsTrigger value="creators">Creators ({creators.length})</TabsTrigger>
-            <TabsTrigger value="brands">Brands ({brands.length})</TabsTrigger>
-            {overdue.length > 0 && (
-              <TabsTrigger value="overdue">Overdue ({overdue.length})</TabsTrigger>
-            )}
-          </TabsList>
+          <div>
+            <h2 className="mb-3 text-sm font-semibold text-foreground">
+              Profile approvals
+            </h2>
+            <TabsList variant="line">
+              <TabsTrigger value="all">All ({profiles.length})</TabsTrigger>
+              <TabsTrigger value="creators">Creators ({creators.length})</TabsTrigger>
+              <TabsTrigger value="brands">Brands ({brands.length})</TabsTrigger>
+              {overdue.length > 0 && (
+                <TabsTrigger value="overdue">Overdue ({overdue.length})</TabsTrigger>
+              )}
+            </TabsList>
+          </div>
           {currentProfiles.length > 0 && (
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
               <input
@@ -621,16 +671,16 @@ export default function AdminApprovalsPage() {
         </div>
 
         <TabsContent value="all">
-          <ProfileList profiles={profiles} locale={locale} onAction={loadProfiles} selectedIds={selectedIds} onToggle={handleToggle} />
+          <ProfileList profiles={profiles} locale={locale} onAction={loadApprovals} selectedIds={selectedIds} onToggle={handleToggle} />
         </TabsContent>
         <TabsContent value="creators">
-          <ProfileList profiles={creators} locale={locale} onAction={loadProfiles} selectedIds={selectedIds} onToggle={handleToggle} />
+          <ProfileList profiles={creators} locale={locale} onAction={loadApprovals} selectedIds={selectedIds} onToggle={handleToggle} />
         </TabsContent>
         <TabsContent value="brands">
-          <ProfileList profiles={brands} locale={locale} onAction={loadProfiles} selectedIds={selectedIds} onToggle={handleToggle} />
+          <ProfileList profiles={brands} locale={locale} onAction={loadApprovals} selectedIds={selectedIds} onToggle={handleToggle} />
         </TabsContent>
         <TabsContent value="overdue">
-          <ProfileList profiles={overdue} locale={locale} onAction={loadProfiles} selectedIds={selectedIds} onToggle={handleToggle} />
+          <ProfileList profiles={overdue} locale={locale} onAction={loadApprovals} selectedIds={selectedIds} onToggle={handleToggle} />
         </TabsContent>
       </Tabs>
 
@@ -685,6 +735,334 @@ export default function AdminApprovalsPage() {
   );
 }
 
+function AccessRequestList({
+  requests,
+  locale,
+  onAction,
+}: {
+  requests: PendingAccessRequest[];
+  locale: string;
+  onAction: () => void;
+}) {
+  const [sort, setSort] = useState<SortState<AccessSortKey>>({
+    key: "waiting",
+    direction: "desc",
+  });
+  const [reviewRequest, setReviewRequest] =
+    useState<PendingAccessRequest | null>(null);
+  const [rejectRequest, setRejectRequest] =
+    useState<PendingAccessRequest | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const sortedRequests = sortAccessRequests(requests, sort, locale);
+
+  async function handleApprove(request: PendingAccessRequest) {
+    const title = getAccessRequestTitle(request);
+    setActionLoadingId(request.id);
+    try {
+      await approveWaitlistRequest(request.id);
+      toast.success(`${title} approved`);
+      setReviewRequest(null);
+      onAction();
+    } catch {
+      toast.error("Failed to approve request");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleReject() {
+    if (!rejectRequest || !rejectReason.trim()) return;
+    const title = getAccessRequestTitle(rejectRequest);
+    setActionLoadingId(rejectRequest.id);
+    try {
+      await rejectWaitlistRequest(rejectRequest.id, rejectReason.trim());
+      toast.success(`${title} rejected`);
+      setRejectRequest(null);
+      setReviewRequest(null);
+      setRejectReason("");
+      onAction();
+    } catch {
+      toast.error("Failed to reject request");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  if (requests.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed border-border py-10 text-center">
+        <ShieldCheck className="mx-auto mb-3 size-8 text-muted-foreground/50" />
+        <p className="text-sm font-medium text-foreground">All clear</p>
+        <p className="text-xs text-muted-foreground/70">
+          No pending access requests
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table
+            data-testid="admin-access-requests-table"
+            className="min-w-[860px] table-fixed divide-y divide-border"
+          >
+            <thead className="bg-slate-50/70">
+              <tr>
+                <SortableHeader
+                  label="Request"
+                  sortKey="request"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[32%]"
+                />
+                <th
+                  scope="col"
+                  className="w-[22%] px-4 py-3 text-start text-xs font-semibold text-muted-foreground"
+                >
+                  Review
+                </th>
+                <SortableHeader
+                  label="Type"
+                  sortKey="type"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[12%]"
+                />
+                <SortableHeader
+                  label="Market"
+                  sortKey="market"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[22%]"
+                />
+                <SortableHeader
+                  label="Waiting"
+                  sortKey="waiting"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[12%]"
+                />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-white">
+              {sortedRequests.map((request) => {
+                const hours = hoursAgo(request.created_at);
+                const isOverdue = hours > 24;
+                const title = getAccessRequestTitle(request);
+                const loading = actionLoadingId === request.id;
+
+                return (
+                  <tr key={request.id} className="group align-top hover:bg-slate-50/60">
+                    <td className="px-4 py-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">
+                          {title}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {request.full_name} · {request.email}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-muted-foreground">
+                          {getAccessSignal(request)}
+                        </p>
+                      </div>
+                    </td>
+                    <td data-testid="admin-access-row-actions" className="px-4 py-3">
+                      <div className="flex flex-nowrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setReviewRequest(request)}
+                          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          Review
+                        </button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setRejectRequest(request)}
+                          disabled={loading}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(request)}
+                          disabled={loading}
+                        >
+                          Approve
+                        </Button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary" className="text-xs">
+                        {request.type === "brand" ? "Brand" : "Creator"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-foreground">
+                      <span className="line-clamp-2">
+                        {getAccessMarketSummary(request, locale)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-foreground">
+                        <Clock className="size-3.5 text-muted-foreground" />
+                        <span>{formatWaitingLabel(hours)}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatSubmittedAt(request.created_at, locale)}
+                      </p>
+                      {isOverdue && (
+                        <p className="mt-1 text-xs font-medium text-amber-700">
+                          Overdue
+                        </p>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Dialog
+        open={reviewRequest !== null}
+        onOpenChange={(open) => !open && setReviewRequest(null)}
+      >
+        <DialogContent>
+          {reviewRequest && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{getAccessRequestTitle(reviewRequest)}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Contact</p>
+                    <p className="font-medium text-foreground">
+                      {reviewRequest.full_name}
+                    </p>
+                    <p className="text-muted-foreground">{reviewRequest.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Signal</p>
+                    <p className="font-medium text-foreground">
+                      {getAccessSignal(reviewRequest)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {getAccessMarketSummary(reviewRequest, locale)}
+                    </p>
+                  </div>
+                </div>
+                {reviewRequest.website && (
+                  <a
+                    href={reviewRequest.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-muted-foreground"
+                  >
+                    <Globe className="size-4" />
+                    Open website
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+                {reviewRequest.social_url && (
+                  <a
+                    href={reviewRequest.social_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-muted-foreground"
+                  >
+                    <ExternalLink className="size-4" />
+                    Open social profile
+                  </a>
+                )}
+                {reviewRequest.reason && (
+                  <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Reason
+                    </p>
+                    <p className="mt-1 text-foreground">{reviewRequest.reason}</p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setReviewRequest(null)}>
+                  Close
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setRejectRequest(reviewRequest);
+                    setReviewRequest(null);
+                  }}
+                >
+                  Reject
+                </Button>
+                <Button
+                  onClick={() => handleApprove(reviewRequest)}
+                  disabled={actionLoadingId === reviewRequest.id}
+                >
+                  Approve
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={rejectRequest !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectRequest(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Reject {rejectRequest ? getAccessRequestTitle(rejectRequest) : "request"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Keep the reason short and specific. It stays on the request record.
+            </p>
+            <Textarea
+              rows={3}
+              placeholder="Reason for rejection"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectRequest(null);
+                setRejectReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={actionLoadingId !== null || !rejectReason.trim()}
+            >
+              Reject request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+}
+
 function ProfileList({
   profiles,
   locale,
@@ -698,6 +1076,48 @@ function ProfileList({
   selectedIds: Set<string>;
   onToggle: (id: string) => void;
 }) {
+  const [sort, setSort] = useState<SortState<ProfileSortKey>>({
+    key: "waiting",
+    direction: "desc",
+  });
+  const [reviewProfile, setReviewProfile] = useState<PendingProfile | null>(null);
+  const [rejectProfileTarget, setRejectProfileTarget] =
+    useState<PendingProfile | null>(null);
+  const [rejectReason, setRejectReason] = useState("");
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const sortedProfiles = sortProfiles(profiles, sort, locale);
+
+  async function handleApprove(profile: PendingProfile) {
+    setActionLoadingId(profile.id);
+    try {
+      await approveProfile(profile.id);
+      toast.success(`${getProfileTitle(profile)} approved`);
+      setReviewProfile(null);
+      onAction();
+    } catch {
+      toast.error("Failed to approve");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function handleReject() {
+    if (!rejectProfileTarget || !rejectReason.trim()) return;
+    setActionLoadingId(rejectProfileTarget.id);
+    try {
+      await rejectProfile(rejectProfileTarget.id, rejectReason.trim());
+      toast.success(`${getProfileTitle(rejectProfileTarget)} rejected`);
+      setRejectProfileTarget(null);
+      setReviewProfile(null);
+      setRejectReason("");
+      onAction();
+    } catch {
+      toast.error("Failed to reject");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
   if (profiles.length === 0) {
     return (
       <div className="rounded-lg border border-dashed border-border py-12 text-center">
@@ -708,10 +1128,302 @@ function ProfileList({
     );
   }
   return (
-    <div className="space-y-4">
-      {profiles.map((p) => (
-        <ApplicantCard key={p.id} profile={p} locale={locale} onAction={onAction} selected={selectedIds.has(p.id)} onToggle={onToggle} />
-      ))}
-    </div>
+    <>
+      <div className="overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+        <div className="overflow-x-auto">
+          <table
+            data-testid="admin-profile-approvals-table"
+            className="min-w-[920px] table-fixed divide-y divide-border"
+          >
+            <thead className="bg-slate-50/70">
+              <tr>
+                <th scope="col" className="w-[48px] px-4 py-3 text-start">
+                  <span className="sr-only">Select</span>
+                </th>
+                <SortableHeader
+                  label="Applicant"
+                  sortKey="applicant"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[28%]"
+                />
+                <th
+                  scope="col"
+                  className="w-[22%] px-4 py-3 text-start text-xs font-semibold text-muted-foreground"
+                >
+                  Review
+                </th>
+                <SortableHeader
+                  label="Role"
+                  sortKey="role"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[12%]"
+                />
+                <SortableHeader
+                  label="Signal"
+                  sortKey="signal"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[26%]"
+                />
+                <SortableHeader
+                  label="Waiting"
+                  sortKey="waiting"
+                  sort={sort}
+                  onSort={(key) => setSort((current) => toggleSort(current, key))}
+                  className="w-[12%]"
+                />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border bg-white">
+              {sortedProfiles.map((profile) => {
+                const hours = hoursAgo(profile.created_at);
+                const isOverdue = hours > 24;
+                const title = getProfileTitle(profile);
+                const loading = actionLoadingId === profile.id;
+
+                return (
+                  <tr key={profile.id} className="group align-top hover:bg-slate-50/60">
+                    <td className="px-4 py-3">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(profile.id)}
+                        onChange={() => onToggle(profile.id)}
+                        aria-label={`Select ${title}`}
+                        className="size-4 rounded border-border accent-slate-900"
+                      />
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border bg-slate-50 text-xs font-semibold text-muted-foreground">
+                          {getInitials(profile.full_name)}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-foreground">
+                            {title}
+                          </p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {profile.full_name} · {profile.email}
+                          </p>
+                          <p className="mt-1 truncate text-xs text-muted-foreground">
+                            {getProfileMarketSummary(profile, locale)}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td data-testid="admin-profile-row-actions" className="px-4 py-3">
+                      <div className="flex flex-nowrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setReviewProfile(profile)}
+                          className="rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                        >
+                          Review
+                        </button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setRejectProfileTarget(profile)}
+                          disabled={loading}
+                        >
+                          Reject
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={() => handleApprove(profile)}
+                          disabled={loading}
+                        >
+                          Approve
+                        </Button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="secondary" className="text-xs">
+                        {profile.role === "creator" ? "Creator" : "Brand"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="line-clamp-2 text-sm text-foreground">
+                        {getProfileSignal(profile, locale)}
+                      </p>
+                      {profile.role === "creator" &&
+                        getRedFlags(profile).length > 0 && (
+                          <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-red-700">
+                            <AlertTriangle className="size-3" />
+                            Needs review
+                          </p>
+                        )}
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1.5 text-sm text-foreground">
+                        <Clock className="size-3.5 text-muted-foreground" />
+                        <span>{formatWaitingLabel(hours)}</span>
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {formatSubmittedAt(profile.created_at, locale)}
+                      </p>
+                      {isOverdue && (
+                        <p className="mt-1 text-xs font-medium text-amber-700">
+                          Overdue
+                        </p>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <Dialog
+        open={reviewProfile !== null}
+        onOpenChange={(open) => !open && setReviewProfile(null)}
+      >
+        <DialogContent>
+          {reviewProfile && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{getProfileTitle(reviewProfile)}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 text-sm">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Contact</p>
+                    <p className="font-medium text-foreground">
+                      {reviewProfile.full_name}
+                    </p>
+                    <p className="text-muted-foreground">{reviewProfile.email}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground">Signal</p>
+                    <p className="font-medium text-foreground">
+                      {getProfileSignal(reviewProfile, locale)}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {getProfileMarketSummary(reviewProfile, locale)}
+                    </p>
+                  </div>
+                </div>
+                {reviewProfile.creator_profile?.bio && (
+                  <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
+                    <p className="text-xs font-medium text-muted-foreground">Bio</p>
+                    <p className="mt-1 text-foreground">
+                      {reviewProfile.creator_profile.bio}
+                    </p>
+                  </div>
+                )}
+                {reviewProfile.brand_profile?.website && (
+                  <a
+                    href={reviewProfile.brand_profile.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-foreground hover:text-muted-foreground"
+                  >
+                    <Globe className="size-4" />
+                    Open website
+                    <ExternalLink className="size-3.5" />
+                  </a>
+                )}
+                {getSocialLinks(reviewProfile.creator_profile).length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {getSocialLinks(reviewProfile.creator_profile).map((link) => (
+                      <a
+                        key={link.platform}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-foreground hover:bg-muted"
+                      >
+                        <ExternalLink className="size-3.5" />
+                        {link.platform}
+                      </a>
+                    ))}
+                  </div>
+                )}
+                {reviewProfile.waitlist_reason && (
+                  <div className="rounded-lg border border-border bg-slate-50 px-3 py-2">
+                    <p className="text-xs font-medium text-muted-foreground">
+                      Reason for joining
+                    </p>
+                    <p className="mt-1 text-foreground">
+                      {reviewProfile.waitlist_reason}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setReviewProfile(null)}>
+                  Close
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setRejectProfileTarget(reviewProfile);
+                    setReviewProfile(null);
+                  }}
+                >
+                  Reject
+                </Button>
+                <Button
+                  onClick={() => handleApprove(reviewProfile)}
+                  disabled={actionLoadingId === reviewProfile.id}
+                >
+                  Approve
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={rejectProfileTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRejectProfileTarget(null);
+            setRejectReason("");
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Reject {rejectProfileTarget ? getProfileTitle(rejectProfileTarget) : "profile"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Provide a reason for rejection. This will be sent to the user.
+            </p>
+            <Textarea
+              rows={3}
+              placeholder="Reason for rejection"
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRejectProfileTarget(null);
+                setRejectReason("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleReject}
+              disabled={actionLoadingId !== null || !rejectReason.trim()}
+            >
+              Reject profile
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

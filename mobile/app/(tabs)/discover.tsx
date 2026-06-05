@@ -18,7 +18,7 @@ import {
   Bookmark,
   BookmarkCheck,
   Clock,
-  Sparkles,
+  Target,
 } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../lib/auth";
@@ -277,7 +277,7 @@ function CampaignCard({
             className="flex-row items-center gap-1 rounded-full px-2.5 py-1"
             style={{ backgroundColor: palette.atmosphereTeal }}
           >
-            <Sparkles size={11} color={palette.textTertiary} strokeWidth={2} />
+            <Target size={11} color={palette.textTertiary} strokeWidth={2} />
             <Text
               className="text-[11px]"
               style={{
@@ -407,7 +407,7 @@ function FilterSheet({
 }) {
   const [draft, setDraft] = useState(filters);
 
-  // Sync draft when sheet opens — using Realtime subscription pattern
+  // Sync draft when sheet opens - using Realtime subscription pattern
   useEffect(() => {
     if (!visible) return;
     // Schedule sync for next microtask to avoid synchronous setState in effect

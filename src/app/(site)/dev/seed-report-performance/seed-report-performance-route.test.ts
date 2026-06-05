@@ -14,7 +14,8 @@ describe("dev report performance seed route", () => {
     expect(routeSource).toContain("initial_48h");
     expect(routeSource).toContain("final_7d");
     expect(routeSource).toContain("extended_30d");
-    expect(routeSource).toContain('onConflict: "submission_id,measurement_type"');
+    expect(routeSource).toContain('.eq("report_task_id", reportTask.id)');
+    expect(routeSource).not.toContain(".upsert(performanceRows");
     expect(routeSource).toContain("buildDevReportSeedSchedule");
     expect(routeSource).toContain("posting_window_start");
     expect(routeSource).toContain("posting_window_end");

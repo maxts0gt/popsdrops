@@ -6,7 +6,6 @@
     "nav.creators": "क्रिएटर",
     "nav.earnings": "कमाई",
     "nav.profile": "प्रोफ़ाइल",
-    "nav.messages": "संदेश",
     "nav.notifications": "नोटिफिकेशन",
     "nav.settings": "सेटिंग्स",
     "nav.forBrands": "ब्रांड्स के लिए",
@@ -68,7 +67,6 @@
     "empty.noData": "अभी यहाँ कुछ नहीं है",
     "empty.noNotifications": "आप पूरी तरह अपडेट हैं",
     "empty.noCampaigns": "अभी कोई कैंपेन नहीं है",
-    "empty.noMessages": "अभी कोई संदेश नहीं है",
     "time.today": "आज",
     "time.yesterday": "कल",
     "time.daysAgo": "{count} दिन पहले",
@@ -130,7 +128,9 @@
     "format.photoPost": "फोटो पोस्ट",
     "format.reel": "रील्स",
     "format.carousel": "कैरोजल",
-    "format.live": "लाइव स्ट्रीम"
+    "format.live": "लाइव स्ट्रीम",
+    "nav.communications": "संचार",
+    "empty.noUpdates": "अभी कोई अपडेट नहीं"
   },
   "marketing.landing": {
     "meta.title": "बिना सीमाओं के क्रिएटर कैंपेन",

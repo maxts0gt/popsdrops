@@ -18,7 +18,7 @@ INSERT INTO playbooks (name, description, icon, defaults, sort_order) VALUES
     "budget_range": "100-300",
     "timeline_days": 14,
     "max_creators": 5,
-    "brief_template": "We''d love for you to try our product and share your honest review with your audience. Show the unboxing, your first impressions, and how you use it in your daily routine. Be authentic — your audience trusts your genuine opinion."
+    "brief_template": "We''d love for you to try our product and share your honest review with your audience. Show the unboxing, your first impressions, and how you use it in your daily routine. Be authentic - your audience trusts your genuine opinion."
   }'::jsonb,
   1
 ),
@@ -90,7 +90,7 @@ INSERT INTO cultural_calendar (market, event_name, start_date, end_date, marketi
  'Peak engagement after iftar (7-11pm local). Avoid food/drink content during fasting hours. Themes: generosity, family, spirituality. CPMs increase 20-40%. Plan campaigns to launch 1-2 weeks before Ramadan.',
  2026),
 ('MENA', 'Eid al-Fitr 2026', '2026-03-20', '2026-03-22',
- 'Celebration period — fashion, beauty, food, and gift content perform exceptionally well. High purchasing intent. Short campaign window: plan content in advance.',
+ 'Celebration period - fashion, beauty, food, and gift content perform exceptionally well. High purchasing intent. Short campaign window: plan content in advance.',
  2026),
 ('MENA', 'Eid al-Adha 2026', '2026-05-27', '2026-05-30',
  'Family-focused celebration. Travel, fashion, and food content peak. Many users travel so engagement patterns shift.',

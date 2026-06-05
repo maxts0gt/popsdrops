@@ -27,8 +27,20 @@ export function resolvePublicBundleTranslations(
   locale: string,
   bundles: Partial<Record<string, PublicTranslationBundle>> = PUBLIC_TRANSLATION_BUNDLES,
 ): PublicTranslationBundle {
-  const resolved =
-    locale === "en" ? buildPublicBundleFallback() : bundles[locale] ?? buildPublicBundleFallback();
+  const fallback = buildPublicBundleFallback();
+  const bundle = locale === "en" ? undefined : bundles[locale];
+  const resolved: PublicTranslationBundle = bundle
+    ? { ...fallback }
+    : fallback;
+
+  if (bundle) {
+    for (const pageKey of PUBLIC_BUNDLE_PAGE_KEYS) {
+      resolved[pageKey] = {
+        ...(fallback[pageKey] ?? {}),
+        ...(bundle[pageKey] ?? {}),
+      };
+    }
+  }
 
   return applyWebEditorialOverrides(resolved, WEB_EDITORIAL_OVERRIDES[locale]);
 }

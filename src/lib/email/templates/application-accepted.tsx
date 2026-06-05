@@ -1,5 +1,5 @@
 import { Link, Section, Text } from "@react-email/components";
-import { EmailLayout, styles } from "./layout";
+import { EmailLayout, EmailSummary, styles } from "./layout";
 
 interface ApplicationAcceptedProps {
   creatorName: string;
@@ -18,17 +18,17 @@ export function ApplicationAcceptedEmail({
     <EmailLayout preview={`Accepted: ${campaignTitle}`}>
       <Text style={styles.heading}>You have been selected.</Text>
       <Text style={styles.paragraph}>
-        {creatorName}, your application has been accepted. Review the brief and begin creating.
+        {creatorName}, your application has been accepted. Review the brief
+        before you begin creating.
       </Text>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Campaign</Text>
-        <Text style={styles.value}>{campaignTitle}</Text>
-      </Section>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Agreed rate</Text>
-        <Text style={styles.value}>${acceptedRate}</Text>
-      </Section>
-      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
+      <EmailSummary
+        items={[
+          { label: "Campaign", value: campaignTitle },
+          { label: "Agreed rate", value: `$${acceptedRate}` },
+          { label: "Next action", value: "Open campaign" },
+        ]}
+      />
+      <Section style={styles.ctaSection}>
         <Link href={campaignUrl} style={styles.button}>
           Open campaign
         </Link>

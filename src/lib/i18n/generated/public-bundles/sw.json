@@ -6,7 +6,6 @@
     "nav.creators": "Wabunifu",
     "nav.earnings": "Mapato",
     "nav.profile": "Wasifu",
-    "nav.messages": "Ujumbe",
     "nav.notifications": "Arifa",
     "nav.settings": "Mipangilio",
     "nav.forBrands": "Kwa Chapa",
@@ -68,7 +67,6 @@
     "empty.noData": "Hakuna kitu hapa bado",
     "empty.noNotifications": "Uko sawa, hakuna arifa mpya",
     "empty.noCampaigns": "Hakuna kampeni bado",
-    "empty.noMessages": "Hakuna ujumbe bado",
     "time.today": "Leo",
     "time.yesterday": "Jana",
     "time.daysAgo": "Siku {count} zilizopita",
@@ -130,7 +128,9 @@
     "format.photoPost": "Chapisho la Picha",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Mubashara"
+    "format.live": "Mubashara",
+    "nav.communications": "Mawasiliano",
+    "empty.noUpdates": "Hakuna masasisho bado"
   },
   "marketing.landing": {
     "meta.title": "Kampeni za Wabunifu Bila Mipaka",

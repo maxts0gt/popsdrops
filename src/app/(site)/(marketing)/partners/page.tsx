@@ -49,7 +49,7 @@ export default function PartnersPage() {
         </div>
       </section>
 
-      {/* HOW IT WORKS — minimal */}
+      {/* HOW IT WORKS - minimal */}
       <section className="pb-12">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -141,7 +141,7 @@ export default function PartnersPage() {
         </div>
       </section>
 
-      {/* COMMISSION — transparent */}
+      {/* COMMISSION - transparent */}
       <section className="py-12">
         <div className="mx-auto max-w-xl px-6 text-center">
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">{t("commission.label")}</p>

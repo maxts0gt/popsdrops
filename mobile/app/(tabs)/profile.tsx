@@ -47,7 +47,7 @@ function formatFollowers(count: number): string {
 
 function formatResponseHours(hours: number | null): string {
   if (hours == null) {
-    return "—";
+    return "-";
   }
 
   if (hours < 24) {
@@ -498,7 +498,7 @@ export default function ProfileScreen() {
                 className="text-lg"
                 style={{ color: palette.textPrimary, fontFamily: "Inter_600SemiBold" }}
               >
-                {creator.rating > 0 ? creator.rating.toFixed(1) : "—"}
+                {creator.rating > 0 ? creator.rating.toFixed(1) : "-"}
               </Text>
             </View>
             <Text

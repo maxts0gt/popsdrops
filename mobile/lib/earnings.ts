@@ -10,14 +10,15 @@ export type EarningRecord = {
   brandName: string;
   acceptedRate: number;
   paymentStatus: string;
+  joinedAt: string | null;
   completedAt: string | null;
   status: string;
 };
 
 export type EarningsSummary = {
-  totalEarned: number;
-  thisMonthEarned: number;
-  pendingPayments: number;
+  paidTotal: number;
+  openTotal: number;
+  trackedTotal: number;
   campaigns: EarningRecord[];
 };
 
@@ -29,7 +30,7 @@ export async function loadEarnings(userId: string): Promise<EarningsSummary> {
   const { data, error } = await supabase
     .from("campaign_members")
     .select(
-      `accepted_rate, payment_status,
+      `accepted_rate, payment_status, joined_at,
        campaigns (
          id, title, status, completed_at,
          profiles!campaigns_brand_id_fkey ( full_name, brand_profiles ( company_name ) )
@@ -40,12 +41,9 @@ export async function loadEarnings(userId: string): Promise<EarningsSummary> {
 
   if (error) throw new Error(error.message);
 
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-
-  let totalEarned = 0;
-  let thisMonthEarned = 0;
-  let pendingPayments = 0;
+  let paidTotal = 0;
+  let openTotal = 0;
+  let trackedTotal = 0;
 
   const campaigns: EarningRecord[] = (data ?? []).flatMap((row) => {
     const campaign = Array.isArray(row.campaigns)
@@ -65,21 +63,12 @@ export async function loadEarnings(userId: string): Promise<EarningsSummary> {
 
     const rate = row.accepted_rate ?? 0;
     const paymentStatus = row.payment_status ?? "pending";
-    const isCompleted =
-      campaign.status === "completed" || campaign.status === "monitoring";
 
-    if (isCompleted && paymentStatus === "paid") {
-      totalEarned += rate;
-      if (
-        campaign.completed_at &&
-        new Date(campaign.completed_at) >= monthStart
-      ) {
-        thisMonthEarned += rate;
-      }
-    }
-
-    if (isCompleted && paymentStatus !== "paid") {
-      pendingPayments += rate;
+    trackedTotal += rate;
+    if (paymentStatus === "paid") {
+      paidTotal += rate;
+    } else {
+      openTotal += rate;
     }
 
     return [
@@ -89,11 +78,12 @@ export async function loadEarnings(userId: string): Promise<EarningsSummary> {
         brandName,
         acceptedRate: rate,
         paymentStatus,
+        joinedAt: row.joined_at,
         completedAt: campaign.completed_at,
         status: campaign.status,
       },
     ];
   });
 
-  return { totalEarned, thisMonthEarned, pendingPayments, campaigns };
+  return { paidTotal, openTotal, trackedTotal, campaigns };
 }

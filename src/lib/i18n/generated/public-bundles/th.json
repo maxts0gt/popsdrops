@@ -6,7 +6,6 @@
     "nav.creators": "ครีเอเตอร์",
     "nav.earnings": "รายได้",
     "nav.profile": "โปรไฟล์",
-    "nav.messages": "ข้อความ",
     "nav.notifications": "การแจ้งเตือน",
     "nav.settings": "การตั้งค่า",
     "nav.forBrands": "สำหรับแบรนด์",
@@ -68,7 +67,6 @@
     "empty.noData": "ยังไม่มีข้อมูล",
     "empty.noNotifications": "คุณอ่านครบหมดแล้ว",
     "empty.noCampaigns": "ยังไม่มีแคมเปญ",
-    "empty.noMessages": "ยังไม่มีข้อความ",
     "time.today": "วันนี้",
     "time.yesterday": "เมื่อวาน",
     "time.daysAgo": "{count} วันที่แล้ว",
@@ -130,7 +128,9 @@
     "format.photoPost": "โพสต์รูปภาพ",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "ไลฟ์สตรีม"
+    "format.live": "ไลฟ์สตรีม",
+    "nav.communications": "การสื่อสาร",
+    "empty.noUpdates": "ยังไม่มีอัปเดต"
   },
   "marketing.landing": {
     "meta.title": "แคมเปญครีเอเตอร์ไร้พรมแดน",

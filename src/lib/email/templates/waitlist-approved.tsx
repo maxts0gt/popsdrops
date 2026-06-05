@@ -1,5 +1,5 @@
 import { Link, Section, Text } from "@react-email/components";
-import { EmailLayout, styles } from "./layout";
+import { EmailLayout, EmailSummary, styles } from "./layout";
 
 interface WaitlistApprovedProps {
   name: string;
@@ -18,10 +18,19 @@ export function WaitlistApprovedEmail({
       <Text style={styles.paragraph}>
         {name}, you have been approved.{" "}
         {role === "brand"
-          ? "You can now create campaigns and connect with vetted creators across global markets."
-          : "Browse campaigns, complete your profile, and start applying to opportunities that match your audience."}
+          ? "You can now create private campaign workspaces, invite creators, and manage cross-border work in one place."
+          : "Complete your profile so PopsDrops can consider you for curated campaign briefs that match your audience."}
       </Text>
-      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
+      <EmailSummary
+        items={[
+          {
+            label: role === "brand" ? "Workspace" : "Creator profile",
+            value: role === "brand" ? "Brand dashboard" : "Creator network",
+          },
+          { label: "Next action", value: "Sign in to PopsDrops" },
+        ]}
+      />
+      <Section style={styles.ctaSection}>
         <Link href={loginUrl} style={styles.button}>
           Sign in to PopsDrops
         </Link>

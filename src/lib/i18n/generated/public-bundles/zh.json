@@ -6,7 +6,6 @@
     "nav.creators": "创作者",
     "nav.earnings": "收益",
     "nav.profile": "个人资料",
-    "nav.messages": "消息",
     "nav.notifications": "通知",
     "nav.settings": "设置",
     "nav.forBrands": "品牌方",
@@ -68,7 +67,6 @@
     "empty.noData": "暂无内容",
     "empty.noNotifications": "已读完所有通知",
     "empty.noCampaigns": "暂无推广活动",
-    "empty.noMessages": "暂无消息",
     "time.today": "今天",
     "time.yesterday": "昨天",
     "time.daysAgo": "{count} 天前",
@@ -130,7 +128,9 @@
     "format.photoPost": "图文帖子",
     "format.reel": "Reel",
     "format.carousel": "轮播图",
-    "format.live": "直播"
+    "format.live": "直播",
+    "nav.communications": "沟通",
+    "empty.noUpdates": "暂无更新"
   },
   "marketing.landing": {
     "meta.title": "无国界创作者营销",

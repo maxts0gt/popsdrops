@@ -17,7 +17,7 @@ import { getMobileAuthRedirectUrl } from "../../lib/mobile-auth";
 import { supabase } from "../../lib/supabase";
 
 /**
- * Login screen — matches the web's dark hero exactly:
+ * Login screen - matches the web's dark hero exactly:
  * pure black bg, neutral blurred orbs, character grid at 6% opacity.
  */
 
@@ -87,7 +87,7 @@ export default function LoginScreen() {
 
   return (
     <View className="flex-1" style={{ backgroundColor: BG }}>
-      {/* Neutral gradient orbs — matching web hero */}
+      {/* Neutral gradient orbs - matching web hero */}
       <View pointerEvents="none" className="absolute inset-0">
         <View
           className="absolute rounded-full"
@@ -161,31 +161,22 @@ export default function LoginScreen() {
               className="mt-12 rounded-2xl px-5 py-6"
               style={{ backgroundColor: SURFACE, borderWidth: 1, borderColor: BORDER }}
             >
-              {/* Google — white button, dark text (matches web hero CTA) */}
+              {/* Google - white button, dark text (matches web hero CTA) */}
               <Pressable
                 onPress={signInWithGoogle}
-                className="w-full flex-row items-center justify-center rounded-xl px-6 py-4"
+                className="w-full items-center justify-center rounded-xl px-6 py-4"
                 style={{ backgroundColor: BTN_BG }}
               >
                 <Text
-                  style={{
-                    fontFamily: "Inter_700Bold",
-                    fontSize: 16,
-                    marginEnd: 8,
-                  }}
-                >
-                  <Text style={{ color: "#4285F4" }}>G</Text>
-                  <Text style={{ color: "#EA4335" }}>o</Text>
-                  <Text style={{ color: "#FBBC05" }}>o</Text>
-                  <Text style={{ color: "#4285F4" }}>g</Text>
-                  <Text style={{ color: "#34A853" }}>l</Text>
-                  <Text style={{ color: "#EA4335" }}>e</Text>
-                </Text>
-                <Text
                   className="text-base"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
                   style={{
                     color: BTN_TEXT,
                     fontFamily: "Inter_600SemiBold",
+                    textAlign: "center",
+                    width: "100%",
                   }}
                 >
                   {t("auth.signInGoogle")}
@@ -215,7 +206,15 @@ export default function LoginScreen() {
                 >
                   <Text
                     className="text-base"
-                    style={{ color: TEXT_PRIMARY, fontFamily: "Inter_600SemiBold" }}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.85}
+                    style={{
+                      color: TEXT_PRIMARY,
+                      fontFamily: "Inter_600SemiBold",
+                      textAlign: "center",
+                      width: "100%",
+                    }}
                   >
                     {t("auth.signInEmail")}
                   </Text>

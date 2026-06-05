@@ -6,7 +6,6 @@
     "nav.creators": "Twórcy",
     "nav.earnings": "Zarobki",
     "nav.profile": "Profil",
-    "nav.messages": "Wiadomości",
     "nav.notifications": "Powiadomienia",
     "nav.settings": "Ustawienia",
     "nav.forBrands": "Dla marek",
@@ -68,7 +67,6 @@
     "empty.noData": "Jeszcze nic tu nie ma",
     "empty.noNotifications": "Jesteś na bieżąco",
     "empty.noCampaigns": "Brak kampanii",
-    "empty.noMessages": "Brak wiadomości",
     "time.today": "Dzisiaj",
     "time.yesterday": "Wczoraj",
     "time.daysAgo": "{count} dni temu",
@@ -130,7 +128,9 @@
     "format.photoPost": "Post ze zdjęciem",
     "format.reel": "Reel",
     "format.carousel": "Karuzela",
-    "format.live": "Transmisja na żywo"
+    "format.live": "Transmisja na żywo",
+    "nav.communications": "Komunikacja",
+    "empty.noUpdates": "Brak aktualizacji"
   },
   "marketing.landing": {
     "meta.title": "Kampanie z twórcami bez granic",

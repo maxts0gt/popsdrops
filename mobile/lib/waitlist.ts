@@ -56,7 +56,7 @@ export async function submitCreatorWaitlist(
   });
 
   if (error) {
-    // Duplicate email — they already submitted
+    // Duplicate email - they already submitted
     if (error.code === "23505") {
       return { success: true };
     }

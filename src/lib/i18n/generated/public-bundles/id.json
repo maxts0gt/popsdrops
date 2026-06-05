@@ -6,7 +6,6 @@
     "nav.creators": "Kreator",
     "nav.earnings": "Penghasilan",
     "nav.profile": "Profil",
-    "nav.messages": "Pesan",
     "nav.notifications": "Notifikasi",
     "nav.settings": "Pengaturan",
     "nav.forBrands": "Untuk Brand",
@@ -68,7 +67,6 @@
     "empty.noData": "Belum ada data",
     "empty.noNotifications": "Semua sudah terbaca",
     "empty.noCampaigns": "Belum ada kampanye",
-    "empty.noMessages": "Belum ada pesan",
     "time.today": "Hari ini",
     "time.yesterday": "Kemarin",
     "time.daysAgo": "{count} hari lalu",
@@ -130,7 +128,9 @@
     "format.photoPost": "Unggahan Foto",
     "format.reel": "Reel",
     "format.carousel": "Carousel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Komunikasi",
+    "empty.noUpdates": "Belum ada pembaruan"
   },
   "marketing.landing": {
     "meta.title": "Kampanye Kreator Tanpa Batas",

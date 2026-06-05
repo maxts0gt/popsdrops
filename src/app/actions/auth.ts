@@ -49,6 +49,12 @@ export async function getUser() {
   return user;
 }
 
+export async function getCurrentUserId() {
+  const user = await getUser();
+
+  return user.id;
+}
+
 /** Get authenticated user + profile */
 export async function getUserWithProfile() {
   const supabase = await createClient();

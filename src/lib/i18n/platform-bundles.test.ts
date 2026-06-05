@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { PageKey } from "./strings";
 import {
+  PLATFORM_TRANSLATION_BUNDLES,
+} from "./generated/platform-translation-manifest";
+import { PLATFORM_TRANSLATION_LOCALES } from "./generated/platform-translation-locales";
+import {
   PLATFORM_BUNDLE_PAGE_KEYS,
   buildPlatformBundleFallback,
   getSafePlatformLocale,
@@ -19,6 +23,7 @@ describe("platform translation bundles", () => {
     });
 
     expect(bundled["brand.home"]?.title).toBe("브랜드 홈");
+    expect(bundled["brand.campaign"]?.["creativeKit.title"]).toBe("Creative Kit");
   });
 
   it("applies editorial overrides for premium signed-in copy", () => {
@@ -64,5 +69,26 @@ describe("platform translation bundles", () => {
 
     expect(fallback["brand.home"]).toBeDefined();
     expect(fallback["creator.home"]).toBeDefined();
+  });
+
+  it("keeps generated bundles aligned with campaign update vocabulary", () => {
+    for (const locale of PLATFORM_TRANSLATION_LOCALES) {
+      const bundle = PLATFORM_TRANSLATION_BUNDLES[locale]!;
+
+      expect(bundle["ui.common"]?.["nav.communications"]).toBeTruthy();
+      expect(bundle["ui.common"]?.["nav.messages"]).toBeUndefined();
+      expect(bundle["ui.common"]?.["empty.noUpdates"]).toBeTruthy();
+      expect(bundle["ui.common"]?.["empty.noMessages"]).toBeUndefined();
+      expect(
+        bundle["brand.campaign"]?.["announcement.placeholder"],
+      ).toBeTruthy();
+      expect(bundle["brand.campaign"]?.["chat.placeholder"]).toBeUndefined();
+      expect(bundle["brand.campaign"]?.["tab.chat"]).toBeUndefined();
+      expect(bundle["creator.campaign"]?.["tab.chat"]).toBeUndefined();
+      expect(bundle.notifications?.["type.campaignUpdate"]).toBeTruthy();
+      expect(bundle.notifications?.["type.newMessage"]).toBeUndefined();
+      expect(bundle.settings?.["notifications.campaignUpdates"]).toBeTruthy();
+      expect(bundle.settings?.["notifications.messages"]).toBeUndefined();
+    }
   });
 });

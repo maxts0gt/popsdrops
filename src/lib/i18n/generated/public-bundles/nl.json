@@ -6,7 +6,6 @@
     "nav.creators": "Creators",
     "nav.earnings": "Inkomsten",
     "nav.profile": "Profiel",
-    "nav.messages": "Berichten",
     "nav.notifications": "Meldingen",
     "nav.settings": "Instellingen",
     "nav.forBrands": "Voor merken",
@@ -68,7 +67,6 @@
     "empty.noData": "Nog niets te zien",
     "empty.noNotifications": "Je bent helemaal bij",
     "empty.noCampaigns": "Nog geen campagnes",
-    "empty.noMessages": "Nog geen berichten",
     "time.today": "Vandaag",
     "time.yesterday": "Gisteren",
     "time.daysAgo": "{count} dagen geleden",
@@ -130,7 +128,9 @@
     "format.photoPost": "Fotopost",
     "format.reel": "Reel",
     "format.carousel": "Carrousel",
-    "format.live": "Livestream"
+    "format.live": "Livestream",
+    "nav.communications": "Communicatie",
+    "empty.noUpdates": "Nog geen updates"
   },
   "marketing.landing": {
     "meta.title": "Creator-campagnes zonder grenzen",

@@ -1,5 +1,5 @@
 import { Link, Section, Text } from "@react-email/components";
-import { EmailLayout, styles } from "./layout";
+import { EmailLayout, EmailSummary, styles } from "./layout";
 
 interface CounterOfferProps {
   creatorName: string;
@@ -10,34 +10,30 @@ interface CounterOfferProps {
 }
 
 export function CounterOfferEmail({
+  creatorName = "Creator",
   campaignTitle = "Campaign",
   counterRate = 150,
   message,
   campaignUrl = "https://popsdrops.com",
 }: CounterOfferProps) {
   return (
-    <EmailLayout preview={`Counter offer: ${campaignTitle} — $${counterRate}`}>
-      <Text style={styles.heading}>Counter offer.</Text>
+    <EmailLayout preview={`Counter offer: ${campaignTitle}, $${counterRate}`}>
+      <Text style={styles.heading}>Counter offer received.</Text>
       <Text style={styles.paragraph}>
-        The brand has proposed ${counterRate} for this campaign.
+        {creatorName}, the brand proposed a new rate. Review the offer before
+        accepting or declining.
       </Text>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Campaign</Text>
-        <Text style={styles.value}>{campaignTitle}</Text>
-      </Section>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Offered rate</Text>
-        <Text style={styles.value}>${counterRate}</Text>
-      </Section>
-      {message && (
-        <Section style={styles.card}>
-          <Text style={styles.label}>Note from brand</Text>
-          <Text style={{ ...styles.paragraph, margin: "4px 0 0 0" }}>
-            {message}
-          </Text>
-        </Section>
-      )}
-      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
+      <EmailSummary
+        items={[
+          { label: "Campaign", value: campaignTitle },
+          { label: "Offered rate", value: `$${counterRate}` },
+          ...(message
+            ? [{ label: "Note from brand", value: message, multiline: true }]
+            : []),
+          { label: "Next action", value: "Review offer" },
+        ]}
+      />
+      <Section style={styles.ctaSection}>
         <Link href={campaignUrl} style={styles.button}>
           Review offer
         </Link>

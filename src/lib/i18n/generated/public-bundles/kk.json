@@ -6,7 +6,6 @@
     "nav.creators": "Креаторлар",
     "nav.earnings": "Табыс",
     "nav.profile": "Профиль",
-    "nav.messages": "Хабарламалар",
     "nav.notifications": "Хабарландырулар",
     "nav.settings": "Баптаулар",
     "nav.forBrands": "Брендтерге",
@@ -68,7 +67,6 @@
     "empty.noData": "Әзірге ештеңе жоқ",
     "empty.noNotifications": "Жаңа хабарландыру жоқ",
     "empty.noCampaigns": "Науқандар жоқ",
-    "empty.noMessages": "Хабарламалар жоқ",
     "time.today": "Бүгін",
     "time.yesterday": "Кеше",
     "time.daysAgo": "{count} күн бұрын",
@@ -130,7 +128,9 @@
     "format.photoPost": "Фото-пост",
     "format.reel": "Reel",
     "format.carousel": "Карусель",
-    "format.live": "Тікелей эфир"
+    "format.live": "Тікелей эфир",
+    "nav.communications": "Коммуникациялар",
+    "empty.noUpdates": "Әзірге жаңартулар жоқ"
   },
   "marketing.landing": {
     "meta.title": "Шекарасыз креаторлық науқандар",

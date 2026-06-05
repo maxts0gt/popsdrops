@@ -1,11 +1,13 @@
 /**
  * send-email Edge Function
  *
- * Accepts { to, subject, html } and sends via AWS SES SMTP (port 465, implicit TLS).
+ * Accepts { to, subject, html, text? } and sends via AWS SES SMTP (port 465, implicit TLS).
  * Uses SMTP_USERNAME / SMTP_PASSWORD from Supabase secrets.
- * Auth: verify_jwt enabled — Supabase validates the JWT before the function runs.
+ * Auth: verify_jwt enabled - Supabase validates the JWT before the function runs.
  * Only service_role tokens can call this (anon tokens are rejected via role check).
  */
+
+import { buildSmtpMimeMessage } from "../_shared/smtp-message.ts";
 
 const SMTP_HOST = Deno.env.get("SES_SMTP_HOST") || "email-smtp.us-east-1.amazonaws.com";
 const SMTP_USER = Deno.env.get("SMTP_USERNAME")!;
@@ -14,7 +16,6 @@ const FROM_ADDRESS = Deno.env.get("EMAIL_FROM") || "PopsDrops <notifications@pop
 const CONNECT_TIMEOUT_MS = 5_000;
 const IO_TIMEOUT_MS = 5_000;
 const TRANSACTION_TIMEOUT_MS = 15_000;
-const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -45,50 +46,19 @@ function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise
   });
 }
 
-function rejectHeaderInjection(value: string, field: string) {
-  if (/[\r\n]/.test(value)) {
-    throw new Error(`Invalid ${field}`);
-  }
-}
-
-function validateEmailAddress(value: string, field: string) {
-  const normalized = value.trim();
-  rejectHeaderInjection(normalized, field);
-  if (!EMAIL_REGEX.test(normalized)) {
-    throw new Error(`Invalid ${field}`);
-  }
-  return normalized;
-}
-
-function getEnvelopeFromAddress() {
-  rejectHeaderInjection(FROM_ADDRESS, "from address");
-  const envelope = FROM_ADDRESS.match(/<([^<>]+)>/)?.[1] || FROM_ADDRESS;
-  return validateEmailAddress(envelope, "from address");
-}
-
-function sanitizeSubject(subject: string) {
-  const normalized = subject.trim();
-  rejectHeaderInjection(normalized, "subject");
-  if (!normalized) {
-    throw new Error("Invalid subject");
-  }
-  return normalized;
-}
-
-function dotStuffSmtpBody(value: string) {
-  const normalized = value.replace(/\r?\n/g, "\r\n");
-  return normalized.replace(/(^|\r\n)\./g, "$1..");
-}
-
 async function sendViaSMTP(
   to: string,
   subject: string,
   html: string,
+  text?: string,
 ): Promise<void> {
-  const recipient = validateEmailAddress(to, "recipient email");
-  const safeSubject = sanitizeSubject(subject);
-  const fromAddr = getEnvelopeFromAddress();
-  const safeHtml = dotStuffSmtpBody(html);
+  const message = buildSmtpMimeMessage({
+    fromAddress: FROM_ADDRESS,
+    html,
+    subject,
+    text,
+    to,
+  });
   const encoder = new TextEncoder();
   const decoder = new TextDecoder();
   let conn: Deno.TlsConn | null = null;
@@ -137,28 +107,15 @@ async function sendViaSMTP(
       expect(await read(), "220");
       expect(await send("EHLO popsdrops.com"), "250");
 
-      // AUTH PLAIN — single base64 string: \0username\0password
+      // AUTH PLAIN - single base64 string: \0username\0password
       const authPlain = btoa(`\0${SMTP_USER}\0${SMTP_PASS}`);
       expect(await send(`AUTH PLAIN ${authPlain}`), "235");
 
-      expect(await send(`MAIL FROM:<${fromAddr}>`), "250");
-      expect(await send(`RCPT TO:<${recipient}>`), "250");
+      expect(await send(`MAIL FROM:<${message.envelopeFrom}>`), "250");
+      expect(await send(`RCPT TO:<${message.recipient}>`), "250");
       expect(await send("DATA"), "354");
 
-      const body = [
-        `From: ${FROM_ADDRESS}`,
-        `To: ${recipient}`,
-        `Subject: ${safeSubject}`,
-        `MIME-Version: 1.0`,
-        `Content-Type: text/html; charset=UTF-8`,
-        `Date: ${new Date().toUTCString()}`,
-        ``,
-        safeHtml,
-        ``,
-        `.`,
-      ].join("\r\n");
-
-      expect(await send(body), "250");
+      expect(await send(`${message.data}\r\n.`), "250");
       await send("QUIT");
     })(), TRANSACTION_TIMEOUT_MS, "transaction");
   } finally {
@@ -197,7 +154,7 @@ Deno.serve(async (req) => {
     const payload = JSON.parse(atob(padded));
     if (payload.role !== "service_role") {
       return new Response(
-        JSON.stringify({ error: "Unauthorized — service_role required" }),
+        JSON.stringify({ error: "Unauthorized - service_role required" }),
         { status: 401, headers: jsonHeaders },
       );
     }
@@ -209,7 +166,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { to, subject, html } = await req.json();
+    const { to, subject, html, text } = await req.json();
 
     if (!to || !subject || !html) {
       return new Response(
@@ -225,7 +182,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    await sendViaSMTP(to, subject, html);
+    await sendViaSMTP(to, subject, html, text);
 
     return new Response(
       JSON.stringify({ success: true }),

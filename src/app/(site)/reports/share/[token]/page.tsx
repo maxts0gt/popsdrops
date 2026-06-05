@@ -67,7 +67,7 @@ export default async function SharedReportPage({ params }: SharedReportPageProps
       locale={locale}
       initialTranslations={initialTranslations}
     >
-      <SharedReportView data={payload.report} />
+      <SharedReportView data={payload.report} share={payload.share} />
     </LocalizedRouteShell>
   );
 }

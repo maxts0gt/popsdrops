@@ -1,172 +1,112 @@
 # PopsDrops
 
-Cross-border influencer marketing platform connecting global brands with vetted micro-creators in MENA, Central Asia, and emerging markets. Also provides market-entry brokerage services connecting brands with local distributors.
+Global cross-border influencer marketing platform connecting brands with vetted micro-creators across any market. PopsDrops also offers market-entry brokerage by connecting brands with local distributors.
 
-## Tech Stack
+PopsDrops is global by design. Product, copy, and visual design should lead with cross-border capability, not any specific geography.
 
-- **Framework:** Next.js 16.1.7+ (App Router, Turbopack, React Compiler, PPR) deployed on Vercel — pinned to ≥16.1.7 for CSRF fix (CVE-2026-27978)
-- **Database/Auth/Storage/Realtime:** Supabase (Postgres + Auth + Storage + Realtime + pgvector + pg_trgm) — Small compute, Realtime spend cap removed
-- **AI:** Vercel AI SDK (`ai` package) + Gemini API (translation, recommendations) + Cohere embed-v3 (multilingual embeddings for semantic search/matching)
-- **Email:** AWS SES + React Email templates — SPF/DKIM/DMARC/SNS bounce handling configured
-- **Translation:** Gemini API (auto-translate briefs to Arabic, French, Russian, Kazakh, Uzbek, Turkish)
-- **Search:** Hybrid — tsvector (keyword) + pg_trgm (fuzzy) + pgvector with HNSW (semantic)
-- **DNS:** Cloudflare (DNS only, no proxy — domain registered there)
-- **Analytics:** Vercel Analytics (free)
-- **Monitoring:** Axiom (OTel + Vercel log drains) + `function_execution_log` table
-- **Styling:** Tailwind CSS v4 + shadcn/ui
-- **Animation:** Motion v12 (`motion/react`) + Magic UI / Aceternity UI (landing page)
-- **Icons:** Lucide React
-- **Fonts:** Inter (Latin/Cyrillic) + Cairo (Arabic) — both Google Fonts, variable
-- **Forms:** React Hook Form + Zod (shared validation client + server)
-- **Tables:** TanStack Table v8 via shadcn DataTable
-- **Command Palette:** cmdk via shadcn Command
-- **Toasts:** Sonner
-- **Rate Limiting:** Upstash Redis + @upstash/ratelimit
-- **Bot Protection:** Cloudflare Turnstile (signup/public forms)
-- **Mobile:** PWA with Web Push (Capacitor native wrapper planned for v2)
-- **Testing:** Playwright (E2E) + Vitest (unit/component)
-- **CI/CD:** GitHub Actions — lint + type check + test on every PR
+## Stack
 
-## What This Is NOT
+- **Web:** Next.js 16.2.1, App Router, React 19, deployed as the product interface layer
+- **Mobile:** Expo React Native creator app in `mobile/`
+- **Backend:** Supabase Postgres, Auth, Storage, Realtime, Edge Functions, pgvector, pg_trgm
+- **AI:** Gemini for dynamic brief translation and evidence extraction, Cohere embed-v3 for multilingual embeddings
+- **Email:** AWS SES with React Email templates
+- **i18n:** Static checked-in UI bundles for 30 curated locales; runtime AI translation is only for dynamic content
+- **Styling:** Tailwind CSS v4, shadcn/ui, Lucide, Motion
+- **Forms:** React Hook Form and Zod
+- **Testing:** Vitest plus Playwright/E2E coverage
 
-- NO Stripe Connect — we do NOT handle payments between brands and creators (payment tracking only: pending/invoiced/paid)
-- NO PostHog — use Vercel Analytics only
-- NO passwords — Google OAuth + magic link + OTP fallback only
-- NO Cloudflare proxy — DNS only mode, Vercel handles CDN/edge
-- NO Novel/Tiptap — broken RTL, XSS CVEs. Use structured forms for briefs
-- NO WhatsApp integration for MVP — email is the only notification channel
-- NO dark mode for MVP — light only, architected for future addition via CSS custom properties
+## Product Areas
 
-## Design System
+- `/` marketing site: landing, `/for-brands`, `/for-creators`, `/partners`, legal pages, login and invite request
+- `/i/*` creator web app: mobile-first creator workspace
+- `/b/*` brand dashboard: desktop-first campaign and creator management
+- `/admin/*` admin center: operations surface for approvals, campaigns, users, settings, audit, and reporting
+- `mobile/` Expo creator app sharing selected types, constants, validations, and generated locale bundles
 
-**Color:** Teal primary (`#0D9488` / teal-600) + Amber accent (`#F59E0B` / amber-500). NOT violet (Aspire owns purple). Teal bridges trust (blue) and Islamic green symbolism. Slate neutrals. Uses Tailwind's built-in scales.
+## Access Model
 
-**Typography:** Inter (Latin/Cyrillic) + Cairo (Arabic). Both variable, visually matched. Never use Noto Sans Arabic (too generic).
+- **Brands:** invite-only, reviewed before onboarding
+- **Creators:** open signup, with profile quality thresholds before appearing in brand search
+- **Admin:** tightly scoped internal operations
+- **Auth:** Google OAuth, magic link, OTP fallback; no password auth
+- **Local dev:** `/dev/login` supports role-based dev sessions and is blocked in production
 
-**Components:** rounded-lg buttons, rounded-xl cards, shadow-sm default, 8px spacing grid. See plan for full component specs.
+## Design Direction
 
-**Philosophy:** "Modern Souq" — international, professional, with soul. Not Middle Eastern themed, not Silicon Valley. Like a premium coworking space in Dubai Marina.
+PopsDrops should feel premium, global, minimal, and trustworthy. The visual system is monochrome-first with Slate-900 (`#0F172A`) as the brand color. Teal and amber are subtle atmospheric accents only, not UI chrome. No broad web dark mode for the current product scope; mobile creator surfaces may use intentional luxury dark styling.
 
-## Architecture
+Marketing uses the dark landing hero pattern; platform pages use light application surfaces with solid headers, sidebars, bottom navigation where appropriate, skeleton loading, and no dead-end empty states.
 
-Full implementation plan: `.claude/plans/typed-plotting-meerkat.md`
+## Domain Model
 
-### Three apps in one
+Core entities:
 
-- `/i/*` — Creator app (mobile-first, bottom nav, daily-briefing-driven)
-- `/b/*` — Brand dashboard (desktop-first, sidebar nav, campaign-driven)
-- `/admin/*` — Admin operations center (desktop, sidebar with 10 sections)
-- `/` — Marketing site (landing, /for-brands, /for-creators, /explore, /market-entry, /rate-calculator, /pricing, /about, /careers, /contact, legal pages, /c/[slug])
+- waitlist requests
+- profiles, creator profiles, brand profiles
+- campaigns and campaign deliverables
+- campaign applications and counter-offers
+- campaign members with payment status tracking
+- content submissions with revision workflow
+- content performance reads with platform-specific metrics
+- reviews
+- notifications and notification queue
+- reporting requirements, evidence records, review state, and correction history
+- admin audit log and platform settings
 
-### Key Entities
+Campaign lifecycle:
 
-- **Profiles** — extends Supabase Auth, role-based (creator/brand/admin)
-- **Creator Profiles** — social accounts (TikTok, Instagram, Snapchat, YouTube, Facebook), niches, markets, rate card (per-platform per-format), tier (new/rising/established/top), ranking score, profile embedding (vector)
-- **Brand Profiles** — company info, target markets, industry, rating
-- **Campaigns** — 6-phase lifecycle: draft → recruiting → in_progress → publishing → monitoring → completed (+ paused/cancelled). Structured brief (description, requirements, do's, don'ts), deliverables, usage rights, budget tracking
-- **Campaign Deliverables** — per-platform content specs (format, quantity, deadline)
-- **Campaign Applications** — rate + pitch, with counter-offer support (counter_rate, counter_message)
-- **Campaign Members** — accepted creators with payment status tracking
-- **Content Submissions** — version history, revision count (max enforced), 6-state machine
-- **Content Performance** — platform-specific fields, multiple measurement reads (48h initial, 7d final, 30d extended for YouTube)
-- **Campaign Messages** — Broadcast-based realtime chat
-- **Reviews** — bidirectional post-campaign ratings
-- **Notifications + Notification Queue** — outbox pattern for reliable email delivery
-- **Market Benchmarks** — per market × platform × format × tier × niche
-- **Cultural Calendar** — Ramadan, Eid, Nauryz, Saudi National Day, etc.
-- **Market Compliance** — UAE licensing, Saudi registration, per-market legal requirements
-- **Playbooks** — campaign templates
-- **Function Execution Log** — Edge Function monitoring
+`draft -> recruiting -> in_progress -> publishing -> monitoring -> completed`
 
-### 5 Supported Platforms
+Additional statuses: `paused`, `cancelled`.
 
-TikTok, Instagram, Snapchat, YouTube, Facebook. Each has different view/engagement definitions — metrics are NEVER mixed cross-platform.
+Campaign and reporting platforms:
 
-## Auth Flow
+Campaign setup supports TikTok, Instagram, Snapchat, YouTube, and Facebook as publishing platforms. Reporting templates also support X and Generic proof entries because creators may submit evidence from a required channel that is not a first-class campaign platform yet.
 
-Supabase Auth with:
-- Google OAuth (primary)
-- Magic link via email (AWS SES as custom SMTP)
-- OTP fallback (for MENA email prefetchers that consume magic links)
-- NO password auth. Ever.
+Platform metrics must not be mixed raw across platforms. Use platform-specific definitions and cross-platform equalizers such as CPE when comparing performance.
 
-After auth → role-based redirect:
-- Creator → `/i/home`
-- Brand → `/b/home`
-- Admin → `/admin/`
+Creator reporting is evidence-first. Creators submit content links, evidence screenshots or platform exports, and metric values. Gemini may extract values from screenshots, but creators confirm or correct those values before the brand report uses them. Platform-token connections are not part of the current reporting architecture; any future verification layer needs a new product decision, privacy model, and written workflow.
 
-New users → progressive onboarding (2 steps only, rest collected over time).
+Do not infer backend architecture from dormant implementation scaffolding. Old tables, helpers, or route names are not product requirements. Cron jobs, token refresh, platform API metric fetchers, scheduler extensions, and Vault secrets require an explicit product decision and a written user workflow before implementation.
 
-## Key Design Principles
+## i18n Rules
 
-1. **Every tap is intentional.** One clear next action per screen. If the user has to think, the page is broken.
-2. **Two products in one shell.** Creators think "opportunities." Brands think "campaigns."
-3. **Mobile-first for creators, desktop-first for brands.**
-4. **Zero dead ends.** Every empty state has exactly one CTA.
-5. **No page reloads for in-context actions.** Sheets, modals, intercepting routes.
-6. **Optimistic UI everywhere.** Actions feel instant.
-7. **Smart defaults.** Pre-fill from profile data. User changes what's wrong, not fills in what's blank.
-8. **Skeleton loading, never spinners.**
-9. **Earn trust through transparency.** Ratings, response times, completion rates, benchmarks.
-10. **Progressive disclosure.** Show 3 things. Let the user ask for more.
+- User-facing UI strings go through `t("key")`.
+- Add source strings before using them in components.
+- Use logical CSS properties (`ms-*`, `ps-*`, `start-*`, `text-start`) for RTL support.
+- Platform names, CPM, and CPE stay in English.
+- Legal pages are English-only.
+- Demo/mock data stays in English.
 
-## Business Logic
+## Security Rules
 
-### Platform-Specific Metrics
+- Keep Next.js pinned at or above the CSRF-fixed baseline.
+- Configure `serverActions.allowedOrigins`.
+- Use `getUser()` on the server, not `getSession()`.
+- Validate every Server Action with Zod.
+- Use Turnstile and rate limiting on public forms.
+- Never expose service-role keys to clients.
+- Keep RLS enabled for exposed Supabase tables.
 
-Every platform measures differently. We NEVER sum or average raw metrics cross-platform.
+## Backend Runtime Boundary
 
-- **Views**: TikTok = any play. YouTube long-form = 30 seconds. Instagram = any play (since Apr 2025). Snapchat = ~1 second.
-- **Engagement**: Platform-specific interactions weighted differently (saves 12x, shares 6x, comments 4x a like).
-- **CPM**: Different denominators per platform. Use CPE (Cost Per Engagement) as cross-platform equalizer.
-- **PopsDrops Performance Score**: Percentile rank within same platform + tier + niche (0-100).
+Next.js is the product interface layer. Supabase is the operational backend.
 
-### Campaign Lifecycle — 6 Phases
+Next.js owns page rendering, app shell, forms, dashboard presentation, and thin orchestration. Supabase owns Postgres, Auth, Storage, RLS, Realtime, project secrets, Edge Functions, audit/event writes, AI extraction, dynamic translation, report generation, email dispatch, and explicitly approved lifecycle automation.
 
-Draft → Recruiting → In Progress → Publishing → Monitoring → Completed (+ Paused/Cancelled)
+Do not put secret-heavy, scheduled, long-running, high-volume, Storage-processing, or lifecycle-critical business logic in Next.js Server Actions by default. Build those operations as Supabase Edge Functions or Postgres functions when the logic belongs close to data. Any background automation needs an explicit product workflow and cannot be inferred from old scaffolding.
 
-### Creator Tiers
+Payment secrets are Supabase-only. Stripe Checkout Session creation lives in `create-stripe-checkout-session`; Stripe webhook verification lives in `stripe-webhook`. Next.js may initiate the user action, but it must never read `STRIPE_SECRET_KEY` or webhook signing secrets.
 
-New → Rising (3+ campaigns, 4.0+ rating) → Established (10+, 4.5+) → Top (25+, 4.7+, manual review). MVP ships New + Rising only.
+For 1M-user scale, avoid creating two backend cost centers. Supabase should absorb operational backend scale because database compute, Auth MAU, Storage, egress, RLS, Edge Functions, and secrets live there. Vercel/Next.js should not become the place where expensive background jobs, AI jobs, or repeated report processing run.
 
-## Backend Architecture
+## Current Implementation Notes
 
-### Supabase Edge Functions (Deno — only DB-triggered work)
-- `send-notification` — pg_cron 5-min batch + DB webhook for immediate priority
-- `calculate-benchmarks` — pg_cron weekly
-
-### Vercel API Routes / Server Actions (Node.js — everything else)
-- `translate-brief` — Gemini API on campaign publish
-- `match-creators` — Cohere embed-v3 similarity search
-- `generate-report` — Vercel AI SDK generateObject for recommendations
-- `update-response-time` — avg response time calculation
-- `generate-embeddings` — Cohere embed-v3 on profile/campaign changes
-
-### Security (Non-Negotiable)
-- Pin Next.js ≥16.1.7, configure `serverActions.allowedOrigins`
-- Rate limiting via Upstash Redis in middleware + per-action
-- Cloudflare Turnstile on public forms
-- Zod validation on every Server Action
-- File upload validation via magic bytes
-- getUser() always, getSession() never on server
-
-## Email (AWS SES)
-
-From: `notifications@popsdrops.com`
-Templates: React Email (JSX-based, RTL-aware for Arabic)
-SPF/DKIM/DMARC configured. SNS bounce/complaint handling. Auto-suppress bounced addresses.
-
-## Business Model
-
-- Creators: FREE forever
-- Brands: Free during launch → per-campaign fee ($99-149) → subscription tiers ($299-999/mo)
-- Market Entry Brokerage: connect brands with local distributors for MENA market entry, 10% commission on first-year sales (handled offline, sourced through platform)
-- Future: Payment facilitation (escrow), benchmark data product for agencies
-
-## Cold Start Strategy
-
-1. Seed Riyadh first (25.3M Snapchat, 18.5M TikTok, Vision 2030 brand spending)
-2. Manually recruit 50-100 micro-creators via DMs
-3. MENA rate calculator as standalone SEO tool (drives organic inbound)
-4. Concierge first 5-10 brand campaigns for free
-5. Expansion: Riyadh → Dubai → Cairo → Casablanca → Almaty
+- Supabase migrations live in `supabase/migrations`.
+- Supabase Edge Functions live in `supabase/functions`.
+- Generated database types live in `src/types/database.ts`.
+- Public and platform translation bundles live under `src/lib/i18n/generated`.
+- Mobile translation bundles live under `mobile/lib/generated`.
+- The local web helper script is `.claude/dev.sh`.
+- The local Expo web helper script is `.claude/expo-dev.sh`.

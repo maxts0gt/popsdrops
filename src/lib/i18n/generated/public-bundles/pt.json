@@ -6,7 +6,6 @@
     "nav.creators": "Criadores",
     "nav.earnings": "Ganhos",
     "nav.profile": "Perfil",
-    "nav.messages": "Mensagens",
     "nav.notifications": "Notificações",
     "nav.settings": "Configurações",
     "nav.forBrands": "Para Marcas",
@@ -68,7 +67,6 @@
     "empty.noData": "Nada por aqui ainda",
     "empty.noNotifications": "Você está em dia",
     "empty.noCampaigns": "Nenhuma campanha ainda",
-    "empty.noMessages": "Nenhuma mensagem ainda",
     "time.today": "Hoje",
     "time.yesterday": "Ontem",
     "time.daysAgo": "há {count} dias",
@@ -130,7 +128,9 @@
     "format.photoPost": "Post de Foto",
     "format.reel": "Reel",
     "format.carousel": "Carrossel",
-    "format.live": "Live Stream"
+    "format.live": "Live Stream",
+    "nav.communications": "Comunicações",
+    "empty.noUpdates": "Ainda não há atualizações"
   },
   "marketing.landing": {
     "meta.title": "Campanhas com Criadores Sem Fronteiras",

@@ -6,7 +6,6 @@
     "nav.creators": "İçerik Üreticileri",
     "nav.earnings": "Kazançlar",
     "nav.profile": "Profil",
-    "nav.messages": "Mesajlar",
     "nav.notifications": "Bildirimler",
     "nav.settings": "Ayarlar",
     "nav.forBrands": "Markalar İçin",
@@ -68,7 +67,6 @@
     "empty.noData": "Henüz bir veri yok",
     "empty.noNotifications": "Her şey güncel",
     "empty.noCampaigns": "Henüz kampanya yok",
-    "empty.noMessages": "Henüz mesaj yok",
     "time.today": "Bugün",
     "time.yesterday": "Dün",
     "time.daysAgo": "{count} gün önce",
@@ -130,7 +128,9 @@
     "format.photoPost": "Fotoğraf Gönderisi",
     "format.reel": "Reel",
     "format.carousel": "Kaydırmalı Post",
-    "format.live": "Canlı Yayın"
+    "format.live": "Canlı Yayın",
+    "nav.communications": "İletişimler",
+    "empty.noUpdates": "Henüz güncelleme yok"
   },
   "marketing.landing": {
     "meta.title": "Sınır Tanımayan İçerik Üreticisi Kampanyaları",

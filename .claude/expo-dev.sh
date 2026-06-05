@@ -1,2 +1,5 @@
 #!/bin/bash
-cd /Users/max/non-office/popsdrops/mobile && npx expo start --web --port 8081
+set -euo pipefail
+
+cd "$(dirname "$0")/../mobile" || exit 1
+exec npm run web -- --port 8081

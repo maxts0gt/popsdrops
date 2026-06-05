@@ -1,17 +1,12 @@
 import { useCallback, useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  FlatList,
-  RefreshControl,
-} from "react-native";
+import { View, Text, FlatList, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   DollarSign,
-  TrendingUp,
   Clock,
   CircleCheck,
   AlertCircle,
+  Wallet,
 } from "lucide-react-native";
 import { useAuth } from "../../lib/auth";
 import {
@@ -24,12 +19,55 @@ import { useTheme } from "../../lib/theme-context";
 
 const PAYMENT_STATUS_CONFIG: Record<
   string,
-  { icon: typeof Clock; color: string; bg: string }
+  { icon: typeof Clock; color: string; bg: string; labelKey: string }
 > = {
-  pending: { icon: Clock, color: "#F59E0B", bg: "#FFFBEB" },
-  invoiced: { icon: AlertCircle, color: "#3B82F6", bg: "#EFF6FF" },
-  paid: { icon: CircleCheck, color: "#10B981", bg: "#ECFDF5" },
+  pending: {
+    icon: Clock,
+    color: "#B45309",
+    bg: "#FFFBEB",
+    labelKey: "earnings.status.pending",
+  },
+  invoiced: {
+    icon: AlertCircle,
+    color: "#0369A1",
+    bg: "#F0F9FF",
+    labelKey: "earnings.status.invoiced",
+  },
+  paid: {
+    icon: CircleCheck,
+    color: "#047857",
+    bg: "#ECFDF5",
+    labelKey: "earnings.status.paid",
+  },
+  overdue: {
+    icon: AlertCircle,
+    color: "#BE123C",
+    bg: "#FFF1F2",
+    labelKey: "earnings.status.overdue",
+  },
+  failed: {
+    icon: AlertCircle,
+    color: "#475569",
+    bg: "#F1F5F9",
+    labelKey: "earnings.status.failed",
+  },
+  refunded: {
+    icon: AlertCircle,
+    color: "#475569",
+    bg: "#F1F5F9",
+    labelKey: "earnings.status.refunded",
+  },
+  disputed: {
+    icon: AlertCircle,
+    color: "#BE123C",
+    bg: "#FFF1F2",
+    labelKey: "earnings.status.disputed",
+  },
 };
+
+function getPaymentStatusMeta(status: string) {
+  return PAYMENT_STATUS_CONFIG[status] ?? PAYMENT_STATUS_CONFIG.pending;
+}
 
 export default function EarningsScreen() {
   const { session } = useAuth();
@@ -46,7 +84,7 @@ export default function EarningsScreen() {
       const earnings = await loadEarnings(userId);
       setData(earnings);
     } catch {
-      // Silent fail — empty state shown
+      // Silent fail - empty state shown
     }
   }, [userId]);
 
@@ -70,6 +108,16 @@ export default function EarningsScreen() {
       maximumFractionDigits: 0,
     }).format(n);
 
+  const formatAcceptedDate = (date: string | null) => {
+    if (!date) return "";
+
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    }).format(new Date(date));
+  };
+
   return (
     <SafeAreaView
       className="flex-1"
@@ -83,9 +131,16 @@ export default function EarningsScreen() {
         >
           {t("earnings.title")}
         </Text>
+        <Text
+          className="mt-1 text-sm"
+          style={{ color: palette.textMuted, fontFamily: "Inter_400Regular" }}
+        >
+          {t("earnings.trackingOnly")}
+        </Text>
       </View>
 
       <FlatList<EarningRecord>
+        testID="creator-earnings-ledger"
         data={data?.campaigns ?? []}
         keyExtractor={(item) => item.campaignId}
         refreshControl={
@@ -99,44 +154,26 @@ export default function EarningsScreen() {
         ListHeaderComponent={
           data ? (
             <View className="mb-6">
-              {/* Summary cards */}
               <View className="flex-row gap-3">
                 <SummaryCard
                   icon={DollarSign}
-                  label={t("earnings.totalEarned")}
-                  value={fmt(data.totalEarned)}
+                  label={t("earnings.paid")}
+                  value={fmt(data.paidTotal)}
                   palette={palette}
                 />
                 <SummaryCard
-                  icon={TrendingUp}
-                  label={t("earnings.thisMonth")}
-                  value={fmt(data.thisMonthEarned)}
+                  icon={Clock}
+                  label={t("earnings.open")}
+                  value={fmt(data.openTotal)}
+                  palette={palette}
+                />
+                <SummaryCard
+                  icon={Wallet}
+                  label={t("earnings.tracked")}
+                  value={fmt(data.trackedTotal)}
                   palette={palette}
                 />
               </View>
-              {data.pendingPayments > 0 ? (
-                <View
-                  className="mt-3 flex-row items-center gap-2 rounded-xl px-4 py-3"
-                  style={{
-                    backgroundColor: "#FFFBEB",
-                    borderWidth: 1,
-                    borderColor: "#FEF3C7",
-                  }}
-                >
-                  <Clock size={14} color="#F59E0B" strokeWidth={2} />
-                  <Text
-                    className="text-sm"
-                    style={{
-                      color: "#92400E",
-                      fontFamily: "Inter_500Medium",
-                    }}
-                  >
-                    {t("earnings.pending", {
-                      amount: fmt(data.pendingPayments),
-                    })}
-                  </Text>
-                </View>
-              ) : null}
 
               {data.campaigns.length > 0 ? (
                 <Text
@@ -146,7 +183,7 @@ export default function EarningsScreen() {
                     fontFamily: "Inter_600SemiBold",
                   }}
                 >
-                  {t("earnings.breakdown")}
+                  {t("earnings.campaignLedger")}
                 </Text>
               ) : null}
             </View>
@@ -163,13 +200,12 @@ export default function EarningsScreen() {
           ) : null
         }
         renderItem={({ item }) => {
-          const config =
-            PAYMENT_STATUS_CONFIG[item.paymentStatus] ??
-            PAYMENT_STATUS_CONFIG.pending;
+          const config = getPaymentStatusMeta(item.paymentStatus);
           const StatusIcon = config.icon;
 
           return (
             <View
+              testID="creator-earnings-row"
               className="mb-3 rounded-xl border px-4 py-4"
               style={{
                 borderColor: palette.borderSubtle,
@@ -195,6 +231,9 @@ export default function EarningsScreen() {
                     }}
                   >
                     {item.brandName}
+                    {item.joinedAt
+                      ? ` | ${t("earnings.accepted")} ${formatAcceptedDate(item.joinedAt)}`
+                      : ""}
                   </Text>
                 </View>
                 <Text
@@ -220,7 +259,7 @@ export default function EarningsScreen() {
                       fontFamily: "Inter_600SemiBold",
                     }}
                   >
-                    {t(`earnings.status.${item.paymentStatus}`)}
+                    {t(config.labelKey)}
                   </Text>
                 </View>
               </View>

@@ -143,6 +143,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const completion = await completeMobileAuthSession(
           result.url,
           (session) => supabase.auth.setSession(session),
+          (code) => supabase.auth.exchangeCodeForSession(code),
         );
 
         if (completion.kind === "error") {

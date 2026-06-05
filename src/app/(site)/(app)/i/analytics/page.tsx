@@ -9,7 +9,7 @@ import {
   Star,
   Eye,
   Heart,
-  Zap,
+  Percent,
   DollarSign,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -24,7 +24,7 @@ import {
 } from "@/lib/constants";
 import { useTranslation } from "@/lib/i18n";
 import { useI18n } from "@/lib/i18n/context";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getBrowserUser } from "@/lib/supabase/client";
 import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
@@ -101,7 +101,7 @@ interface SubmissionPerformanceRecord {
 // ---------------------------------------------------------------------------
 
 function formatNumber(n: number | null): string {
-  if (n === null || n === undefined) return "—";
+  if (n === null || n === undefined) return "-";
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
   return String(n);
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getBrowserUser();
       if (!user) return;
 
       // Fetch creator profile
@@ -366,7 +366,7 @@ export default function AnalyticsPage() {
     },
     {
       label: t("metric.avgRating"),
-      value: stats.rating > 0 ? `${stats.rating.toFixed(1)}/5` : "—",
+      value: stats.rating > 0 ? `${stats.rating.toFixed(1)}/5` : "-",
       detail:
         stats.review_count > 0
           ? t("label.reviews", { count: String(stats.review_count) })
@@ -378,14 +378,14 @@ export default function AnalyticsPage() {
       value:
         stats.completion_rate > 0
           ? `${Math.round(stats.completion_rate * 100)}%`
-          : "—",
+          : "-",
       icon: TrendingUp,
     },
     {
       label: t("metric.responseTime"),
       value: stats.avg_response_time_hours
         ? `${stats.avg_response_time_hours.toFixed(1)}h`
-        : "—",
+        : "-",
       icon: Clock,
     },
   ];
@@ -403,12 +403,12 @@ export default function AnalyticsPage() {
     },
     {
       label: t("metric.avgEngRate"),
-      value: stats.avgER > 0 ? `${stats.avgER.toFixed(1)}%` : "—",
-      icon: Zap,
+      value: stats.avgER > 0 ? `${stats.avgER.toFixed(1)}%` : "-",
+      icon: Percent,
     },
     {
       label: t("metric.totalEarned"),
-      value: stats.totalEarned > 0 ? formatCurrency(stats.totalEarned, locale) : "—",
+      value: stats.totalEarned > 0 ? formatCurrency(stats.totalEarned, locale) : "-",
       icon: DollarSign,
     },
   ];
@@ -424,7 +424,7 @@ export default function AnalyticsPage() {
           <TabsTrigger value="platforms">{t("section.platforms")}</TabsTrigger>
         </TabsList>
 
-        {/* Performance — aggregated from real campaign data */}
+        {/* Performance - aggregated from real campaign data */}
         <TabsContent value="performance" className="mt-4 space-y-6">
           <div className="grid grid-cols-2 gap-3">
             {performanceMetrics.map((s) => (
@@ -479,7 +479,7 @@ export default function AnalyticsPage() {
                       </div>
                       <div className="text-end">
                         <p className="text-sm font-semibold tabular-nums text-foreground">
-                          {cp.er > 0 ? `${cp.er.toFixed(1)}%` : "—"}
+                          {cp.er > 0 ? `${cp.er.toFixed(1)}%` : "-"}
                         </p>
                         <p className="text-[11px] text-muted-foreground/70">{t("label.er")}</p>
                       </div>

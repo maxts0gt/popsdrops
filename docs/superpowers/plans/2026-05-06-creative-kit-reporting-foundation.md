@@ -2002,18 +2002,18 @@ Expected:
 No ESLint warnings or errors.
 ```
 
-- [ ] **Step 4: Scan for banned UI and copy patterns in touched files**
+- [ ] **Step 4: Run the design contract scan**
 
 Run:
 
 ```bash
-rg -n "—|Sparkles|Sparkle|WandSparkles|Stars" src/lib/reporting src/lib/supabase/privileged.ts src/app/actions/applications.ts src/types/database.ts
+npx vitest run src/components/design-contract.test.ts
 ```
 
 Expected:
 
 ```text
-No matches.
+All design contract tests pass.
 ```
 
 - [ ] **Step 5: Confirm migration and plan diffs**

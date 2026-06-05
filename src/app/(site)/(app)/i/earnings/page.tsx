@@ -1,18 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Clock,
-  DollarSign,
-  TrendingUp,
-  Wallet,
-} from "lucide-react";
+import { Clock, DollarSign, Wallet } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlatformIcon } from "@/components/platform-icons";
 import { LinkButton } from "@/components/ui/link-button";
 import { formatCurrency, type Platform } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getBrowserUser } from "@/lib/supabase/client";
 import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
@@ -27,6 +22,12 @@ interface EarningEntry {
   accepted_rate: number;
   payment_status: string;
   joined_at: string;
+}
+
+interface PaymentStatusMeta {
+  labelKey: string;
+  className: string;
+  group: "paid" | "open" | "attention";
 }
 
 interface EarningRecord {
@@ -67,19 +68,47 @@ function formatDate(dateStr: string, locale = "en"): string {
   });
 }
 
-const statusStyles: Record<string, string> = {
-  pending: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-400",
-  invoiced: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-400",
-  paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400",
-  overdue: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400",
+const paymentStatusMeta: Record<string, PaymentStatusMeta> = {
+  pending: {
+    labelKey: "status.pending",
+    className: "bg-amber-50 text-amber-700 ring-amber-200/70",
+    group: "open",
+  },
+  invoiced: {
+    labelKey: "status.invoiced",
+    className: "bg-sky-50 text-sky-700 ring-sky-200/70",
+    group: "open",
+  },
+  paid: {
+    labelKey: "status.paid",
+    className: "bg-emerald-50 text-emerald-700 ring-emerald-200/70",
+    group: "paid",
+  },
+  overdue: {
+    labelKey: "status.overdue",
+    className: "bg-rose-50 text-rose-700 ring-rose-200/70",
+    group: "attention",
+  },
+  failed: {
+    labelKey: "status.failed",
+    className: "bg-slate-100 text-slate-700 ring-slate-200",
+    group: "attention",
+  },
+  refunded: {
+    labelKey: "status.refunded",
+    className: "bg-slate-100 text-slate-700 ring-slate-200",
+    group: "attention",
+  },
+  disputed: {
+    labelKey: "status.disputed",
+    className: "bg-rose-50 text-rose-700 ring-rose-200/70",
+    group: "attention",
+  },
 };
 
-const statusLabelKeys: Record<string, string> = {
-  pending: "status.pending",
-  invoiced: "status.invoiced",
-  paid: "status.paid",
-  overdue: "status.overdue",
-};
+function getPaymentStatusMeta(status: string): PaymentStatusMeta {
+  return paymentStatusMeta[status] ?? paymentStatusMeta.pending;
+}
 
 // ---------------------------------------------------------------------------
 // Component
@@ -96,7 +125,7 @@ export default function EarningsPage() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getBrowserUser();
       if (!user) return;
 
       const { data } = await supabase
@@ -106,26 +135,28 @@ export default function EarningsPage() {
            campaigns (
              id, title, platforms,
              profiles!campaigns_brand_id_fkey ( full_name )
-           )`
+           )`,
         )
         .eq("creator_id", user.id)
         .order("joined_at", { ascending: false });
 
       if (data) {
-        const mapped: EarningEntry[] = (data as EarningRecord[]).map((membership) => {
-          const campaign = getSingleRelation(membership.campaigns);
-          const brand = getSingleRelation(campaign?.profiles);
+        const mapped: EarningEntry[] = (data as EarningRecord[]).map(
+          (membership) => {
+            const campaign = getSingleRelation(membership.campaigns);
+            const brand = getSingleRelation(campaign?.profiles);
 
-          return {
-            campaign_id: campaign?.id || "",
-            campaign_title: campaign?.title || "Campaign",
-            brand_name: brand?.full_name || "Brand",
-            platforms: campaign?.platforms || [],
-            accepted_rate: membership.accepted_rate || 0,
-            payment_status: membership.payment_status || "pending",
-            joined_at: membership.joined_at,
-          };
-        });
+            return {
+              campaign_id: campaign?.id || "",
+              campaign_title: campaign?.title || "Campaign",
+              brand_name: brand?.full_name || "Brand",
+              platforms: campaign?.platforms || [],
+              accepted_rate: membership.accepted_rate || 0,
+              payment_status: membership.payment_status || "pending",
+              joined_at: membership.joined_at,
+            };
+          },
+        );
         setEarnings(mapped);
       }
       setLoading(false);
@@ -133,59 +164,61 @@ export default function EarningsPage() {
     load();
   }, []);
 
-  // Compute summary stats
-  const totalEarned = earnings
+  const paidTotal = earnings
     .filter((e) => e.payment_status === "paid")
     .reduce((sum, e) => sum + e.accepted_rate, 0);
-  const pending = earnings
-    .filter((e) => e.payment_status !== "paid")
+  const openTotal = earnings
+    .filter((e) => getPaymentStatusMeta(e.payment_status).group !== "paid")
     .reduce((sum, e) => sum + e.accepted_rate, 0);
-  const avgDeal =
-    earnings.length > 0
-      ? Math.round(
-          earnings.reduce((sum, e) => sum + e.accepted_rate, 0) /
-            earnings.length
-        )
-      : 0;
+  const trackedTotal = paidTotal + openTotal;
 
   const stats = [
     {
-      label: t("total"),
-      value: formatCurrency(totalEarned, locale),
+      label: t("paidTotal"),
+      value: formatCurrency(paidTotal, locale),
       icon: DollarSign,
-      sublabel: t("campaigns", { count: String(earnings.filter((e) => e.payment_status === "paid").length) }),
+      sublabel: t("campaigns", {
+        count: String(
+          earnings.filter((e) => e.payment_status === "paid").length,
+        ),
+      }),
     },
     {
-      label: t("pending"),
-      value: formatCurrency(pending, locale),
+      label: t("openTotal"),
+      value: formatCurrency(openTotal, locale),
       icon: Clock,
-      sublabel: t("campaigns", { count: String(earnings.filter((e) => e.payment_status !== "paid").length) }),
+      sublabel: t("campaigns", {
+        count: String(
+          earnings.filter(
+            (e) => getPaymentStatusMeta(e.payment_status).group !== "paid",
+          ).length,
+        ),
+      }),
     },
     {
-      label: t("avgDeal"),
-      value: avgDeal > 0 ? formatCurrency(avgDeal, locale) : "—",
-      icon: TrendingUp,
-      sublabel: t("total.label", { count: String(earnings.length) }),
-    },
-    {
-      label: t("lifetime"),
-      value: formatCurrency(totalEarned + pending, locale),
+      label: t("trackedTotal"),
+      value: formatCurrency(trackedTotal, locale),
       icon: Wallet,
-      sublabel: t("allTime"),
+      sublabel: t("total.label", { count: String(earnings.length) }),
     },
   ];
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4 lg:p-6">
-      <h1 className="text-xl font-semibold tracking-tight text-foreground">
-        {t("title")}
-      </h1>
+      <div className="space-y-1">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          {t("title")}
+        </h1>
+        <p className="max-w-xl text-sm text-muted-foreground">
+          {t("trackingOnly")}
+        </p>
+      </div>
 
       {loading ? (
         <div className="space-y-3">
           {/* Summary KPI skeletons */}
-          <div className="grid grid-cols-2 gap-3">
-            {[1, 2, 3, 4].map((i) => (
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3].map((i) => (
               <div
                 key={i}
                 className="rounded-xl border border-border/60 bg-card p-4"
@@ -206,7 +239,10 @@ export default function EarningsPage() {
               <div className="h-4 w-28 animate-pulse rounded bg-muted" />
             </div>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center gap-4 border-t border-border/30 px-5 py-3">
+              <div
+                key={i}
+                className="flex items-center gap-4 border-t border-border/30 px-5 py-3"
+              >
                 <div className="size-8 animate-pulse rounded-lg bg-muted/50" />
                 <div className="flex-1 space-y-1.5">
                   <div className="h-3.5 w-32 animate-pulse rounded bg-muted" />
@@ -220,7 +256,7 @@ export default function EarningsPage() {
       ) : (
         <>
           {/* Summary cards */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             {stats.map((s) => (
               <Card key={s.label}>
                 <CardContent className="py-3">
@@ -229,7 +265,9 @@ export default function EarningsPage() {
                       <s.icon className="size-4" />
                     </div>
                     <div>
-                      <p className="text-[11px] text-muted-foreground/70">{s.label}</p>
+                      <p className="text-[11px] text-muted-foreground/70">
+                        {s.label}
+                      </p>
                       <p className="text-lg font-semibold tabular-nums text-foreground">
                         {s.value}
                       </p>
@@ -269,19 +307,25 @@ export default function EarningsPage() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">{t("campaignEarnings")}</CardTitle>
+                <CardTitle className="text-sm">{t("campaignLedger")}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-1">
+                <div
+                  data-testid="creator-earnings-ledger"
+                  className="space-y-1"
+                >
+                  <div className="hidden grid-cols-[minmax(0,1fr)_7rem_7rem] gap-3 px-2 pb-2 text-[11px] font-medium text-muted-foreground sm:grid">
+                    <span>{t("campaign")}</span>
+                    <span>{t("status")}</span>
+                    <span className="text-end">{t("amount")}</span>
+                  </div>
                   {earnings.map((e, i) => {
-                    const style =
-                      statusStyles[e.payment_status] || statusStyles.pending;
-                    const labelKey =
-                      statusLabelKeys[e.payment_status] || "status.pending";
+                    const status = getPaymentStatusMeta(e.payment_status);
                     return (
                       <div
                         key={`${e.campaign_id}-${i}`}
-                        className="flex items-center gap-3 rounded-lg p-2"
+                        data-testid="creator-earnings-row"
+                        className="grid gap-3 rounded-lg border border-border/50 p-3 sm:grid-cols-[minmax(0,1fr)_7rem_7rem] sm:items-center sm:border-0 sm:px-2 sm:py-3"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-sm font-medium text-foreground">
@@ -301,19 +345,30 @@ export default function EarningsPage() {
                               );
                             })}
                             <span className="tabular-nums">
-                              {formatDate(e.joined_at, locale)}
+                              {t("accepted")} {formatDate(e.joined_at, locale)}
                             </span>
                           </div>
                         </div>
-                        <div className="text-end">
-                          <p className="text-sm font-semibold tabular-nums text-foreground">
-                            {formatCurrency(e.accepted_rate, locale)}
-                          </p>
-                          <span
-                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ${style}`}
-                          >
-                            {t(labelKey)}
+                        <div className="flex items-center justify-between gap-3 sm:block">
+                          <span className="text-xs text-muted-foreground sm:hidden">
+                            {t("status")}
                           </span>
+                          <span
+                            data-testid="creator-earnings-status"
+                            className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-medium ring-1 ${status.className}`}
+                          >
+                            {t(status.labelKey)}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3 sm:block sm:text-end">
+                          <span className="text-xs text-muted-foreground sm:hidden">
+                            {t("amount")}
+                          </span>
+                          <p className="text-sm font-semibold tabular-nums text-foreground">
+                            <span data-testid="creator-earnings-amount">
+                              {formatCurrency(e.accepted_rate, locale)}
+                            </span>
+                          </p>
                         </div>
                       </div>
                     );

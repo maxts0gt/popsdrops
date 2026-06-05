@@ -13,6 +13,10 @@
 # testing
 /coverage
 
+# generated smoke and browser evidence
+/output/
+/.playwright-cli/
+
 # next.js
 /.next/
 /out/
@@ -32,6 +36,8 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.local.example
+!mobile/.env.local.example
 
 # vercel
 .vercel
@@ -45,6 +51,11 @@ mobile/.expo
 mobile/dist
 mobile/android
 mobile/ios
+mobile/AuthKey_*.p8
+mobile/*.p8
+mobile/google-service-account*.json
+mobile/play-console-service-account*.json
+mobile/store-install-evidence-manifest.local.json
 
 # typescript
 *.tsbuildinfo

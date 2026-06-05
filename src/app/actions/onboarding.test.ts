@@ -94,7 +94,7 @@ describe("onboarding actions", () => {
   it("upserts creator onboarding by profile_id", async () => {
     await submitCreatorOnboarding({
       full_name: "Max Tsogt",
-      primary_market: "south_korea",
+      primary_market: "kr",
       social_accounts: [{ platform: "tiktok", value: "max-tsogt" }],
       niches: ["tech"],
       base_rate: 150,
@@ -109,9 +109,9 @@ describe("onboarding actions", () => {
       expect.objectContaining({
         profile_id: "user-123",
         slug: "max-tsogt",
-        primary_market: "south_korea",
+        primary_market: "kr",
         niches: ["tech"],
-        markets: ["south_korea"],
+        markets: ["kr"],
         rate_currency: "USD",
         platforms: ["tiktok"],
         tiktok: expect.objectContaining({
@@ -135,7 +135,7 @@ describe("onboarding actions", () => {
     await expect(
       submitCreatorOnboarding({
         full_name: "Max Tsogt",
-        primary_market: "south_korea",
+        primary_market: "kr",
         social_accounts: [{ platform: "tiktok", value: "max-tsogt" }],
         niches: ["tech"],
         base_rate: 150,
@@ -148,7 +148,7 @@ describe("onboarding actions", () => {
     await submitBrandOnboarding({
       company_name: "PopsDrops",
       industry: "fashion",
-      primary_market: "south_korea",
+      primary_market: "kr",
       description: "Cross-border creator campaigns.",
       website: "https://www.popsdrops.com",
     });
@@ -158,7 +158,7 @@ describe("onboarding actions", () => {
         profile_id: "user-123",
         company_name: "PopsDrops",
         industry: "fashion",
-        target_markets: ["south_korea"],
+        target_markets: ["kr"],
         description: "Cross-border creator campaigns.",
         website: "https://www.popsdrops.com",
         contact_name: "Max Tsogt",

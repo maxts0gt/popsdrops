@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import {
   CONTENT_FORMATS,
+  CAMPAIGN_MARKETS,
   INDUSTRIES,
   LANGUAGES,
   MARKETS,
@@ -12,6 +13,11 @@ import {
   hasDuplicatePlatforms,
   normalizeCreatorSocialAccount,
 } from "./creator-socials";
+import {
+  CAMPAIGN_MODES,
+  PRIVATE_CAMPAIGN_MAX_SELF_SERVE_CREATORS,
+} from "./campaign-service-packages";
+import { CAMPAIGN_RECRUITMENT_VISIBILITIES } from "./campaigns/recruitment-visibility";
 import { REPORTING_PLATFORMS } from "./reporting/platform-templates";
 
 // ---------------------------------------------------------------------------
@@ -21,9 +27,12 @@ import { REPORTING_PLATFORMS } from "./reporting/platform-templates";
 const platformEnum = z.enum(PLATFORMS);
 const nicheEnum = z.enum(NICHES);
 const marketEnum = z.enum(MARKETS);
+const campaignMarketEnum = z.enum(CAMPAIGN_MARKETS);
 const industryEnum = z.enum(INDUSTRIES);
 const languageEnum = z.enum(LANGUAGES);
 const contentFormatEnum = z.enum(CONTENT_FORMATS);
+const campaignModeEnum = z.enum(CAMPAIGN_MODES);
+const campaignRecruitmentVisibilityEnum = z.enum(CAMPAIGN_RECRUITMENT_VISIBILITIES);
 const reportingPlatformEnum = z.enum(REPORTING_PLATFORMS);
 const reportingEvidenceTypeEnum = z.enum([
   "public_url",
@@ -39,8 +48,50 @@ const reportingAccountRequirementEnum = z.enum([
   "business_or_creator_account_required",
   "brand_defined",
 ]);
+const reportBuilderPresetSelectionEnum = z.enum([
+  "leadership",
+  "proof_audit",
+  "creator_performance",
+  "custom",
+]);
+const reportBuilderChartModeEnum = z.enum(["trend", "comparison", "proof"]);
+const reportBuilderBlockIdEnum = z.enum([
+  "report_framing",
+  "executive_summary",
+  "channel_story",
+  "proof_sources",
+  "report_trust",
+  "creator_table",
+  "recommendations",
+]);
+const agreementGateModeEnum = z.enum([
+  "rules_acknowledgement",
+  "typed_signature",
+  "brand_agreement",
+  "rules_and_brand_agreement",
+]);
+const campaignAssetTypeEnum = z.enum([
+  "product_image",
+  "brand_guideline",
+  "reference_video",
+  "sell_sheet",
+  "logo",
+  "document",
+  "other",
+]);
+const campaignAssetVisibilityEnum = z.enum(["public", "member", "brand"]);
 
 const slugRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+const campaignPlatformSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(1, "Platform is required")
+  .max(50, "Platform must be 50 characters or less")
+  .regex(
+    /^[a-z0-9]+(?:[-_][a-z0-9]+)*$/,
+    "Use lowercase letters, numbers, hyphens, or underscores",
+  );
 
 // Zod v4 .uuid() enforces RFC 4122 version/variant bits.
 // Our seed data uses non-standard UUIDs, so we use a relaxed pattern.
@@ -161,11 +212,23 @@ export type BrandOnboardingInput = z.infer<typeof brandOnboardingSchema>;
 // ---------------------------------------------------------------------------
 
 const deliverableSchema = z.object({
-  platform: platformEnum,
+  platform: campaignPlatformSchema,
   content_type: contentFormatEnum,
   quantity: z.coerce.number().int().min(1).max(100),
   notes: z.string().max(500).optional(),
 });
+
+const briefTranslationSchema = z.object({
+  description: z.string().trim().max(5000).optional().default(""),
+  requirements: z.string().trim().max(3000).optional().default(""),
+  dos: z.string().trim().max(2000).optional().default(""),
+  donts: z.string().trim().max(2000).optional().default(""),
+});
+
+const briefTranslationsSchema = z.record(
+  z.string().trim().regex(/^[a-z]{2,3}(?:-[A-Z]{2})?$/, "Invalid locale"),
+  briefTranslationSchema,
+);
 
 export const campaignReportingRequirementSchema = z.object({
   platform: reportingPlatformEnum,
@@ -200,6 +263,8 @@ export const createCampaignSchema = z
       .string()
       .min(3, "Title must be at least 3 characters")
       .max(200, "Title must be 200 characters or less"),
+    campaign_mode: campaignModeEnum.default("private"),
+    recruitment_visibility: campaignRecruitmentVisibilityEnum.default("private_invite"),
     brief_description: z
       .string()
       .min(10, "Brief must be at least 10 characters")
@@ -207,18 +272,24 @@ export const createCampaignSchema = z
     brief_requirements: z.string().max(3000).optional(),
     brief_dos: z.string().max(2000).optional(),
     brief_donts: z.string().max(2000).optional(),
+    brief_translated: briefTranslationsSchema.optional(),
+    compliance_notes: z.string().max(3000).optional(),
     platforms: z
-      .array(platformEnum)
+      .array(campaignPlatformSchema)
       .min(1, "Select at least 1 platform")
-      .max(5, "Select up to 5 platforms"),
-    markets: z.array(marketEnum).min(1, "Select at least 1 market"),
+      .max(10, "Select up to 10 platforms"),
+    markets: z.array(campaignMarketEnum).min(1, "Select at least 1 market"),
     niches: z
       .array(nicheEnum)
       .min(1, "Select at least 1 niche")
       .max(5, "Select up to 5 niches"),
     budget_min: z.coerce.number().min(0, "Budget cannot be negative"),
     budget_max: z.coerce.number().min(0, "Budget cannot be negative"),
-    max_creators: z.coerce.number().int().min(1).max(50),
+    max_creators: z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(PRIVATE_CAMPAIGN_MAX_SELF_SERVE_CREATORS),
     application_deadline: z.string().date("Enter a valid date (YYYY-MM-DD)"),
     content_due_date: z.string().date("Enter a valid date (YYYY-MM-DD)"),
     performance_due_date: z.string().date("Enter a valid date (YYYY-MM-DD)").optional(),
@@ -237,20 +308,170 @@ export const createCampaignSchema = z
     reporting_cadence: z
       .enum(["final_only", "weekly", "daily_launch_window", "custom", "per_post"])
       .default("final_only"),
+    report_template_id: uuidLike.nullish(),
+    report_preset_id: reportBuilderPresetSelectionEnum
+      .default("creator_performance"),
+    report_chart_mode_id: reportBuilderChartModeEnum.default("comparison"),
+    report_block_ids: z
+      .array(reportBuilderBlockIdEnum)
+      .min(1)
+      .max(12)
+      .optional(),
   })
   .refine((data) => data.budget_max >= data.budget_min, {
     message: "Maximum budget must be greater than or equal to minimum budget",
     path: ["budget_max"],
+  })
+  .superRefine((data, ctx) => {
+    if (data.application_deadline > data.content_due_date) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Applications must close on or before the content due date",
+        path: ["application_deadline"],
+      });
+    }
+
+    if (
+      data.posting_window_start &&
+      data.posting_window_end &&
+      data.posting_window_start > data.posting_window_end
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Posting end date must be on or after posting start date",
+        path: ["posting_window_end"],
+      });
+    }
+
+    if (data.posting_window_end && data.content_due_date > data.posting_window_end) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Content due date must be on or before posting ends",
+        path: ["content_due_date"],
+      });
+    }
+
+    if (
+      data.performance_due_date &&
+      data.posting_window_end &&
+      data.performance_due_date < data.posting_window_end
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Performance data must be due on or after posting ends",
+        path: ["performance_due_date"],
+      });
+    }
+
+    if (
+      data.performance_due_date &&
+      !data.posting_window_end &&
+      data.performance_due_date < data.content_due_date
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Performance data must be due on or after content is due",
+        path: ["performance_due_date"],
+      });
+    }
   });
 
 export type CreateCampaignInput = z.infer<typeof createCampaignSchema>;
 
+export const enterpriseConciergeRequestSchema = z.object({
+  campaign_title: z
+    .string()
+    .trim()
+    .min(3, "Campaign title must be at least 3 characters")
+    .max(200, "Campaign title must be 200 characters or less"),
+  campaign_mode: campaignModeEnum,
+  requestReason: z.enum(["private_capacity", "sourcing"]).optional(),
+  requested_creator_count: z.coerce.number().int().min(1).max(5000),
+  market_count: z.coerce.number().int().min(1).max(250),
+  markets: z.array(campaignMarketEnum).min(1).max(250),
+  platforms: z.array(campaignPlatformSchema).min(1).max(10),
+  creator_budget_cents: z.coerce.number().int().nonnegative(),
+  product_value_cents: z.coerce.number().int().nonnegative(),
+  fulfillment_budget_cents: z.coerce.number().int().nonnegative(),
+  note: z.string().trim().max(1000).optional(),
+});
+
+export type EnterpriseConciergeRequestInput = z.infer<
+  typeof enterpriseConciergeRequestSchema
+>;
+
 // ---------------------------------------------------------------------------
-// 5. Submit Application
+// 5. Campaign Agreement Gate
+// ---------------------------------------------------------------------------
+
+export const agreementRuleSectionSchema = z.object({
+  title: z.string().trim().min(1).max(80),
+  body: z.string().trim().min(1).max(1200),
+});
+
+export const upsertCampaignAgreementDraftSchema = z.object({
+  campaignId: uuidLike,
+  gateMode: agreementGateModeEnum,
+  title: z.string().trim().min(3).max(120),
+  rules: z.record(
+    z.string().trim().min(1).max(60),
+    agreementRuleSectionSchema,
+  ),
+  agreementBody: z.string().trim().max(20_000).optional().nullable(),
+  previewEnabled: z.boolean().default(false),
+  previewSummary: z.record(z.string(), z.string()).default({}),
+  requiresTypedName: z.boolean().default(true),
+  fileName: z.string().trim().max(220).optional().nullable(),
+  fileMimeType: z.literal("application/pdf").optional().nullable(),
+  fileSizeBytes: z.coerce.number().int().positive().optional().nullable(),
+  fileSha256: z.string().regex(/^[a-f0-9]{64}$/).optional().nullable(),
+});
+
+export const publishCampaignAgreementSchema = z.object({
+  agreementId: uuidLike,
+});
+
+export const acceptCampaignAgreementSchema = z.object({
+  agreementId: uuidLike,
+  campaignId: uuidLike,
+  typedName: z.string().trim().min(2).max(120),
+  acceptedRules: z.record(z.string(), z.boolean()).default({}),
+});
+
+export type UpsertCampaignAgreementDraftInput = z.infer<
+  typeof upsertCampaignAgreementDraftSchema
+>;
+export type AcceptCampaignAgreementInput = z.infer<
+  typeof acceptCampaignAgreementSchema
+>;
+
+export const createCampaignAssetUploadSchema = z.object({
+  campaignId: uuidLike,
+  title: z.string().trim().min(1).max(120),
+  description: z.string().trim().max(500).optional().nullable(),
+  assetType: campaignAssetTypeEnum,
+  visibility: campaignAssetVisibilityEnum,
+  fileName: z.string().trim().min(1).max(220),
+  mimeType: z.string().trim().min(1).max(120),
+  sizeBytes: z.coerce.number().int().positive(),
+});
+
+export const markCampaignAssetReadySchema = z.object({
+  campaignId: uuidLike,
+  assetId: uuidLike,
+});
+
+export type CreateCampaignAssetUploadInput = z.infer<
+  typeof createCampaignAssetUploadSchema
+>;
+
+// ---------------------------------------------------------------------------
+// 6. Submit Application
 // ---------------------------------------------------------------------------
 
 export const submitApplicationSchema = z.object({
   campaign_id: uuidLike,
+  invite_id: uuidLike.optional(),
   proposed_rate: z.coerce.number().min(1, "Rate must be at least $1"),
   pitch: z
     .string()
@@ -261,7 +482,7 @@ export const submitApplicationSchema = z.object({
 export type SubmitApplicationInput = z.infer<typeof submitApplicationSchema>;
 
 // ---------------------------------------------------------------------------
-// 6. Counter Offer
+// 7. Counter Offer
 // ---------------------------------------------------------------------------
 
 export const counterOfferSchema = z.object({
@@ -273,7 +494,7 @@ export const counterOfferSchema = z.object({
 export type CounterOfferInput = z.infer<typeof counterOfferSchema>;
 
 // ---------------------------------------------------------------------------
-// 7. Submit Content
+// 8. Submit Content
 // ---------------------------------------------------------------------------
 
 export const submitContentSchema = z.object({
@@ -286,7 +507,7 @@ export const submitContentSchema = z.object({
 export type SubmitContentInput = z.infer<typeof submitContentSchema>;
 
 // ---------------------------------------------------------------------------
-// 8. Content Feedback
+// 9. Content Feedback
 // ---------------------------------------------------------------------------
 
 export const contentFeedbackSchema = z.object({
@@ -300,45 +521,58 @@ export const contentFeedbackSchema = z.object({
 export type ContentFeedbackInput = z.infer<typeof contentFeedbackSchema>;
 
 // ---------------------------------------------------------------------------
-// 9. Submit Performance
+// 10. Submit Performance
 // ---------------------------------------------------------------------------
 
-export const submitPerformanceSchema = z.object({
-  submission_id: uuidLike,
-  report_task_id: uuidLike.optional(),
-  evidence_id: uuidLike.optional(),
-  measurement_type: z.enum(["initial_48h", "final_7d", "extended_30d"]),
-  views: z.coerce.number().int().nonnegative().optional(),
-  reach: z.coerce.number().int().nonnegative().optional(),
-  impressions: z.coerce.number().int().nonnegative().optional(),
-  likes: z.coerce.number().int().nonnegative().optional(),
-  comments: z.coerce.number().int().nonnegative().optional(),
-  shares: z.coerce.number().int().nonnegative().optional(),
-  saves: z.coerce.number().int().nonnegative().optional(),
-  sends: z.coerce.number().int().nonnegative().optional(),
-  screenshots: z.coerce.number().int().nonnegative().optional(),
-  replies: z.coerce.number().int().nonnegative().optional(),
-  clicks: z.coerce.number().int().nonnegative().optional(),
-  completion_rate: z.coerce.number().min(0).max(100).optional(),
-  avg_watch_time_seconds: z.coerce.number().nonnegative().optional(),
-  subscriber_gains: z.coerce.number().int().nonnegative().optional(),
-  screenshot_url: z
-    .string()
-    .refine(
-      (value) =>
-        value === "" ||
-        value.startsWith("campaign-evidence/") ||
-        z.string().url().safeParse(value).success,
-      "Enter a valid evidence URL",
-    )
-    .optional(),
-  metric_values: z.array(performanceMetricValueSchema).max(40).optional(),
-});
+export const submitPerformanceSchema = z
+  .object({
+    submission_id: uuidLike,
+    report_task_id: uuidLike.optional(),
+    evidence_id: uuidLike.optional(),
+    ai_extraction_id: uuidLike.optional(),
+    ai_extraction_edited: z.boolean().optional(),
+    measurement_type: z.enum(["initial_48h", "final_7d", "extended_30d"]),
+    views: z.coerce.number().int().nonnegative().optional(),
+    reach: z.coerce.number().int().nonnegative().optional(),
+    impressions: z.coerce.number().int().nonnegative().optional(),
+    likes: z.coerce.number().int().nonnegative().optional(),
+    comments: z.coerce.number().int().nonnegative().optional(),
+    shares: z.coerce.number().int().nonnegative().optional(),
+    saves: z.coerce.number().int().nonnegative().optional(),
+    sends: z.coerce.number().int().nonnegative().optional(),
+    screenshots: z.coerce.number().int().nonnegative().optional(),
+    replies: z.coerce.number().int().nonnegative().optional(),
+    clicks: z.coerce.number().int().nonnegative().optional(),
+    completion_rate: z.coerce.number().min(0).max(100).optional(),
+    avg_watch_time_seconds: z.coerce.number().nonnegative().optional(),
+    subscriber_gains: z.coerce.number().int().nonnegative().optional(),
+    screenshot_url: z
+      .string()
+      .refine(
+        (value) =>
+          value === "" ||
+          value.startsWith("campaign-evidence/") ||
+          z.string().url().safeParse(value).success,
+        "Enter a valid evidence URL",
+      )
+      .optional(),
+    metric_values: z.array(performanceMetricValueSchema).max(40).optional(),
+  })
+  .superRefine((value, ctx) => {
+    const hasProofLink = Boolean(value.screenshot_url?.trim());
+    if (value.report_task_id && !value.evidence_id && !hasProofLink) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["screenshot_url"],
+        message: "Proof link or evidence file is required",
+      });
+    }
+  });
 
 export type SubmitPerformanceInput = z.infer<typeof submitPerformanceSchema>;
 
 // ---------------------------------------------------------------------------
-// 10. Submit Review
+// 11. Submit Review
 // ---------------------------------------------------------------------------
 
 export const submitReviewSchema = z.object({
@@ -349,20 +583,6 @@ export const submitReviewSchema = z.object({
 });
 
 export type SubmitReviewInput = z.infer<typeof submitReviewSchema>;
-
-// ---------------------------------------------------------------------------
-// 11. Send Message
-// ---------------------------------------------------------------------------
-
-export const sendMessageSchema = z.object({
-  campaign_id: uuidLike,
-  content: z
-    .string()
-    .min(1, "Message cannot be empty")
-    .max(5000, "Message must be 5,000 characters or less"),
-});
-
-export type SendMessageInput = z.infer<typeof sendMessageSchema>;
 
 // ---------------------------------------------------------------------------
 // 12. Update Creator Profile
@@ -402,7 +622,7 @@ export type UpdateCreatorProfileInput = z.infer<
 >;
 
 // ---------------------------------------------------------------------------
-// 13. Update Brand Profile
+// 14. Update Brand Profile
 // ---------------------------------------------------------------------------
 
 export const updateBrandProfileSchema = z.object({
@@ -410,7 +630,7 @@ export const updateBrandProfileSchema = z.object({
   industry: industryEnum.optional(),
   description: z.string().max(500).optional(),
   website: z.string().url().optional().or(z.literal("")),
-  target_markets: z.array(marketEnum).min(1).optional(),
+  target_markets: z.array(campaignMarketEnum).min(1).optional(),
   logo_url: z.string().url().optional(),
   contact_name: z.string().max(100).optional(),
   contact_email: z.string().email().optional(),
@@ -420,7 +640,7 @@ export const updateBrandProfileSchema = z.object({
 export type UpdateBrandProfileInput = z.infer<typeof updateBrandProfileSchema>;
 
 // ---------------------------------------------------------------------------
-// 14. Approve Profile (Admin)
+// 15. Approve Profile (Admin)
 // ---------------------------------------------------------------------------
 
 export const approveProfileSchema = z.object({
@@ -430,7 +650,7 @@ export const approveProfileSchema = z.object({
 export type ApproveProfileInput = z.infer<typeof approveProfileSchema>;
 
 // ---------------------------------------------------------------------------
-// 15. Reject Profile (Admin)
+// 16. Reject Profile (Admin)
 // ---------------------------------------------------------------------------
 
 export const rejectProfileSchema = z.object({
@@ -444,7 +664,7 @@ export const rejectProfileSchema = z.object({
 export type RejectProfileInput = z.infer<typeof rejectProfileSchema>;
 
 // ---------------------------------------------------------------------------
-// 16. Waitlist Request (pre-auth, public form)
+// 17. Waitlist Request (pre-auth, public form)
 // ---------------------------------------------------------------------------
 
 const waitlistBaseSchema = z.object({
@@ -464,6 +684,10 @@ export const waitlistBrandSchema = waitlistBaseSchema.extend({
     .string()
     .min(2, "Company name must be at least 2 characters")
     .max(100),
+  markets: z
+    .array(campaignMarketEnum)
+    .min(1, "Select at least 1 target market")
+    .max(10, "Select up to 10 target markets"),
   industry: industryEnum.optional(),
   website: z.string().url("Enter a valid URL").optional().or(z.literal("")),
   budget_range: z
@@ -491,7 +715,7 @@ export type WaitlistBrandInput = z.infer<typeof waitlistBrandSchema>;
 export type WaitlistCreatorInput = z.infer<typeof waitlistCreatorSchema>;
 
 // ---------------------------------------------------------------------------
-// 17. Partner Inquiry (public form)
+// 18. Partner Inquiry (public form)
 // ---------------------------------------------------------------------------
 
 const partnerInquiryBaseSchema = z.object({

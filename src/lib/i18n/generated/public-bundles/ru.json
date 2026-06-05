@@ -6,7 +6,6 @@
     "nav.creators": "Креаторы",
     "nav.earnings": "Доходы",
     "nav.profile": "Профиль",
-    "nav.messages": "Сообщения",
     "nav.notifications": "Уведомления",
     "nav.settings": "Настройки",
     "nav.forBrands": "Брендам",
@@ -68,7 +67,6 @@
     "empty.noData": "Здесь пока пусто",
     "empty.noNotifications": "У вас нет новых уведомлений",
     "empty.noCampaigns": "Кампаний пока нет",
-    "empty.noMessages": "Сообщений пока нет",
     "time.today": "Сегодня",
     "time.yesterday": "Вчера",
     "time.daysAgo": "{count} дн. назад",
@@ -130,7 +128,9 @@
     "format.photoPost": "Фото-пост",
     "format.reel": "Reel",
     "format.carousel": "Карусель",
-    "format.live": "Прямой эфир"
+    "format.live": "Прямой эфир",
+    "nav.communications": "Коммуникации",
+    "empty.noUpdates": "Обновлений пока нет"
   },
   "marketing.landing": {
     "meta.title": "Кампании с креаторами без границ",

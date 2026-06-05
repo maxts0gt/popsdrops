@@ -1,8 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { assertBrandWorkspacePermission } from "@/lib/brand-workspace";
 import { createClient } from "@/lib/supabase/server";
+import {
+  updateBrandProfileSchema,
+  type UpdateBrandProfileInput,
+} from "@/lib/validations";
 import { getUser } from "./auth";
+
+const notificationEmailPreferencesSchema = z.object({
+  email_campaign_activity: z.boolean(),
+  email_messages: z.boolean(),
+  email_reports: z.boolean(),
+});
 
 export async function updateCreatorProfile(input: {
   bio?: string;
@@ -53,22 +65,20 @@ export async function updateCreatorProfile(input: {
   if (input.slug) revalidatePath(`/c/${input.slug}`);
 }
 
-export async function updateBrandProfile(input: {
-  company_name?: string;
-  industry?: string;
-  description?: string;
-  website?: string;
-  target_markets?: string[];
-  logo_url?: string;
-  contact_name?: string;
-  contact_email?: string;
-  contact_phone?: string;
-}) {
+export async function updateBrandProfile(input: UpdateBrandProfileInput) {
+  const parsed = updateBrandProfileSchema.safeParse(input);
+  if (!parsed.success) throw new Error(parsed.error.issues[0].message);
+
   const user = await getUser();
   const supabase = await createClient();
+  const workspace = await assertBrandWorkspacePermission(
+    supabase,
+    user.id,
+    "manage_profile",
+  );
 
   const update: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(input)) {
+  for (const [key, value] of Object.entries(parsed.data)) {
     if (value !== undefined) {
       update[key] = value;
     }
@@ -77,7 +87,7 @@ export async function updateBrandProfile(input: {
   const { error } = await supabase
     .from("brand_profiles")
     .update(update)
-    .eq("profile_id", user.id);
+    .eq("profile_id", workspace.brandId);
 
   if (error) throw new Error(error.message);
 
@@ -97,6 +107,31 @@ export async function updateAvatar(avatarUrl: string) {
 
   revalidatePath("/i/profile");
   revalidatePath("/b/settings");
+}
+
+export async function updateNotificationEmailPreferences(input: {
+  email_campaign_activity: boolean;
+  email_messages: boolean;
+  email_reports: boolean;
+}) {
+  const user = await getUser();
+  const supabase = await createClient();
+  const preferences = notificationEmailPreferencesSchema.parse(input);
+
+  const { error } = await supabase
+    .from("notification_email_preferences")
+    .upsert({
+      user_id: user.id,
+      ...preferences,
+      updated_at: new Date().toISOString(),
+    });
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/b/settings");
+  revalidatePath("/b/notifications");
+  revalidatePath("/i/profile");
+  revalidatePath("/i/notifications");
 }
 
 function calculateCompleteness(profile: Record<string, unknown>): number {

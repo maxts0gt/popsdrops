@@ -78,6 +78,24 @@ export function createPerPostReportTaskDraft(input: {
   );
 }
 
+export function createExtraReportTaskDraft(input: {
+  campaignId: string;
+  campaignMemberId: string;
+  readId: string;
+  dueAt: string;
+}): ReportTaskDraft {
+  return createDraft(
+    {
+      campaignId: input.campaignId,
+      campaignMemberId: input.campaignMemberId,
+    },
+    `extra:${input.readId}`,
+    null,
+    null,
+    input.dueAt,
+  );
+}
+
 function buildWeeklyTasks(input: {
   campaignId: string;
   campaignMemberId: string;

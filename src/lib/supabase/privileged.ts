@@ -4,15 +4,49 @@ import {
   createPerPostReportTaskDraft,
   generateReportTaskDrafts,
 } from "@/lib/reporting/task-schedule";
+import { getCompletedReportSubmissionCount } from "@/lib/reporting/report-task-completion";
+import { dispatchNotificationEmailByNotificationId } from "@/lib/email/notification-queue";
 import type { Database } from "@/types/database";
 import { createAdminClient } from "./admin";
 
 type CampaignMemberInsert =
   Database["public"]["Tables"]["campaign_members"]["Insert"];
+type CampaignApplicationUpdate =
+  Database["public"]["Tables"]["campaign_applications"]["Update"];
 type CampaignReportTaskInsert =
   Database["public"]["Tables"]["campaign_report_tasks"]["Insert"];
 type NotificationInsert =
   Database["public"]["Tables"]["notifications"]["Insert"];
+type ApplicationStatus = Database["public"]["Enums"]["application_status"];
+
+export async function updatePrivilegedCampaignApplicationStatus(input: {
+  applicationId: string;
+  status: ApplicationStatus;
+  expectedStatus?: ApplicationStatus;
+  values?: Pick<CampaignApplicationUpdate, "counter_rate" | "counter_message">;
+}) {
+  const admin = createAdminClient();
+  let query = admin
+    .from("campaign_applications")
+    .update({
+      ...input.values,
+      status: input.status,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", input.applicationId);
+
+  if (input.expectedStatus) {
+    query = query.eq("status", input.expectedStatus);
+  }
+
+  const { data, error } = await query.select("id, status").single();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
+}
 
 export async function upsertPrivilegedCampaignMember(
   member: CampaignMemberInsert,
@@ -124,6 +158,10 @@ export async function markPrivilegedReportTaskSubmitted(
     .update({
       status,
       submitted_at: submittedAt,
+      verified_at: null,
+      review_note: null,
+      missed_at: null,
+      excused_at: null,
       updated_at: submittedAt,
     })
     .eq("id", reportTaskId);
@@ -159,14 +197,14 @@ export async function markPrivilegedReportTaskSubmittedIfComplete(input: {
 
   const { data: performanceRows, error: performanceError } = await admin
     .from("content_performance")
-    .select("submission_id")
+    .select("submission_id, verification_status, reported_at")
     .eq("report_task_id", input.reportTaskId);
 
   if (performanceError) throw new Error(performanceError.message);
 
-  const reportedSubmissionCount = new Set(
-    (performanceRows ?? []).map((row) => row.submission_id),
-  ).size;
+  const reportedSubmissionCount = getCompletedReportSubmissionCount(
+    performanceRows ?? [],
+  );
   const requiredSubmissionCount = publishedSubmissionCount ?? 0;
 
   if (
@@ -237,11 +275,26 @@ export async function createPrivilegedNotification(
   notification: NotificationInsert,
 ) {
   const admin = createAdminClient();
-  const { error } = await admin.from("notifications").insert(notification);
+  const { data, error } = await admin
+    .from("notifications")
+    .insert(notification)
+    .select("id")
+    .single();
 
   if (error) {
     console.error("Failed to create notification:", error);
+    return null;
   }
+
+  if (data?.id) {
+    try {
+      await dispatchNotificationEmailByNotificationId(data.id, admin);
+    } catch (dispatchError) {
+      console.error("Failed to dispatch notification email:", dispatchError);
+    }
+  }
+
+  return data;
 }
 
 export async function createPrivilegedNotifications(
@@ -250,9 +303,25 @@ export async function createPrivilegedNotifications(
   if (notifications.length === 0) return;
 
   const admin = createAdminClient();
-  const { error } = await admin.from("notifications").insert(notifications);
+  const { data: insertedNotifications, error } = await admin
+    .from("notifications")
+    .insert(notifications)
+    .select("id");
 
   if (error) {
     console.error("Failed to create notifications:", error);
+    return [];
   }
+
+  for (const notification of insertedNotifications ?? []) {
+    if (!notification.id) continue;
+
+    try {
+      await dispatchNotificationEmailByNotificationId(notification.id, admin);
+    } catch (dispatchError) {
+      console.error("Failed to dispatch notification email:", dispatchError);
+    }
+  }
+
+  return insertedNotifications ?? [];
 }

@@ -68,13 +68,13 @@ ON CONFLICT (profile_id) DO UPDATE SET company_name = EXCLUDED.company_name;
 
 INSERT INTO campaigns (id, brand_id, title, brief_description, brief_requirements, brief_dos, brief_donts, platforms, markets, niches, budget_min, budget_max, budget_currency, max_creators, status, application_deadline, content_due_date, posting_window_start, posting_window_end) VALUES
 
--- Campaign 1: Lumière Beauty — Skincare Routine
+-- Campaign 1: Lumière Beauty - Skincare Routine
 ('c0000000-0000-0000-0000-000000000001',
  'b0000000-0000-0000-0000-000000000001',
  'Summer Glow Skincare Routine',
  'Create an authentic skincare routine video featuring our new Summer Glow collection. Show your morning routine incorporating the Vitamin C serum, SPF moisturizer, and lip treatment.',
  'Must show product packaging clearly. Mention SPF importance. Include a before/after or routine sequence. Tag @lumierebeauty.',
- 'Be authentic — use your real morning routine. Show texture and application. Good natural lighting.',
+ 'Be authentic - use your real morning routine. Show texture and application. Good natural lighting.',
  'No competitor products visible. No medical claims. No heavy filters that alter skin appearance.',
  ARRAY['tiktok', 'instagram']::platform_type[],
  ARRAY['turkey', 'uae', 'france'],
@@ -85,10 +85,10 @@ INSERT INTO campaigns (id, brand_id, title, brief_description, brief_requirement
  now() + interval '30 days',
  now() + interval '44 days'),
 
--- Campaign 2: Wanderlust Co. — Travel Essentials
+-- Campaign 2: Wanderlust Co. - Travel Essentials
 ('c0000000-0000-0000-0000-000000000002',
  'b0000000-0000-0000-0000-000000000002',
- 'Pack Light, Go Far — Travel Essentials',
+ 'Pack Light, Go Far - Travel Essentials',
  'Show how you pack for a trip using Wanderlust Co. essentials. Focus on the compression cube set and our new weather-resistant daypack. Any destination works.',
  'Feature at least 2 Wanderlust products. Show packing process or travel transition (home to destination). Use branded hashtag #WanderlustReady.',
  'Film in real travel context. Show the products in action, not just unboxing. Storytelling over product shots.',
@@ -102,11 +102,11 @@ INSERT INTO campaigns (id, brand_id, title, brief_description, brief_requirement
  now() + interval '26 days',
  now() + interval '40 days'),
 
--- Campaign 3: NovaTech — Headphones Launch
+-- Campaign 3: NovaTech - Headphones Launch
 ('c0000000-0000-0000-0000-000000000003',
  'b0000000-0000-0000-0000-000000000003',
- 'NovaPods Pro Launch — Everyday Sound',
- 'Introduce the NovaPods Pro to your audience. Focus on real daily use — commute, gym, gaming, study. We want authentic reactions and genuine impressions, not scripted reviews.',
+ 'NovaPods Pro Launch - Everyday Sound',
+ 'Introduce the NovaPods Pro to your audience. Focus on real daily use - commute, gym, gaming, study. We want authentic reactions and genuine impressions, not scripted reviews.',
  'Show unboxing or first impression moment. Demonstrate ANC in a noisy environment. Mention 40h battery life and multipoint pairing. Tag @novatech.',
  'Be honest about your experience. Show the product in your real environment. Comparison content welcome if fair.',
  'No scripted "wow" reactions. No false claims about specs. No opening with "NovaTech sent me this."',
@@ -119,13 +119,13 @@ INSERT INTO campaigns (id, brand_id, title, brief_description, brief_requirement
  now() + interval '37 days',
  now() + interval '51 days'),
 
--- Campaign 4: Maison Sportif — Collection Drop
+-- Campaign 4: Maison Sportif - Collection Drop
 ('c0000000-0000-0000-0000-000000000004',
  'b0000000-0000-0000-0000-000000000004',
- 'SS26 Collection — Move in Style',
- 'Style the new SS26 athleisure collection your way. We want to see how different creators interpret luxury sportswear for their lifestyle — studio, street, travel, wherever you move.',
+ 'SS26 Collection - Move in Style',
+ 'Style the new SS26 athleisure collection your way. We want to see how different creators interpret luxury sportswear for their lifestyle - studio, street, travel, wherever you move.',
  'Wear at least 2 pieces from SS26 collection. Show outfit in motion (workout, walk, dance, sport). Tag @maisonsportif and #MoveInStyle.',
- 'Make it your own — we chose you for your style. Natural settings over studios. Movement over poses.',
+ 'Make it your own - we chose you for your style. Natural settings over studios. Movement over poses.',
  'No gym mirror selfies as the hero shot. No heavy editing that misrepresents colors. No pairing with fast-fashion items.',
  ARRAY['instagram', 'tiktok']::platform_type[],
  ARRAY['france', 'uk', 'brazil', 'turkey'],
@@ -136,13 +136,13 @@ INSERT INTO campaigns (id, brand_id, title, brief_description, brief_requirement
  now() + interval '28 days',
  now() + interval '42 days'),
 
--- Campaign 5: Lumière Beauty — Lip Collection (in_progress, for variety)
+-- Campaign 5: Lumière Beauty - Lip Collection (in_progress, for variety)
 ('c0000000-0000-0000-0000-000000000005',
  'b0000000-0000-0000-0000-000000000001',
- 'New Lip Vault — Colour Stories',
+ 'New Lip Vault - Colour Stories',
  'Create a lip colour story featuring 3+ shades from the new Lip Vault collection. Show swatches, application, and your top pick.',
  'Swatch at least 3 shades. Show application close-up. Name your favourite and why. Tag @lumierebeauty.',
- 'Creative freedom on concept — GRWM, ranking, lookbook all welcome. Show true-to-life colour.',
+ 'Creative freedom on concept - GRWM, ranking, lookbook all welcome. Show true-to-life colour.',
  'No misleading colour representation. No competitor dupes comparison. No AI lip filters.',
  ARRAY['instagram', 'tiktok']::platform_type[],
  ARRAY['turkey', 'france'],
@@ -153,7 +153,7 @@ INSERT INTO campaigns (id, brand_id, title, brief_description, brief_requirement
  now() + interval '12 days',
  now() + interval '26 days'),
 
--- Campaign 6: NovaTech — Smart Home (completed, for variety)
+-- Campaign 6: NovaTech - Smart Home (completed, for variety)
 ('c0000000-0000-0000-0000-000000000006',
  'b0000000-0000-0000-0000-000000000003',
  'Smart Home Setup Tour',

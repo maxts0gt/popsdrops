@@ -6,7 +6,6 @@
     "nav.creators": "تولیدکنندگان محتوا",
     "nav.earnings": "درآمدها",
     "nav.profile": "پروفایل",
-    "nav.messages": "پیام‌ها",
     "nav.notifications": "اعلان‌ها",
     "nav.settings": "تنظیمات",
     "nav.forBrands": "برای برندها",
@@ -68,7 +67,6 @@
     "empty.noData": "هنوز داده‌ای وجود ندارد",
     "empty.noNotifications": "همه اعلان‌ها را خوانده‌اید",
     "empty.noCampaigns": "هنوز کمپینی وجود ندارد",
-    "empty.noMessages": "هنوز پیامی وجود ندارد",
     "time.today": "امروز",
     "time.yesterday": "دیروز",
     "time.daysAgo": "{count} روز پیش",
@@ -130,7 +128,9 @@
     "format.photoPost": "پست تصویری",
     "format.reel": "Reel",
     "format.carousel": "کاروسل",
-    "format.live": "پخش زنده"
+    "format.live": "پخش زنده",
+    "nav.communications": "ارتباطات",
+    "empty.noUpdates": "هنوز به‌روزرسانی‌ای نیست"
   },
   "marketing.landing": {
     "meta.title": "کمپین‌های تولید محتوا بدون مرز",

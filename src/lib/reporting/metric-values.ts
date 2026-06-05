@@ -4,6 +4,7 @@ import type {
 } from "@/types/database";
 
 type SubmittedMetricValue = {
+  platform?: ReportingPlatform;
   metricKey: string;
   metricLabel?: string;
   metricValue?: number;
@@ -60,7 +61,7 @@ export function buildMetricValueRows(input: {
   return input.metricValues.map((metric) => ({
     performance_id: input.performanceId,
     report_task_id: input.reportTaskId,
-    platform: input.platform,
+    platform: metric.platform ?? input.platform,
     metric_key: metric.metricKey,
     metric_label: metric.metricLabel ?? metric.metricKey,
     metric_value: metric.metricValue ?? null,

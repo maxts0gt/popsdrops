@@ -6,7 +6,6 @@
     "nav.creators": "ক্রিয়েটর",
     "nav.earnings": "উপার্জন",
     "nav.profile": "প্রোফাইল",
-    "nav.messages": "মেসেজ",
     "nav.notifications": "নোটিফিকেশন",
     "nav.settings": "সেটিংস",
     "nav.forBrands": "ব্র্যান্ডের জন্য",
@@ -68,7 +67,6 @@
     "empty.noData": "এখনও কিছু নেই",
     "empty.noNotifications": "সব নোটিফিকেশন দেখা শেষ",
     "empty.noCampaigns": "এখনও কোনো ক্যাম্পেইন নেই",
-    "empty.noMessages": "এখনও কোনো মেসেজ নেই",
     "time.today": "আজ",
     "time.yesterday": "গতকাল",
     "time.daysAgo": "{count} দিন আগে",
@@ -130,7 +128,9 @@
     "format.photoPost": "ফটো পোস্ট",
     "format.reel": "রিল",
     "format.carousel": "ক্যারোজেল",
-    "format.live": "লাইভ স্ট্রিম"
+    "format.live": "লাইভ স্ট্রিম",
+    "nav.communications": "যোগাযোগ",
+    "empty.noUpdates": "এখনও কোনো আপডেট নেই"
   },
   "marketing.landing": {
     "meta.title": "সীমানা ছাড়িয়ে ক্রিয়েটর ক্যাম্পেইন",

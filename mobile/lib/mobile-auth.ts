@@ -5,6 +5,10 @@ export type MobileAuthCallbackResult =
       refreshToken: string;
     }
   | {
+      kind: "code";
+      code: string;
+    }
+  | {
       kind: "error";
       message: string;
     }
@@ -17,10 +21,56 @@ export type SetMobileSession = (session: {
   refresh_token: string;
 }) => Promise<{ error: { message: string } | null }>;
 
+export type ExchangeMobileAuthCode = (
+  code: string,
+) => Promise<{ error: { message: string } | null }>;
+
+export type MobileAuthRouteParams = Record<
+  string,
+  string | string[] | undefined
+>;
+
+const MOBILE_AUTH_CALLBACK_PARAM_KEYS = [
+  "access_token",
+  "refresh_token",
+  "code",
+  "error",
+  "error_description",
+] as const;
+
+function getFirstRouteParamValue(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return value;
+}
+
 export function getMobileAuthRedirectUrl(
   createUrl: (path: string) => string,
 ): string {
   return createUrl("auth/callback");
+}
+
+export function buildMobileAuthCallbackUrlFromParams(
+  params: MobileAuthRouteParams,
+): string | null {
+  const query = new URLSearchParams();
+
+  for (const key of MOBILE_AUTH_CALLBACK_PARAM_KEYS) {
+    const value = getFirstRouteParamValue(params[key]);
+    if (value) {
+      query.set(key, value);
+    }
+  }
+
+  const queryString = query.toString();
+
+  if (!queryString) {
+    return null;
+  }
+
+  return `popsdrops://auth/callback?${queryString}`;
 }
 
 export function parseMobileAuthCallback(
@@ -56,14 +106,41 @@ export function parseMobileAuthCallback(
     };
   }
 
+  const code = hashParams.get("code") ?? queryParams.get("code");
+
+  if (code) {
+    return {
+      kind: "code",
+      code,
+    };
+  }
+
   return { kind: "empty" };
 }
 
 export async function completeMobileAuthSession(
   url: string,
   setSession: SetMobileSession,
+  exchangeCodeForSession?: ExchangeMobileAuthCode,
 ): Promise<{ kind: "success" } | { kind: "error"; message: string } | { kind: "empty" }> {
   const result = parseMobileAuthCallback(url);
+
+  if (result.kind === "code") {
+    if (!exchangeCodeForSession) {
+      return { kind: "empty" };
+    }
+
+    const { error } = await exchangeCodeForSession(result.code);
+
+    if (error) {
+      return {
+        kind: "error",
+        message: error.message,
+      };
+    }
+
+    return { kind: "success" };
+  }
 
   if (result.kind !== "success") {
     return result;

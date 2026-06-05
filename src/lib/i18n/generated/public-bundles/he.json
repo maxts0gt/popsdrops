@@ -6,7 +6,6 @@
     "nav.creators": "יוצרים",
     "nav.earnings": "רווחים",
     "nav.profile": "פרופיל",
-    "nav.messages": "הודעות",
     "nav.notifications": "התראות",
     "nav.settings": "הגדרות",
     "nav.forBrands": "למותגים",
@@ -68,7 +67,6 @@
     "empty.noData": "אין כאן נתונים עדיין",
     "empty.noNotifications": "הכל מעודכן",
     "empty.noCampaigns": "אין קמפיינים עדיין",
-    "empty.noMessages": "אין הודעות עדיין",
     "time.today": "היום",
     "time.yesterday": "אתמול",
     "time.daysAgo": "לפני {count} ימים",
@@ -130,7 +128,9 @@
     "format.photoPost": "פוסט תמונה",
     "format.reel": "Reel",
     "format.carousel": "קרוסלה",
-    "format.live": "שידור חי"
+    "format.live": "שידור חי",
+    "nav.communications": "תקשורת",
+    "empty.noUpdates": "אין עדכונים עדיין"
   },
   "marketing.landing": {
     "meta.title": "קמפיינים עם יוצרי תוכן ללא גבולות",

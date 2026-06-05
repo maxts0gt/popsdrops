@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { getCreatorReportingEligibility } from "./eligibility";
+import { getCreatorDeclaredPlatforms } from "./eligibility";
 
 describe("creator reporting eligibility", () => {
   it("marks creator eligible when required platform is declared", () => {
@@ -79,5 +80,39 @@ describe("creator reporting eligibility", () => {
         ],
       }),
     ).toMatchObject({ status: "needs_confirmation" });
+  });
+
+  it("lets reporting-only X proof proceed without a profile account gate", () => {
+    expect(
+      getCreatorReportingEligibility({
+        creatorPlatforms: ["tiktok"],
+        requirements: [
+          {
+            platform: "x",
+            platformLabel: null,
+            accountRequirement: "native_insights_required",
+            evidenceTypes: ["screenshot"],
+            requiredMetricKeys: ["replies"],
+            contentFormat: "short_video",
+          },
+        ],
+      }),
+    ).toMatchObject({
+      status: "needs_confirmation",
+      missingPlatforms: [],
+    });
+  });
+
+  it("derives declared platforms from profile lists and connected account fields", () => {
+    expect(
+      getCreatorDeclaredPlatforms({
+        platforms: ["tiktok", "instagram"],
+        instagram: null,
+        tiktok: { handle: "@creator" },
+        youtube: { channel: "Creator Studio" },
+        facebook: null,
+        snapchat: null,
+      }),
+    ).toEqual(["instagram", "tiktok", "youtube"]);
   });
 });

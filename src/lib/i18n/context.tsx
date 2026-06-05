@@ -134,9 +134,13 @@ export function useI18n() {
  */
 export function useTranslation(pageKey: PageKey) {
   const { t, locale, isRTL, dir, isLoading, isLocaleReady } = useI18n();
+  const scopedT = useCallback(
+    (key: string, vars?: Record<string, string>) => t(pageKey, key, vars),
+    [t, pageKey],
+  );
 
   return {
-    t: (key: string, vars?: Record<string, string>) => t(pageKey, key, vars),
+    t: scopedT,
     locale,
     isRTL,
     dir,

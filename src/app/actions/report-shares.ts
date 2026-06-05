@@ -1,7 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import {
+  assertBrandWorkspacePermission,
+  type BrandWorkspaceSupabaseClient,
+} from "@/lib/brand-workspace";
 import { getUser } from "./auth";
 import {
   buildReportShareUrl,
@@ -22,8 +27,24 @@ export interface ReportShareLinkSummary {
   createdAt: string;
 }
 
-function getShareOrigin(): string {
-  return process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+async function getShareOrigin(): Promise<string> {
+  if (process.env.NEXT_PUBLIC_SITE_URL) {
+    return process.env.NEXT_PUBLIC_SITE_URL;
+  }
+
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  if (!host) {
+    throw new Error("Report share origin could not be resolved.");
+  }
+
+  const protocol =
+    requestHeaders.get("x-forwarded-proto") ??
+    (host.startsWith("localhost") || host.startsWith("127.0.0.1")
+      ? "http"
+      : "https");
+
+  return `${protocol}://${host}`;
 }
 
 function toSummary(row: {
@@ -48,11 +69,42 @@ function toSummary(row: {
   };
 }
 
+async function assertBrandReportShareAccess(
+  supabase: BrandWorkspaceSupabaseClient,
+  userId: string,
+  campaignId: string,
+  permission: "view_campaigns" | "share_reports",
+) {
+  const workspace = await assertBrandWorkspacePermission(
+    supabase,
+    userId,
+    permission,
+  );
+
+  const { data: campaign } = await supabase
+    .from("campaigns")
+    .select("id")
+    .eq("id", campaignId)
+    .eq("brand_id", workspace.brandId)
+    .single();
+
+  if (!campaign) throw new Error("Campaign not found");
+
+  return workspace;
+}
+
 export async function listReportShareLinks(
   campaignId: string,
 ): Promise<ReportShareLinkSummary[]> {
-  await getUser();
+  const user = await getUser();
   const supabase = await createClient();
+  await assertBrandReportShareAccess(
+    supabase,
+    user.id,
+    campaignId,
+    "view_campaigns",
+  );
+
   const { data, error } = await supabase
     .from("campaign_report_share_links")
     .select(
@@ -71,6 +123,12 @@ export async function createReportShareLink(
 ): Promise<ReportShareLinkSummary & { url: string }> {
   const user = await getUser();
   const supabase = await createClient();
+  await assertBrandReportShareAccess(
+    supabase,
+    user.id,
+    campaignId,
+    "share_reports",
+  );
   const token = createReportShareToken();
   const tokenHash = await hashReportShareToken(token);
   const expiresAt = getReportShareExpiry(30);
@@ -96,7 +154,7 @@ export async function createReportShareLink(
 
   return {
     ...toSummary(data),
-    url: buildReportShareUrl({ origin: getShareOrigin(), token }),
+    url: buildReportShareUrl({ origin: await getShareOrigin(), token }),
   };
 }
 
@@ -107,8 +165,15 @@ export async function revokeReportShareLink({
   campaignId: string;
   shareLinkId: string;
 }): Promise<{ ok: true }> {
-  await getUser();
+  const user = await getUser();
   const supabase = await createClient();
+  await assertBrandReportShareAccess(
+    supabase,
+    user.id,
+    campaignId,
+    "share_reports",
+  );
+
   const { data, error } = await supabase
     .from("campaign_report_share_links")
     .update({ revoked_at: new Date().toISOString() })

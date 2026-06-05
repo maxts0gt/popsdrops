@@ -5,6 +5,7 @@ import {
   EVIDENCE_MAX_FILE_BYTES,
   buildEvidenceStoragePath,
   getEvidenceFileValidationError,
+  parseEvidenceStorageReference,
   getEvidenceStorageUri,
   getEvidenceTypeFromMime,
   sanitizeEvidenceFileName,
@@ -49,6 +50,28 @@ describe("reporting evidence upload helpers", () => {
     expect(getEvidenceTypeFromMime("image/png")).toBe("screenshot");
     expect(getEvidenceTypeFromMime("text/csv")).toBe("analytics_export");
     expect(getEvidenceTypeFromMime("application/pdf")).toBe("document");
+  });
+
+  it("parses private evidence storage references for signed previews", () => {
+    const storagePath = buildEvidenceStoragePath({
+      ...ids,
+      fileName: "instagram-proof.png",
+    });
+
+    expect(parseEvidenceStorageReference(`${EVIDENCE_BUCKET_ID}/${storagePath}`)).toEqual({
+      bucket: EVIDENCE_BUCKET_ID,
+      path: storagePath,
+    });
+    expect(parseEvidenceStorageReference(`supabase://${EVIDENCE_BUCKET_ID}/${storagePath}`)).toEqual({
+      bucket: EVIDENCE_BUCKET_ID,
+      path: storagePath,
+    });
+    expect(parseEvidenceStorageReference("https://example.com/proof.png")).toBeNull();
+  });
+
+  it("rejects malformed evidence storage references", () => {
+    expect(parseEvidenceStorageReference("campaign-evidence")).toBeNull();
+    expect(parseEvidenceStorageReference("avatars/folder/proof.png")).toBeNull();
   });
 
   it("validates evidence files before the browser attempts upload", () => {
