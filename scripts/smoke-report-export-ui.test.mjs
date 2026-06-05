@@ -36,6 +36,9 @@ describe("report export UI smoke contract", () => {
     expect(source).toContain("data-promise-item");
     expect(source).toContain("report-builder-story-strip");
     expect(source).toContain("report-builder-story-step");
+    expect(source).toContain("report-builder-decision-recipe");
+    expect(source).toContain("report-builder-decision-recipe-item");
+    expect(source).toContain("data-recipe-step");
     expect(source).toContain("report-builder-export-contract");
     expect(source).toContain("report-builder-contract-item");
     expect(source).toContain("data-contract-item");
@@ -53,6 +56,11 @@ describe("report export UI smoke contract", () => {
     expect(source).toContain("Evidence view");
     expect(source).toContain("Export style");
     expect(source).toContain("Story order");
+    expect(source).toContain("Decision recipe");
+    expect(source).toContain("Question");
+    expect(source).toContain("Visual job");
+    expect(source).toContain("Evidence gate");
+    expect(source).toContain("Next action");
     expect(source).toContain("Leadership handoff");
     expect(source).toContain("Save the report shape, then exports and shared links carry this trust gate.");
     expect(source).toContain("Output preview updates immediately.");

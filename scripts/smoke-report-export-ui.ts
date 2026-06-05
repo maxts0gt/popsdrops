@@ -2027,16 +2027,20 @@ async function assertReportBuilderStoryStrip({
       const templateStrip = document.querySelector('[data-testid="report-builder-template-strip"]');
       const promise = document.querySelector('[data-testid="report-builder-reader-promise"]');
       const strip = document.querySelector('[data-testid="report-builder-story-strip"]');
+      const recipe = strip?.querySelector('[data-testid="report-builder-decision-recipe"]');
       const contract = strip?.querySelector('[data-testid="report-builder-export-contract"]');
       const text = strip.textContent || "";
+      const recipeText = recipe?.textContent || "";
       const promiseText = promise?.textContent || "";
       const controlText = controls?.textContent || "";
       const previewText = preview?.textContent || "";
       const promiseItems = [...(promise?.querySelectorAll('[data-testid="report-builder-reader-promise-item"]') ?? [])];
       const promiseItemKeys = promiseItems.map((item) => item.getAttribute("data-promise-item"));
       const steps = [...(strip?.querySelectorAll('[data-testid="report-builder-story-step"]') ?? [])];
+      const recipeItems = [...(recipe?.querySelectorAll('[data-testid="report-builder-decision-recipe-item"]') ?? [])];
       const contractItems = [...(contract?.querySelectorAll('[data-testid="report-builder-contract-item"]') ?? [])];
       const stepIds = steps.map((step) => step.getAttribute("data-story-step"));
+      const recipeItemKeys = recipeItems.map((item) => item.getAttribute("data-recipe-step"));
       const contractItemKeys = contractItems.map((item) => item.getAttribute("data-contract-item"));
       const contractText = contract?.textContent || "";
 
@@ -2056,6 +2060,17 @@ async function assertReportBuilderStoryStrip({
         hasEvidenceStep: stepIds.includes("evidence"),
         hasPresentationStep: stepIds.includes("presentation"),
         hasOrderStep: stepIds.includes("order"),
+        hasRecipe: Boolean(recipe),
+        recipeItemCount: recipeItems.length === 4,
+        hasQuestionRecipe: recipeItemKeys.includes("question"),
+        hasVisualJobRecipe: recipeItemKeys.includes("visual-job"),
+        hasEvidenceGateRecipe: recipeItemKeys.includes("evidence-gate"),
+        hasNextActionRecipe: recipeItemKeys.includes("next-action"),
+        recipeBeforeContract: Boolean(
+          recipe &&
+            contract &&
+            (recipe.compareDocumentPosition(contract) & Node.DOCUMENT_POSITION_FOLLOWING),
+        ),
         hasContract: Boolean(contract),
         contractItemCount: contractItems.length === 4,
         hasLeadMetricContract: contractItemKeys.includes("lead-metric"),
@@ -2077,6 +2092,12 @@ async function assertReportBuilderStoryStrip({
         stripStoryOrder: text.includes("Story order"),
         stripPreviewUpdates: text.includes("Output preview updates immediately."),
         stripTrustLocked: text.includes("Trust block locked"),
+        recipeTitle: recipeText.includes("Decision recipe"),
+        recipeQuestion: recipeText.includes("Question"),
+        recipeVisualJob: recipeText.includes("Visual job"),
+        recipeEvidenceGate: recipeText.includes("Evidence gate"),
+        recipeNextAction: recipeText.includes("Next action"),
+        recipeLeadershipReady: recipeText.includes("Ready for leadership sharing."),
         contractLeadMetric: contractText.includes("Lead metric"),
         contractViews: contractText.includes("Views"),
         contractTrustDecision: contractText.includes("Trust decision"),
@@ -2108,11 +2129,13 @@ async function assertReportBuilderStoryStrip({
           checks,
           promiseItemKeys,
           stepIds,
+          recipeItemKeys,
           contractItemKeys,
           controlText: controlText.replace(/\\s+/g, " ").slice(0, 500),
           promiseText: promiseText.replace(/\\s+/g, " ").slice(0, 500),
           previewText: previewText.replace(/\\s+/g, " ").slice(0, 500),
           stripText: text.replace(/\\s+/g, " ").slice(0, 900),
+          recipeText: recipeText.replace(/\\s+/g, " ").slice(0, 700),
           contractText: contractText.replace(/\\s+/g, " ").slice(0, 700),
         });
       })()`,

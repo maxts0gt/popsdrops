@@ -5904,6 +5904,7 @@ export default function CampaignReportPage() {
             activeTemplateId={selectedReportTemplateId}
             campaignTitle={campaign.title}
             metricTileOptions={metricTileOptions}
+            nextAction={selectedReportStory.nextAction}
             onChartModeChange={selectReportChartMode}
             onChartMetricChange={selectReportChartMetric}
             onMoveBlock={moveReportBlock}
