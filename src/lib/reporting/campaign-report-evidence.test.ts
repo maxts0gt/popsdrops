@@ -181,6 +181,31 @@ describe("campaign report evidence metric", () => {
     expect(evidence.confidence).toBe("incomplete");
   });
 
+  it("treats submitted tasks without proof rows as missing proof before leadership sharing", () => {
+    const evidence = buildReportEvidenceMetric({
+      reads: [],
+      tasks: [
+        {
+          id: "report-task-without-proof",
+          dueAt: "2026-05-12T10:00:00.000Z",
+          status: "submitted",
+          submittedAt: "2026-05-12T09:00:00.000Z",
+        },
+      ],
+    });
+    const readiness = buildProofRoomScaleReadiness(evidence);
+
+    expect(evidence.totalReads).toBe(0);
+    expect(evidence.missingEvidenceReads).toBe(1);
+    expect(evidence.confidence).toBe("incomplete");
+    expect(readiness).toMatchObject({
+      action: "collect_missing_proof",
+      readyForLeadership: false,
+      severity: "blocked",
+    });
+    expect(readiness.lanes).toEqual([{ id: "missing_proof", count: 1 }]);
+  });
+
   it("only treats openable platform proof as evidence-backed", () => {
     const evidence = buildReportEvidenceMetric({
       reads: [

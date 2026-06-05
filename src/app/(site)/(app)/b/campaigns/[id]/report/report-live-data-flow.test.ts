@@ -923,6 +923,19 @@ describe("campaign report live data flow", () => {
     expect(sharedReportDataSource).toContain("buildSharedReportStatusValue(evidence)");
   });
 
+  it("counts submitted report tasks with no proof row as missing proof in every report surface", () => {
+    expect(reportMetricsSource).toContain("submittedTasksWithoutProof");
+    expect(reportMetricsSource).toContain('task.status === "submitted"');
+    expect(reportMetricsSource).toContain('task.status === "submitted_late"');
+    expect(reportMetricsSource).toContain("!currentReadTaskIds.has(task.id as string)");
+    expect(reportMetricsSource).toContain(
+      "currentReads.length - evidenceBackedReads + submittedTasksWithoutProof",
+    );
+    expect(reportMetricsSource).toContain("missingEvidenceReads > 0");
+    expect(reportPageSource).toContain("id: task.id");
+    expect(sharedReportDataSource).toContain("id: task.id");
+  });
+
   it("uses only accepted evidence for report charts and performer totals", () => {
     expect(reportPageSource).toContain("getAcceptedReportReads");
     expect(reportPageSource).toContain("trustedReportReads");

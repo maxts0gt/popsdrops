@@ -4733,6 +4733,7 @@ export default function CampaignReportPage() {
         (tasks || []).map((task: Record<string, string | null>) => [
           task.id,
           {
+            id: task.id,
             dueAt: task.due_at,
             status: task.status,
             submittedAt: task.submitted_at,
@@ -4741,6 +4742,7 @@ export default function CampaignReportPage() {
       );
       setReportTasks(
         (tasks || []).map((task: Record<string, string | null>) => ({
+          id: task.id,
           dueAt: task.due_at || new Date().toISOString(),
           status: task.status || "pending",
           submittedAt: task.submitted_at,

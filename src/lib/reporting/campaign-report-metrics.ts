@@ -69,6 +69,7 @@ export interface ReportPlatformPartition {
 }
 
 export interface CampaignReportTask {
+  id?: string | null;
   dueAt: string;
   status: string;
   submittedAt?: string | null;
@@ -742,12 +743,26 @@ export function buildReportEvidenceMetric({
 }): ReportEvidenceMetric {
   const completion = buildReportCompletionMetric(tasks);
   const currentReads = getCurrentReportReads(reads);
+  const currentReadTaskIds = new Set(
+    currentReads
+      .map((read) => read.reportTaskId)
+      .filter((taskId): taskId is string => Boolean(taskId)),
+  );
+  const submittedTasksWithoutProof = tasks.filter(
+    (task) =>
+      Boolean(task.id) &&
+      (task.status === "submitted" ||
+        task.status === "submitted_late" ||
+        task.status === "verified") &&
+      !currentReadTaskIds.has(task.id as string),
+  ).length;
   const evidenceBackedReads = currentReads.filter(hasOpenableEvidence).length;
   const verifiedReads = currentReads.filter(
     (read) => hasOpenableEvidence(read) && isVerifiedRead(read),
   ).length;
   const correctionRequestedReads = currentReads.filter(isCorrectionRead).length;
-  const missingEvidenceReads = currentReads.length - evidenceBackedReads;
+  const missingEvidenceReads =
+    currentReads.length - evidenceBackedReads + submittedTasksWithoutProof;
   const pendingReviewReads = currentReads.filter(
     (read) => hasOpenableEvidence(read) && !isVerifiedRead(read) && !isCorrectionRead(read),
   ).length;
@@ -774,7 +789,7 @@ export function buildReportEvidenceMetric({
   if (currentReads.length > 0 || tasks.length > 0) {
     if (
       completion.missed > 0 ||
-      evidenceBackedReads < currentReads.length ||
+      missingEvidenceReads > 0 ||
       correctionRequestedReads > 0 ||
       actionRequiredTasks > 0
     ) {

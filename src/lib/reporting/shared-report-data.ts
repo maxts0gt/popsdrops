@@ -717,6 +717,7 @@ export async function buildCampaignSharedReport(
   }
 
   const reportTasks = ((tasks ?? []) as Array<Record<string, string | null>>).map((task) => ({
+    id: task.id,
     dueAt: task.due_at || new Date().toISOString(),
     status: task.status || "pending",
     submittedAt: task.submitted_at,
