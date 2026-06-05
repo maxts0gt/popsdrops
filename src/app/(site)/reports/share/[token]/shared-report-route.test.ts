@@ -164,20 +164,24 @@ describe("public shared report route", () => {
 
   it("surfaces the trust decision directly on the shared executive cover", () => {
     expect(sharedViewSource).toContain('data-testid="shared-report-executive-cover-trust-decision"');
+    expect(sharedViewSource).toContain('data-testid="shared-report-leadership-next-action"');
     expect(sharedViewSource).toContain("data-cover-trust-state={leadershipGate.state}");
     expect(sharedViewSource).toContain('t("builder.output.trustDecision")');
     expect(sharedViewSource).toContain("{leadershipGate.detail}");
+    expect(sharedViewSource).toContain("{nextAction}");
   });
 
   it("marks public shared reports as leadership-ready or on leadership hold", () => {
     expect(sharedReportTrustSource).toContain('export type SharedReportLeadershipState = "ready" | "hold";');
     expect(sharedReportTrustSource).toContain("export function getSharedReportLeadershipGate");
     expect(sharedReportTrustSource).toContain("export function getSharedReportProofBasis");
+    expect(sharedReportTrustSource).toContain("export function getSharedReportNextAction");
     expect(sharedReportTrustSource).toContain('trustDecision === "Ready for leadership sharing."');
     expect(sharedViewSource).toContain('data-testid="shared-report-leadership-gate"');
     expect(sharedViewSource).toContain("data-leadership-state={leadershipGate.state}");
     expect(sharedViewSource).toContain("data-trust-state={leadershipGate.state}");
     expect(sharedViewSource).toContain('data-testid="shared-report-proof-basis"');
+    expect(sharedViewSource).toContain('data-testid="shared-report-hold-next-action"');
     expect(sharedViewSource).toContain('data-proof-basis-key={item.key}');
     expect(sharedViewSource).toContain('t("evidence.command.countsLabel")');
     expect(sharedViewSource).toContain('t("evidence.summary.included")');
@@ -188,6 +192,7 @@ describe("public shared report route", () => {
     expect(sharedReportTrustSource).toContain("Leadership hold");
     expect(sharedViewSource).toContain("<SharedReportExecutiveCover");
     expect(sharedViewSource).toContain("leadershipGate={leadershipGate}");
+    expect(sharedViewSource).toContain("nextAction={sharedReportNextAction}");
     expect(sharedViewSource).toContain("proofBasis={sharedReportProofBasis}");
   });
 

@@ -329,6 +329,7 @@ describe("report export helpers", () => {
     expect(json.story?.trustDecision).toBe(
       "Keep in proof room until all required proof is present.",
     );
+    expect(json.story?.nextAction).toBe("Ask creator to upload 1 missing proof read.");
     expect(missingProof?.value).toBe(1);
     expect(json.proofOperations).toMatchObject({
       state: "hold",
@@ -336,6 +337,7 @@ describe("report export helpers", () => {
       verifiedCoverage: "0/1",
     });
     expect(html).toContain('data-proof-basis-key="missing-proof"');
+    expect(html).toContain("Ask creator to upload 1 missing proof read.");
     expect(html).toContain("<strong>1</strong>");
     expect(html).toContain("Keep in proof room until all required proof is present.");
     expect(html).not.toContain("Ready for leadership sharing.");
@@ -627,6 +629,7 @@ describe("report export helpers", () => {
     expect(html).toContain('class="proof-operations"');
     expect(html).toContain('data-proof-operations-scope="scale"');
     expect(html).toContain("91/100 verified");
+    expect(html).toContain("Resolve 2 correction requests before leadership sharing.");
   });
 
   it("keeps a precomputed leadership handoff authoritative when visible trust tiles are filtered", () => {
@@ -797,7 +800,7 @@ describe("report export helpers", () => {
   });
 
   it("adds an executive trust decision when report proof still needs correction", () => {
-    const html = buildHtmlDocument({
+    const report: ReportExportData = {
       ...exportData,
       composition: {
         ...exportData.composition!,
@@ -833,11 +836,17 @@ describe("report export helpers", () => {
           detail: "How metrics entered PopsDrops",
         },
       ],
-    });
+    };
+    const html = buildHtmlDocument(report);
+    const json = JSON.parse(buildJsonContent(report)) as ReportExportData;
 
     expect(html).toContain("Trust decision");
     expect(html).toContain("Correction requested");
     expect(html).toContain("Resolve correction requests before leadership sharing.");
+    expect(json.story?.nextAction).toBe(
+      "Resolve 1 correction request before leadership sharing.",
+    );
+    expect(html).toContain("Resolve 1 correction request before leadership sharing.");
     expect(html).not.toContain("Ready for leadership sharing.");
   });
 
@@ -890,6 +899,10 @@ describe("report export helpers", () => {
     expect(html).toContain(
       "Keep in proof room until at least one proof read is submitted and reviewed.",
     );
+    expect(json.story?.nextAction).toBe(
+      "Collect and review the first proof read before sharing.",
+    );
+    expect(html).toContain("Collect and review the first proof read before sharing.");
     expect(html).not.toContain("Share the verified proof room with leadership.");
     expect(dataSource).toMatchObject({
       value: "Creator-entered proof",
@@ -936,6 +949,7 @@ describe("report export helpers", () => {
     expect(html).toContain(`<span>Report status</span>
                 <strong>1 awaiting review</strong>
                 <small>1/1 submitted</small>`);
+    expect(html).toContain("Review 1 submitted proof read before sharing.");
     expect(html).not.toContain("<span>Evidence status</span>");
   });
 

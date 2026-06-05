@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ReportExportData } from "./report-export";
 import {
   getSharedReportLeadershipGate,
+  getSharedReportNextAction,
   getSharedReportProofBasis,
   getSharedReportTrustDecision,
 } from "./shared-report-trust";
@@ -63,6 +64,28 @@ describe("shared report trust decision", () => {
     });
 
     expect(trustDecision).toBe("Keep in proof room until evidence is reviewed.");
+    expect(getSharedReportNextAction({
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Evidence-backed reads",
+          value: "1/1",
+          detail: "Native analytics screenshots",
+        },
+        {
+          key: "verified_reads",
+          label: "Verified reads",
+          value: "0/1",
+          detail: "Supported by source evidence",
+        },
+        {
+          key: "report_status",
+          label: "Report status",
+          value: "1 awaiting review",
+          detail: "1/1 submitted",
+        },
+      ],
+    })).toBe("Review 1 submitted proof read before sharing.");
     expect(getSharedReportLeadershipGate(trustDecision)).toMatchObject({
       state: "hold",
       label: "Leadership hold",
@@ -138,6 +161,37 @@ describe("shared report trust decision", () => {
       { key: "corrections", value: 0 },
       { key: "missing-proof", value: 0 },
     ]);
+    expect(getSharedReportNextAction(sharedReport)).toBe(
+      "Share the verified proof room with leadership.",
+    );
+  });
+
+  it("uses authoritative proof basis counts for shared report next actions", () => {
+    const sharedReport: Pick<ReportExportData, "trust" | "leadershipHandoff"> = {
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Proof coverage",
+          value: "1/1",
+          detail: "Native analytics screenshots",
+        },
+      ],
+      leadershipHandoff: {
+        state: "hold",
+        label: "Leadership hold",
+        decision: "Keep in proof room until evidence is reviewed.",
+        proofBasis: [
+          { key: "included", label: "Included", value: 0 },
+          { key: "needs-review", label: "Needs review", value: 1 },
+          { key: "corrections", label: "Corrections", value: 0 },
+          { key: "missing-proof", label: "Missing proof", value: 0 },
+        ],
+      },
+    };
+
+    expect(getSharedReportNextAction(sharedReport)).toBe(
+      "Review 1 submitted proof read before sharing.",
+    );
   });
 
   it("keeps reports with no submitted proof reads on leadership hold", () => {
@@ -171,6 +225,28 @@ describe("shared report trust decision", () => {
       state: "hold",
       label: "Leadership hold",
     });
+    expect(getSharedReportNextAction({
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Evidence-backed reads",
+          value: "0/0",
+          detail: "Native analytics screenshots",
+        },
+        {
+          key: "verified_reads",
+          label: "Verified reads",
+          value: "0/0",
+          detail: "Verified by source evidence",
+        },
+        {
+          key: "report_status",
+          label: "Report status",
+          value: "Ready for review",
+          detail: "0/0 submitted",
+        },
+      ],
+    })).toBe("Collect and review the first proof read before sharing.");
   });
 
   it("keeps correction states on hold even when proof counts are complete", () => {
@@ -198,6 +274,30 @@ describe("shared report trust decision", () => {
         ],
       }),
     ).toBe("Resolve correction requests before leadership sharing.");
+    expect(
+      getSharedReportNextAction({
+        trust: [
+          {
+            key: "evidence_backed_reads",
+            label: "Evidence-backed reads",
+            value: "2/2",
+            detail: "Native analytics screenshots",
+          },
+          {
+            key: "verified_reads",
+            label: "Verified reads",
+            value: "1/2",
+            detail: "Verified by source evidence",
+          },
+          {
+            key: "report_status",
+            label: "Report status",
+            value: "1 correction pending",
+            detail: "Brand requested a correction",
+          },
+        ],
+      }),
+    ).toBe("Resolve 1 correction request before leadership sharing.");
   });
 
   it("summarizes the proof basis behind shared leadership decisions", () => {
@@ -230,5 +330,32 @@ describe("shared report trust decision", () => {
       { key: "corrections", value: 1 },
       { key: "missing-proof", value: 1 },
     ]);
+  });
+
+  it("prioritizes missing proof next actions before leadership sharing", () => {
+    expect(
+      getSharedReportNextAction({
+        trust: [
+          {
+            key: "evidence_backed_reads",
+            label: "Proof coverage",
+            value: "1/2",
+            detail: "Native analytics screenshots",
+          },
+          {
+            key: "verified_reads",
+            label: "Verified reads",
+            value: "1/2",
+            detail: "Brand-reviewed proof",
+          },
+          {
+            key: "report_status",
+            label: "Report status",
+            value: "1/2 submitted",
+            detail: "Creator reporting tasks",
+          },
+        ],
+      }),
+    ).toBe("Ask creator to upload 1 missing proof read.");
   });
 });

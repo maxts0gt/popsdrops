@@ -113,7 +113,7 @@ describe("Supabase report export artifact", () => {
     expect(html).toContain("Evidence trail");
     expect(html).toContain("Evidence-backed reads: 1/1 / Creator-entered proof");
     expect(html).toContain("Next action");
-    expect(html).toContain("Compare first and latest reads before deciding.");
+    expect(html).toContain("Review 1 submitted proof read before sharing.");
     expect(html).toContain("Trust decision");
     expect(html).toContain("Keep in proof room until evidence is reviewed.");
   });
@@ -208,10 +208,14 @@ describe("Supabase report export artifact", () => {
     expect(csv).toContain("Proof Operations");
     expect(csv).toContain("Scope,scale");
     expect(csv).toContain("Verified coverage,91/100");
+    expect(json.story?.nextAction).toBe(
+      "Resolve 2 correction requests before leadership sharing.",
+    );
     expect(html).toContain('data-proof-operations-scope="scale"');
     expect(html).toContain('data-proof-operations-state="hold"');
     expect(html).toContain("91/100 verified");
     expect(html).toContain("9 open proof actions");
+    expect(html).toContain("Resolve 2 correction requests before leadership sharing.");
   });
 
   it("keeps proof operations visible when report trust is exported without primary story", () => {
@@ -249,10 +253,11 @@ describe("Supabase report export artifact", () => {
     expect(html).not.toContain("Primary report story");
     expect(html).toContain('data-proof-operations-scope="scale"');
     expect(html).toContain("91/100 verified");
+    expect(html).toContain("Resolve 2 correction requests before leadership sharing.");
   });
 
   it("adds a durable executive trust decision when report proof still needs correction", () => {
-    const html = buildHtmlDocument({
+    const report: ReportExportData = {
       ...singleReadReport(),
       composition: {
         ...singleReadReport().composition!,
@@ -300,11 +305,17 @@ describe("Supabase report export artifact", () => {
           detail: "How metrics entered PopsDrops",
         },
       ],
-    });
+    };
+    const html = buildHtmlDocument(report);
+    const json = JSON.parse(buildJsonContent(report)) as ReportExportData;
 
     expect(html).toContain("Trust decision");
     expect(html).toContain("Correction requested");
     expect(html).toContain("Resolve correction requests before leadership sharing.");
+    expect(json.story?.nextAction).toBe(
+      "Resolve 1 correction request before leadership sharing.",
+    );
+    expect(html).toContain("Resolve 1 correction request before leadership sharing.");
     expect(html).not.toContain("Ready for leadership sharing.");
   });
 
@@ -368,7 +379,10 @@ describe("Supabase report export artifact", () => {
     expect(html).toContain(expectedDecision);
     expect(html).not.toContain("Share the verified proof room with leadership.");
     expect(json.story?.trustDecision).toBe(expectedDecision);
-    expect(json.story?.nextAction).toBe(expectedDecision);
+    expect(json.story?.nextAction).toBe(
+      "Collect and review the first proof read before sharing.",
+    );
+    expect(html).toContain("Collect and review the first proof read before sharing.");
     expect(dataSource).toMatchObject({
       value: "Creator-entered proof",
       detail: "Creator-submitted values awaiting brand review",
@@ -416,6 +430,7 @@ describe("Supabase report export artifact", () => {
     expect(json.story?.trustDecision).toBe(
       "Keep in proof room until all required proof is present.",
     );
+    expect(json.story?.nextAction).toBe("Ask creator to upload 1 missing proof read.");
     expect(missingProof?.value).toBe(1);
     expect(json.proofOperations).toMatchObject({
       state: "hold",
@@ -423,6 +438,7 @@ describe("Supabase report export artifact", () => {
       verifiedCoverage: "0/1",
     });
     expect(html).toContain('data-proof-basis-key="missing-proof"');
+    expect(html).toContain("Ask creator to upload 1 missing proof read.");
     expect(html).toContain("<strong>1</strong>");
     expect(html).toContain("Keep in proof room until all required proof is present.");
     expect(html).not.toContain("Ready for leadership sharing.");
@@ -746,7 +762,7 @@ describe("Supabase report export artifact", () => {
     expect(framedHtml).toContain("<p>Action</p>");
     expect(framedHtml).toContain("Timeline readout");
     expect(framedHtml).toContain("Evidence-backed reads: 1/1");
-    expect(framedHtml).toContain("Compare first and latest reads before deciding.");
+    expect(framedHtml).toContain("Review 1 submitted proof read before sharing.");
     expect(framedHtml).toContain("Executive question");
     expect(framedHtml).toContain("Report blocks");
     expect(framedHtml).toContain('class="block-ledger"');
@@ -780,7 +796,7 @@ describe("Supabase report export artifact", () => {
       "Visual job,Timeline readout,\"Lead with movement over time, pacing, and the final decision signal.\"",
     );
     expect(csv).toContain("Evidence gate,Evidence-backed reads: 1/1,");
-    expect(csv).toContain("Action,Compare first and latest reads before deciding.,");
+    expect(csv).toContain("Action,Review 1 submitted proof read before sharing.,");
     expect(csv).toContain("Report Presentation");
   });
 

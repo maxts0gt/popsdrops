@@ -25,6 +25,7 @@ import {
 import type { SharedReportPayload } from "@/lib/reporting/shared-report-data";
 import {
   getSharedReportLeadershipGate,
+  getSharedReportNextAction,
   getSharedReportProofBasis,
   type SharedReportProofBasisKey,
   getSharedReportTrustDecision,
@@ -296,10 +297,13 @@ function buildSharedReportHoldCoverMetrics(data: ReportExportData): ReportHeroMe
 function SharedReportLeadershipHoldPanel({
   data,
   leadershipGate,
+  nextAction,
 }: {
   data: ReportExportData;
   leadershipGate: ReturnType<typeof getSharedReportLeadershipGate>;
+  nextAction: string;
 }) {
+  const { t } = useTranslation("brand.report");
   const holdTrustItems = getSharedReportHoldTrustItems(data);
 
   return (
@@ -322,6 +326,17 @@ function SharedReportLeadershipHoldPanel({
           <p className="mt-2 text-sm font-medium leading-6 text-slate-700">
             {leadershipGate.detail}
           </p>
+          <div
+            data-testid="shared-report-hold-next-action"
+            className="mt-4 rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
+          >
+            <p className="text-[10px] font-semibold uppercase leading-none tracking-normal text-slate-500">
+              {t("builder.chartStory.nextAction")}
+            </p>
+            <strong className="mt-1.5 block text-sm font-medium leading-5 text-slate-800">
+              {nextAction}
+            </strong>
+          </div>
         </div>
         {holdTrustItems.length ? (
           <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-2">
@@ -567,6 +582,7 @@ function SharedReportExecutiveCover({
   headline,
   leadershipGate,
   metrics,
+  nextAction,
   presentation,
   proofBasis,
 }: {
@@ -577,6 +593,7 @@ function SharedReportExecutiveCover({
   headline: string;
   leadershipGate: ReturnType<typeof getSharedReportLeadershipGate>;
   metrics: ReportHeroMetric[];
+  nextAction: string;
   presentation: ReportExportPresentation;
   proofBasis: ReturnType<typeof getSharedReportProofBasis>;
 }) {
@@ -732,6 +749,17 @@ function SharedReportExecutiveCover({
                 <p className="mt-1 text-sm font-medium leading-5 text-slate-700">
                   {leadershipGate.detail}
                 </p>
+                <div
+                  data-testid="shared-report-leadership-next-action"
+                  className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2"
+                >
+                  <p className="text-[10px] font-semibold uppercase leading-none tracking-normal text-slate-500">
+                    {t("builder.chartStory.nextAction")}
+                  </p>
+                  <strong className="mt-1.5 block text-sm font-medium leading-5 text-slate-800">
+                    {nextAction}
+                  </strong>
+                </div>
                 <div
                   data-testid="shared-report-proof-basis"
                   className="mt-3 border-t border-slate-200 pt-3"
@@ -1244,6 +1272,7 @@ export function SharedReportView({ data, share }: SharedReportViewProps) {
   );
   const trustDecision = getSharedReportTrustDecision(data);
   const leadershipGate = getSharedReportLeadershipGate(trustDecision);
+  const sharedReportNextAction = getSharedReportNextAction(data);
   const sharedReportProofBasis = useMemo(
     () => getSharedReportProofBasis(data),
     [data],
@@ -1637,6 +1666,7 @@ export function SharedReportView({ data, share }: SharedReportViewProps) {
           headline={reportDisplayTitle}
           leadershipGate={leadershipGate}
           metrics={sharedReportCoverMetrics}
+          nextAction={sharedReportNextAction}
           presentation={sharedReportPresentation}
           proofBasis={sharedReportProofBasis}
         />
@@ -1650,6 +1680,7 @@ export function SharedReportView({ data, share }: SharedReportViewProps) {
           <SharedReportLeadershipHoldPanel
             data={data}
             leadershipGate={leadershipGate}
+            nextAction={sharedReportNextAction}
           />
         ) : null}
 

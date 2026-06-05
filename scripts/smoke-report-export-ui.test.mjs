@@ -269,6 +269,7 @@ describe("report export UI smoke contract", () => {
     expect(source).toContain("shared-report-executive-cover-visual");
     expect(source).toContain("shared-report-executive-cover-image");
     expect(source).toContain("shared-report-leadership-gate");
+    expect(source).toContain("shared-report-leadership-next-action");
     expect(source).toContain("shared-report-proof-basis");
     expect(source).toContain("shared-report-proof-basis-item");
     expect(source).toContain('data-proof-basis-key") === "included"');
@@ -276,6 +277,7 @@ describe("report export UI smoke contract", () => {
     expect(source).toContain('data-proof-basis-key") === "corrections"');
     expect(source).toContain('data-proof-basis-key") === "missing-proof"');
     expect(source).toContain("shared-report-leadership-hold-panel");
+    expect(source).toContain("shared-report-hold-next-action");
     expect(source).toContain("Performance detail held for evidence review");
     expect(source).toContain('data-cover-source") === "campaign-image"');
     expect(source).toContain('data-leadership-state") === expectedState');
@@ -295,6 +297,8 @@ describe("report export UI smoke contract", () => {
     expect(source).toContain('data-leadership-state") === "ready"');
     expect(source).toContain("Leadership-ready");
     expect(source).toContain("Keep in proof room until evidence is reviewed.");
+    expect(source).toContain("expectedNextAction");
+    expect(source).toContain("Review 1 submitted proof read before sharing.");
     expect(source).toContain("configured shared campaign report leadership hold");
     expect(source).toContain("configured shared campaign report executive cover");
     expect(source).toContain("configured shared campaign report leadership gate");
