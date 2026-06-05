@@ -438,6 +438,7 @@ export const strings = {
     "field.reason": "What do you need from PopsDrops?",
     "field.reason.placeholder":
       "Private campaign, Concierge sourcing, Creator Network application, or market-entry support...",
+    "form.verification": "Please complete verification to continue.",
     // Actions
     "action.submit": "Request Access",
     "action.submitting": "Submitting...",
