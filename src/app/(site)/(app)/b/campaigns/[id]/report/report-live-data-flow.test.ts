@@ -779,6 +779,10 @@ describe("campaign report live data flow", () => {
     expect(reportPageSource).toContain("data-testid=\"report-share-trust-decision\"");
     expect(reportPageSource).toContain("data-testid=\"report-share-trust-detail\"");
     expect(reportPageSource).toContain("trustDecision={selectedReportTrustDecision}");
+    expect(reportPageSource).toContain("leadershipState={selectedReportLeadershipHandoff.state}");
+    expect(reportPageSource).not.toContain(
+      'trustDecision === "Ready for leadership sharing." ? "ready" : "hold"',
+    );
     expect(reportPageSource).toContain("data-testid=\"report-share-url\"");
     expect(reportPageSource).not.toContain('t("share.newLinkHint")');
     expect(reportPageSource).not.toContain('t("share.revoked")');
@@ -1424,6 +1428,9 @@ describe("campaign report live data flow", () => {
       'data-testid="report-output-executive-read"',
     );
     expect(reportOutputContractPanelSource).toContain(
+      "data-executive-read-state={leadershipHandoff.state}",
+    );
+    expect(reportOutputContractPanelSource).not.toContain(
       'data-executive-read-state={readinessDecision === "Ready for leadership sharing." ? "ready" : "hold"}',
     );
     expect(executiveReadSource).toContain("border-slate-200 bg-white px-4 py-3");

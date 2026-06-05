@@ -76,6 +76,7 @@ import {
   type ReportExportMetric,
   type ReportExportSection,
   type ReportExportTrustItem,
+  type ReportLeadershipHandoff,
   buildReportLeadershipHandoff,
   buildReportExportStory,
   buildReportProofOperations,
@@ -227,6 +228,7 @@ interface ReportShareDialogProps {
   revokingId: string | null;
   shareLinks: ReportShareLinkSummary[];
   shareUrl: string;
+  leadershipState: ReportLeadershipHandoff["state"];
   t: ReportTranslation;
   trustDecision: string;
 }
@@ -2488,12 +2490,11 @@ function ReportShareDialog({
   revokingId,
   shareLinks,
   shareUrl,
+  leadershipState,
   t,
   trustDecision,
 }: ReportShareDialogProps) {
   const activeShareLinks = shareLinks.filter((link) => !link.revokedAt);
-  const leadershipState =
-    trustDecision === "Ready for leadership sharing." ? "ready" : "hold";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -5790,6 +5791,7 @@ export default function CampaignReportPage() {
           revokingId={shareRevokingId}
           shareLinks={shareLinks}
           shareUrl={shareUrl}
+          leadershipState={selectedReportLeadershipHandoff.state}
           t={t}
           trustDecision={selectedReportTrustDecision}
         />
