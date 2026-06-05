@@ -100,6 +100,20 @@ describe("campaign creator invite import action", () => {
     expect(importSource).not.toContain('"estimatedMaxCreators"');
   });
 
+  it("rechecks paid creator capacity before sending a saved invite", () => {
+    const sendSource = source.slice(
+      source.indexOf("export async function sendCampaignCreatorInvite"),
+      source.indexOf("export async function removeCampaignCreatorInvite"),
+    );
+
+    expect(source).toContain("assertCampaignCreatorInviteSendCapacity");
+    expect(sendSource).toContain("campaign_payment_events");
+    expect(sendSource).toContain("getCampaignPaidCreatorCapacity({");
+    expect(sendSource).toContain("assertCampaignCreatorInviteSendCapacity({");
+    expect(sendSource).toContain("invite.normalized_contact");
+    expect(sendSource).toContain("savedInvites");
+  });
+
   it("keeps campaign invite emails queue-only by default outside production", () => {
     expect(source).toContain("function shouldDispatchCampaignInviteEmail()");
     expect(source).toContain('process.env.POPSDROPS_SMOKE_QUEUE_ONLY === "1"');
