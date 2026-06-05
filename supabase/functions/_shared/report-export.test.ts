@@ -375,6 +375,59 @@ describe("Supabase report export artifact", () => {
     });
   });
 
+  it("preserves missing-proof task counts in durable artifact leadership gates", () => {
+    const report: ReportExportData = {
+      ...singleReadReport(),
+      composition: {
+        ...singleReadReport().composition!,
+        chartModeId: "proof",
+        chartModeTitle: "Proof view",
+        chartLayoutTitle: "Evidence audit",
+        chartLayoutDetail:
+          "Lead with source coverage, review state, and missing proof before performance detail.",
+      },
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Proof coverage",
+          value: "0/0",
+          detail: "Native analytics screenshots",
+        },
+        {
+          key: "verified_reads",
+          label: "Verified reads",
+          value: "0/0",
+          detail: "Brand-reviewed proof",
+        },
+        {
+          key: "report_status",
+          label: "Report status",
+          value: "1 missing proof",
+          detail: "1/1 submitted",
+        },
+      ],
+    };
+    const html = buildHtmlDocument(report);
+    const json = JSON.parse(buildJsonContent(report)) as ReportExportData;
+    const missingProof = json.leadershipHandoff?.proofBasis.find(
+      (item) => item.key === "missing-proof",
+    );
+
+    expect(json.story?.trustDecision).toBe(
+      "Keep in proof room until all required proof is present.",
+    );
+    expect(missingProof?.value).toBe(1);
+    expect(json.proofOperations).toMatchObject({
+      state: "hold",
+      attentionCount: 1,
+      verifiedCoverage: "0/1",
+    });
+    expect(html).toContain('data-proof-basis-key="missing-proof"');
+    expect(html).toContain("<strong>1</strong>");
+    expect(html).toContain("Keep in proof room until all required proof is present.");
+    expect(html).not.toContain("Ready for leadership sharing.");
+  });
+
   it("keeps durable HTML exports truthful after teams rename proof tiles", () => {
     const html = buildHtmlDocument({
       ...singleReadReport(),

@@ -1009,6 +1009,10 @@ function deriveReportTrustDecision(data: ReportExportData): string {
     return "Resolve correction requests before leadership sharing.";
   }
 
+  if (getReportStatusMissingProofCount(data) > 0) {
+    return "Keep in proof room until all required proof is present.";
+  }
+
   if (/\bmissing|incomplete|pending|submitted|unreviewed|awaiting\b/.test(statusValueText)) {
     return "Keep in proof room until evidence is reviewed.";
   }
@@ -1079,6 +1083,20 @@ function getReportStatusCorrectionCount(data: ReportExportData): number {
     : 1;
 }
 
+function getReportStatusMissingProofCount(data: ReportExportData): number {
+  const reportStatus = getReportStatusItem(data);
+  const statusText = `${reportStatus?.label ?? ""} ${reportStatus?.value ?? ""} ${reportStatus?.detail ?? ""}`.toLowerCase();
+
+  if (!/\bmissing proof\b/.test(statusText)) return 0;
+
+  const explicitCount = Number.parseInt(
+    statusText.match(/\b(\d+)\b/)?.[1] ?? "",
+    10,
+  );
+
+  return Number.isFinite(explicitCount) ? explicitCount : 1;
+}
+
 function getReportLeadershipImpactSummary(data: ReportExportData): Array<{
   key: ReportLeadershipProofBasisKey;
   label: string;
@@ -1093,7 +1111,9 @@ function getReportLeadershipImpactSummary(data: ReportExportData): Array<{
     : getReportTrustDecision(data) === "Ready for leadership sharing."
       ? evidenced
       : 0;
-  const missingProof = total > 0 ? Math.max(0, total - evidenced) : 0;
+  const missingProof = total > 0
+    ? Math.max(0, total - evidenced)
+    : getReportStatusMissingProofCount(data);
   const unresolvedEvidence = Math.max(0, evidenced - included);
   const corrections = Math.min(
     getReportStatusCorrectionCount(data),
@@ -1193,6 +1213,19 @@ function buildHtmlProofOperations(data: ReportExportData): string {
         <p>Attention queue</p>
         <strong>${escapeHtml(attentionLabel)}</strong>
       </article>
+    </div>
+    <div class="proof-operations-basis">
+      <p>Proof basis</p>
+      <div>
+        ${operations.proofBasis
+          .map(
+            (item) => `<span data-proof-basis-key="${escapeHtml(item.key)}">
+              <strong>${item.value}</strong>
+              ${escapeHtml(item.label)}
+            </span>`,
+          )
+          .join("")}
+      </div>
     </div>
   </div>`;
 }
@@ -2962,6 +2995,42 @@ export function buildHtmlDocument(data: ReportExportData): string {
         display: grid;
         gap: 10px;
         grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .proof-operations-basis {
+        border-top: 1px solid var(--line);
+        grid-column: 1 / -1;
+        padding-top: 12px;
+      }
+      .proof-operations-basis p {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        margin: 0 0 8px;
+        text-transform: uppercase;
+      }
+      .proof-operations-basis div {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .proof-operations-basis span {
+        align-items: center;
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        display: inline-flex;
+        font-size: 11px;
+        font-weight: 650;
+        gap: 6px;
+        padding: 6px 9px;
+      }
+      .proof-operations-basis strong {
+        color: var(--value);
+        font-family: var(--mono-font);
+        font-size: 11px;
+        font-weight: 560;
       }
       .proof-operations article {
         background: var(--soft);
