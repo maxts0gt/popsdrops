@@ -30,8 +30,11 @@ import {
   type BrandTeamMember,
 } from "@/app/actions/brand-team";
 import { createClient, getBrowserUser } from "@/lib/supabase/client";
+import { buildCampaignReportHealth } from "@/lib/reporting/campaign-list-report-health";
 import type {
   CampaignResponsibilityKind,
+  PerformanceEvidenceVerificationStatus,
+  PerformanceVerificationStatus,
   PaymentStatusType,
 } from "@/types/database";
 
@@ -88,8 +91,23 @@ interface ReportTaskHealthRow {
 interface EvidenceHealthRow {
   id: string;
   campaign_id: string;
+  campaign_member_id: string;
+  created_at: string | null;
+  performance_id: string | null;
   report_task_id: string;
-  verification_status: string;
+  submission_id: string | null;
+  verification_status: PerformanceEvidenceVerificationStatus;
+}
+
+interface PerformanceHealthRow {
+  id: string;
+  campaign_id: string;
+  created_at: string | null;
+  report_task_id: string | null;
+  reported_at: string | null;
+  screenshot_url: string | null;
+  submission_id: string | null;
+  verification_status: PerformanceVerificationStatus | null;
 }
 
 interface CampaignResponsibilityAssignmentRow {
@@ -169,57 +187,6 @@ function getCampaignServiceFeeBalanceDueCents(campaign: Campaign) {
   if (campaign.service_fee_status === "paid") return 0;
 
   return Math.max(0, campaign.service_fee_cents ?? 0);
-}
-
-function buildCampaignReportHealth({
-  campaignIds,
-  evidenceRows,
-  reportTasks,
-}: {
-  campaignIds: string[];
-  evidenceRows: EvidenceHealthRow[];
-  reportTasks: ReportTaskHealthRow[];
-}): Map<string, CampaignReportHealth> {
-  const healthByCampaignId = new Map<string, CampaignReportHealth>();
-
-  for (const campaignId of campaignIds) {
-    const campaignTasks = reportTasks.filter(
-      (task) => task.campaign_id === campaignId,
-    );
-    const campaignEvidence = evidenceRows.filter(
-      (evidence) => evidence.campaign_id === campaignId,
-    );
-    const correctionTaskIds = new Set(
-      campaignTasks
-        .filter((task) => task.status === "needs_revision")
-        .map((task) => task.id),
-    );
-    const toReviewTaskIds = new Set(
-      campaignTasks
-        .filter(
-          (task) =>
-            task.status === "submitted" || task.status === "submitted_late",
-        )
-        .map((task) => task.id),
-    );
-
-    for (const evidence of campaignEvidence) {
-      if (evidence.verification_status === "rejected") {
-        correctionTaskIds.add(evidence.report_task_id);
-      }
-      if (evidence.verification_status === "submitted") {
-        toReviewTaskIds.add(evidence.report_task_id);
-      }
-    }
-
-    healthByCampaignId.set(campaignId, {
-      missed: campaignTasks.filter((task) => task.status === "missed").length,
-      corrections: correctionTaskIds.size,
-      toReview: toReviewTaskIds.size,
-    });
-  }
-
-  return healthByCampaignId;
 }
 
 function getCampaignResponsibilityLabelKey(
@@ -1092,18 +1059,42 @@ export default function BrandCampaignsPage() {
               .in("campaign_id", campaignIds),
             supabase
               .from("content_performance_evidence")
-              .select("id, campaign_id, report_task_id, verification_status")
+              .select("id, campaign_id, campaign_member_id, report_task_id, submission_id, performance_id, verification_status, created_at")
               .in("campaign_id", campaignIds),
             supabase
               .from("campaign_responsibility_assignments")
               .select("id, campaign_id, brand_team_member_id, responsibility")
               .in("campaign_id", campaignIds),
           ]);
+          const reportTaskRows = (reportTasks ?? []) as ReportTaskHealthRow[];
+          const campaignIdByReportTaskId = new Map(
+            reportTaskRows.map((task) => [task.id, task.campaign_id]),
+          );
+          const reportTaskIds = reportTaskRows.map((task) => task.id);
+          let performanceRows: PerformanceHealthRow[] = [];
+
+          if (reportTaskIds.length > 0) {
+            const { data: performanceData } = await supabase
+              .from("content_performance")
+              .select("id, report_task_id, submission_id, screenshot_url, verification_status, reported_at, created_at")
+              .in("report_task_id", reportTaskIds);
+
+            performanceRows = ((performanceData ?? []) as Array<
+              Omit<PerformanceHealthRow, "campaign_id">
+            >).flatMap((row) => {
+              const campaignId = row.report_task_id
+                ? campaignIdByReportTaskId.get(row.report_task_id)
+                : null;
+
+              return campaignId ? [{ ...row, campaign_id: campaignId }] : [];
+            });
+          }
 
           healthByCampaignId = buildCampaignReportHealth({
             campaignIds,
             evidenceRows: (evidenceRows ?? []) as EvidenceHealthRow[],
-            reportTasks: (reportTasks ?? []) as ReportTaskHealthRow[],
+            performanceRows,
+            reportTasks: reportTaskRows,
           });
           responsibilitiesByCampaignId =
             buildCampaignResponsibilitySummariesByCampaign({

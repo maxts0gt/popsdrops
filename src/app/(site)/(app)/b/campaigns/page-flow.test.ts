@@ -21,6 +21,9 @@ describe("brand campaign list operations flow", () => {
     expect(source).toContain("reportHealth: CampaignReportHealth");
     expect(source).toContain('.from("campaign_report_tasks")');
     expect(source).toContain('.from("content_performance_evidence")');
+    expect(source).toContain('.from("content_performance")');
+    expect(source).toContain("campaign_member_id, report_task_id, submission_id, performance_id, verification_status, created_at");
+    expect(source).toContain("performanceRows");
     expect(source).toContain("buildCampaignReportHealth");
     expect(source).toContain("getBrandCampaignListHref");
     expect(source).toContain('data-testid="campaign-health-signals"');
