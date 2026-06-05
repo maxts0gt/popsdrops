@@ -13,7 +13,7 @@ import {
   Bell,
   CheckCheck,
   FileCheck,
-  MessageCircle,
+  Megaphone,
   RotateCcw,
   Send,
   Star,
@@ -41,7 +41,7 @@ const TYPE_ICONS: Record<string, typeof Bell> = {
   content_submitted: FileCheck,
   content_approved: CheckCheck,
   revision_requested: RotateCcw,
-  new_message: MessageCircle,
+  campaign_update: Megaphone,
 };
 
 export default function NotificationsScreen() {
@@ -101,7 +101,7 @@ export default function NotificationsScreen() {
           params: { id: campaignId },
         });
       } else if (
-        notification.type === "new_message" &&
+        notification.type === "campaign_update" &&
         campaignId
       ) {
         router.push({

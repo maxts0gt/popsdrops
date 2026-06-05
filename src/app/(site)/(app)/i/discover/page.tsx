@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import NextImage from "next/image";
 import {
   Bookmark,
   Clock,
@@ -28,13 +29,27 @@ import {
   MARKETS,
   NICHE_KEYS,
   getMarketLabel,
-  formatBudgetRange,
+  campaignMarketsIncludeCreatorMarket,
+  formatBudgetPerCreatorRange,
   type Platform,
   type Niche,
 } from "@/lib/constants";
 import { useI18n, useTranslation } from "@/lib/i18n";
 import { createClient } from "@/lib/supabase/client";
 import { getSingleRelation } from "@/lib/supabase/relations";
+import {
+  mapCampaignAssetRow,
+  pickCreatorFacingHeroAsset,
+  type CampaignCreativeAsset,
+} from "@/lib/campaigns/creative-kit";
+import { getCampaignApplicationDeadlineDaysLeft } from "@/lib/campaigns/application-deadline";
+import { isCampaignOpenForCreatorDiscovery } from "@/lib/campaigns/recruitment-visibility";
+import type {
+  CampaignAssetStatus,
+  CampaignAssetType,
+  CampaignAssetVisibility,
+  CampaignRecruitmentVisibility,
+} from "@/types/database";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,7 +67,12 @@ interface CampaignCard {
   budget_currency: string;
   max_creators: number | null;
   application_deadline: string | null;
+  service_fee_cents: number | null;
+  service_fee_status: string | null;
+  recruitment_visibility: CampaignRecruitmentVisibility | null;
   status: string;
+  creativeAssets: CampaignCreativeAsset[];
+  heroAsset: CampaignCreativeAsset | null;
   brand: {
     company_name: string;
     rating: number;
@@ -61,7 +81,11 @@ interface CampaignCard {
   };
 }
 
-type CampaignCardRecord = Omit<CampaignCard, "brand"> & {
+type CampaignCardRecord = Omit<
+  CampaignCard,
+  "brand" | "creativeAssets" | "heroAsset"
+> & {
+  campaign_assets?: CampaignAssetRecord[] | null;
   profiles?:
     | {
         full_name: string | null;
@@ -80,6 +104,22 @@ type CampaignCardRecord = Omit<CampaignCard, "brand"> & {
     | null;
 };
 
+interface CampaignAssetRecord {
+  id: string;
+  campaign_id: string;
+  title: string;
+  description: string | null;
+  asset_type: CampaignAssetType;
+  bucket_id: "campaign-assets";
+  storage_path: string;
+  file_name: string;
+  mime_type: string;
+  size_bytes: number;
+  visibility: CampaignAssetVisibility;
+  status: CampaignAssetStatus;
+  created_at: string;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -92,8 +132,8 @@ function deadlineLabel(
   urgent: boolean;
 } {
   if (!dateStr) return { text: "", urgent: false };
-  const diff = new Date(dateStr).getTime() - Date.now();
-  const days = Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+  const days = getCampaignApplicationDeadlineDaysLeft(dateStr);
+  if (days === null) return { text: "", urgent: false };
   if (days === 0) return { text: t("card.lastDay"), urgent: true };
   if (days <= 3)
     return { text: t("card.daysLeft", { count: String(days) }), urgent: true };
@@ -108,6 +148,51 @@ function brandInitials(name: string | undefined): string {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+function CampaignCardVisual({
+  campaign,
+  locale,
+}: {
+  campaign: CampaignCard;
+  locale: string;
+}) {
+  const primaryPlatform = campaign.platforms[0];
+  const primaryMarket = campaign.markets[0];
+
+  return (
+    <div
+      data-testid="creator-discover-card-image"
+      className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl border border-border bg-slate-950 sm:h-28 sm:w-28"
+    >
+      {campaign.heroAsset?.signedUrl ? (
+        <NextImage
+          src={campaign.heroAsset.signedUrl}
+          alt={campaign.heroAsset.title}
+          fill
+          sizes="112px"
+          className="object-cover"
+          unoptimized
+          loading="eager"
+        />
+      ) : (
+        <div
+          data-testid="creator-discover-card-fallback-visual"
+          className="flex size-full flex-col justify-between p-3 text-white"
+        >
+          <span className="text-xl font-semibold">
+            {brandInitials(campaign.brand?.company_name)}
+          </span>
+          <span className="space-y-0.5 text-[10px] font-medium uppercase leading-tight text-white/70">
+            {primaryPlatform && <span className="block">{PLATFORM_LABELS[primaryPlatform]}</span>}
+            {primaryMarket && (
+              <span className="block">{getMarketLabel(primaryMarket, locale)}</span>
+            )}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -308,7 +393,13 @@ export default function DiscoverPage() {
         .select(
           `id, title, brief_description, platforms, markets, niches,
            budget_min, budget_max, budget_currency, max_creators,
-           application_deadline, status,
+           application_deadline, service_fee_cents, service_fee_status,
+           recruitment_visibility, status,
+           campaign_assets (
+             id, campaign_id, title, description, asset_type, bucket_id,
+             storage_path, file_name, mime_type, size_bytes, visibility,
+             status, created_at
+           ),
            profiles!campaigns_brand_id_fkey (
              full_name,
              brand_profiles (
@@ -320,12 +411,36 @@ export default function DiscoverPage() {
         .order("application_deadline", { ascending: true });
 
       if (data) {
-        const mapped: CampaignCard[] = (data as CampaignCardRecord[]).map((campaign) => {
+        const rows = (data as CampaignCardRecord[]).filter(
+          (campaign) => isCampaignOpenForCreatorDiscovery(campaign),
+        );
+        const assetPaths = rows.flatMap((campaign) =>
+          (campaign.campaign_assets ?? []).map((asset) => asset.storage_path),
+        );
+        const signedAssetUrls =
+          assetPaths.length > 0
+            ? await supabase.storage
+                .from("campaign-assets")
+                .createSignedUrls(assetPaths, 600)
+            : { data: [] };
+        const signedUrlByPath = new Map(
+          assetPaths.map((path, index) => [
+            path,
+            signedAssetUrls.data?.[index]?.signedUrl ?? null,
+          ]),
+        );
+        const mapped: CampaignCard[] = rows.map((campaign) => {
           const profile = getSingleRelation(campaign.profiles);
           const bp = getSingleRelation(profile?.brand_profiles);
+          const creativeAssets = (campaign.campaign_assets ?? []).map((asset) =>
+            mapCampaignAssetRow(asset, signedUrlByPath.get(asset.storage_path)),
+          );
+          const heroAsset = pickCreatorFacingHeroAsset(creativeAssets);
 
           return {
             ...campaign,
+            creativeAssets,
+            heroAsset,
             brand: bp
               ? bp
               : {
@@ -361,7 +476,7 @@ export default function DiscoverPage() {
       if (!c.niches.some((n) => filters.niches.has(n))) return false;
     }
     if (filters.market) {
-      if (!c.markets.includes(filters.market)) return false;
+      if (!campaignMarketsIncludeCreatorMarket(c.markets, filters.market)) return false;
     }
     return true;
   });
@@ -380,7 +495,7 @@ export default function DiscoverPage() {
           JSON.stringify(Array.from(next)),
         );
       } catch {
-        // localStorage full or unavailable — ignore
+        // localStorage full or unavailable - ignore
       }
       return next;
     });
@@ -581,91 +696,92 @@ export default function DiscoverPage() {
               <Link
                 key={campaign.id}
                 href={`/i/discover/${campaign.id}`}
+                data-testid="creator-discover-card"
                 className="block"
               >
-                <Card className="transition-shadow hover:shadow-md">
-                  <CardContent className="relative">
-                    {/* Save button */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleSave(campaign.id);
-                      }}
-                      className="absolute end-4 top-4 rounded-lg p-1 text-muted-foreground/50 transition-colors hover:text-muted-foreground"
-                    >
-                      <Bookmark
-                        className={`size-4 ${isSaved ? "fill-foreground text-foreground" : ""}`}
-                      />
-                    </button>
+                <Card className="relative overflow-hidden transition-shadow hover:shadow-md">
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleSave(campaign.id);
+                    }}
+                    className="absolute end-3 top-3 z-10 rounded-lg bg-card/90 p-1.5 text-muted-foreground shadow-sm ring-1 ring-border/50 transition-colors hover:text-foreground"
+                  >
+                    <Bookmark
+                      className={`size-4 ${isSaved ? "fill-foreground text-foreground" : ""}`}
+                    />
+                  </button>
+                  <CardContent className="p-3">
+                    <div className="flex gap-3">
+                      <CampaignCardVisual campaign={campaign} locale={locale} />
 
-                    {/* Brand */}
-                    <div className="flex items-center gap-2">
-                      <div className="flex size-8 items-center justify-center rounded-lg bg-muted text-xs font-bold text-muted-foreground">
-                        {brandInitials(campaign.brand?.company_name)}
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground">
-                          {campaign.brand?.company_name}
-                        </p>
-                        {campaign.brand?.rating > 0 && (
-                          <p className="text-[11px] text-muted-foreground/70">
-                            ★ {campaign.brand.rating.toFixed(1)} ·{" "}
-                            {campaign.brand.review_count} {t("card.reviews")}
+                      <div className="min-w-0 flex-1 pe-8">
+                        {/* Brand */}
+                        <div>
+                          <p className="truncate text-xs font-medium text-muted-foreground">
+                            {campaign.brand?.company_name}
+                          </p>
+                          {campaign.brand?.rating > 0 && (
+                            <p className="text-[11px] text-muted-foreground/70">
+                              ★ {campaign.brand.rating.toFixed(1)} ·{" "}
+                              {campaign.brand.review_count} {t("card.reviews")}
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Title */}
+                        <h3 className="mt-1.5 line-clamp-2 text-sm font-semibold leading-snug text-foreground">
+                          {campaign.title}
+                        </h3>
+
+                        {/* Description preview */}
+                        {campaign.brief_description && (
+                          <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
+                            {campaign.brief_description}
                           </p>
                         )}
+
+                        {/* Meta row: platforms + markets */}
+                        <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                          {campaign.platforms.map((p) => {
+                            const Icon = PlatformIcon[p as Platform];
+                            return Icon ? (
+                              <span
+                                key={p}
+                                className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/50"
+                              >
+                                <Icon className="size-3" />
+                                {PLATFORM_LABELS[p as Platform]}
+                              </span>
+                            ) : null;
+                          })}
+                          {campaign.markets.slice(0, 3).map((m) => (
+                            <span
+                              key={m}
+                              className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground/70 ring-1 ring-border/50"
+                            >
+                              {getMarketLabel(m, locale)}
+                            </span>
+                          ))}
+                          {campaign.markets.length > 3 && (
+                            <span className="text-[11px] text-muted-foreground/70">
+                              +{campaign.markets.length - 3}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-
-                    {/* Title */}
-                    <h3 className="mt-2.5 pe-8 text-sm font-semibold text-foreground">
-                      {campaign.title}
-                    </h3>
-
-                    {/* Description preview */}
-                    {campaign.brief_description && (
-                      <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-                        {campaign.brief_description}
-                      </p>
-                    )}
-
-                    {/* Meta row: platforms + markets */}
-                    <div className="mt-3 flex flex-wrap items-center gap-1.5">
-                      {campaign.platforms.map((p) => {
-                        const Icon = PlatformIcon[p as Platform];
-                        return Icon ? (
-                          <span
-                            key={p}
-                            className="inline-flex items-center gap-1 rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-medium text-muted-foreground ring-1 ring-border/50"
-                          >
-                            <Icon className="size-3" />
-                            {PLATFORM_LABELS[p as Platform]}
-                          </span>
-                        ) : null;
-                      })}
-                      {campaign.markets.slice(0, 3).map((m) => (
-                        <span
-                          key={m}
-                          className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] text-muted-foreground/70 ring-1 ring-border/50"
-                        >
-                          {getMarketLabel(m, locale)}
-                        </span>
-                      ))}
-                      {campaign.markets.length > 3 && (
-                        <span className="text-[11px] text-muted-foreground/70">
-                          +{campaign.markets.length - 3}
-                        </span>
-                      )}
                     </div>
 
                     {/* Bottom row: budget + deadline + spots */}
-                    <div className="mt-3 flex items-center gap-4 text-xs">
+                    <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
                       <span className="font-semibold tabular-nums text-foreground">
-                        {formatBudgetRange(
+                        {formatBudgetPerCreatorRange(
                           campaign.budget_min,
                           campaign.budget_max,
+                          campaign.max_creators,
                           locale,
-                          campaign.budget_currency || "USD"
+                          campaign.budget_currency || "USD",
                         )}
                       </span>
                       <span

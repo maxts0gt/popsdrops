@@ -19,7 +19,7 @@ import {
   Clock,
   DollarSign,
   Globe,
-  Sparkles,
+  Target,
   X,
   Send,
 } from "lucide-react-native";
@@ -274,7 +274,7 @@ export default function CampaignDetailScreen() {
                 className="flex-row items-center gap-1 rounded-full px-3 py-1.5"
                 style={{ backgroundColor: palette.atmosphereTeal }}
               >
-                <Sparkles
+                <Target
                   size={12}
                   color={palette.textTertiary}
                   strokeWidth={2}
@@ -349,7 +349,7 @@ export default function CampaignDetailScreen() {
                   fontFamily: "Inter_700Bold",
                 }}
               >
-                {daysLeft !== null ? `${daysLeft}d` : "—"}
+                {daysLeft !== null ? `${daysLeft}d` : "-"}
               </Text>
               <Text
                 className="mt-1 text-[11px] uppercase tracking-[1.2px]"
@@ -741,7 +741,7 @@ export default function CampaignDetailScreen() {
                   }}
                 />
               </View>
-              {budgetLabel !== "—" ? (
+              {budgetLabel !== "-" ? (
                 <Text
                   className="mt-2 text-xs"
                   style={{
@@ -851,10 +851,10 @@ function formatBudget(
     }).format(n);
 
   if (min != null && max != null) {
-    return min === max ? fmt(min) : `${fmt(min)}–${fmt(max)}`;
+    return min === max ? fmt(min) : `${fmt(min)} to ${fmt(max)}`;
   }
 
   if (min != null) return `${fmt(min)}+`;
   if (max != null) return `Up to ${fmt(max)}`;
-  return "—";
+  return "-";
 }

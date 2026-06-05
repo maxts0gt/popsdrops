@@ -11,7 +11,7 @@ import {
   ArrowRight,
   Search,
   AlertTriangle,
-  Sparkles,
+  Target,
   CheckCircle,
 } from "lucide-react-native";
 import { ProfileSetupCard } from "../../components/profile-setup-card";
@@ -48,7 +48,7 @@ function buildActionItems(
 ): ActionItem[] {
   const items: ActionItem[] = [];
 
-  // Counter offers — high priority
+  // Counter offers - high priority
   for (const app of workspace.campaigns.applications) {
     if (app.status === "counter_offer" && app.counterRate != null) {
       items.push({
@@ -77,6 +77,8 @@ function buildActionItems(
           title:
             daysLeft === 0
               ? t("home.dueToday")
+              : daysLeft === 1
+                ? t("home.dueTomorrow")
               : t("home.dueSoon", { days: String(daysLeft) }),
           subtitle: `${m.title} · ${m.brandName}`,
           detail: "",
@@ -251,7 +253,7 @@ export default function HomeScreen() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Workspace content — the main home screen for active creators
+// Workspace content - the main home screen for active creators
 // ─────────────────────────────────────────────────────────────────────────────
 
 function WorkspaceContent({
@@ -289,7 +291,7 @@ function WorkspaceContent({
     },
     {
       label: t("home.rating"),
-      value: "—",
+      value: "-",
       icon: Star,
     },
   ];
@@ -517,7 +519,7 @@ function SectionHeader({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Action card — urgency items with colored left accent
+// Action card - urgency items with colored left accent
 // ─────────────────────────────────────────────────────────────────────────────
 
 function ActionCard({
@@ -595,7 +597,7 @@ function ActionCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Campaign card — recommended campaigns
+// Campaign card - recommended campaigns
 // ─────────────────────────────────────────────────────────────────────────────
 
 function CampaignCard({
@@ -669,7 +671,7 @@ function CampaignCard({
         />
       </View>
 
-      {/* Meta row — platforms, budget, deadline */}
+      {/* Meta row - platforms, budget, deadline */}
       <View className="mt-3 flex-row flex-wrap items-center gap-2">
         {campaign.platforms.slice(0, 3).map((platform) => (
           <View
@@ -722,7 +724,7 @@ function CampaignCard({
             className="flex-row items-center gap-1 rounded-full px-2.5 py-1"
             style={{ backgroundColor: palette.atmosphereTeal }}
           >
-            <Sparkles size={11} color={palette.textTertiary} strokeWidth={2} />
+            <Target size={11} color={palette.textTertiary} strokeWidth={2} />
             <Text
               className="text-[11px]"
               style={{

@@ -10,6 +10,7 @@ import {
   BarChart3,
   FileText,
   Settings,
+  BriefcaseBusiness,
 } from "lucide-react";
 import {
   CommandDialog,
@@ -42,6 +43,7 @@ const quickActions: SearchResult[] = [
   { id: "approvals", label: "Review Approvals", href: "/admin/approvals", icon: ShieldCheck },
   { id: "users", label: "Manage Users", href: "/admin/users", icon: Users },
   { id: "campaigns", label: "View Campaigns", href: "/admin/campaigns", icon: Megaphone },
+  { id: "concierge", label: "Enterprise Concierge", href: "/admin/concierge", icon: BriefcaseBusiness },
   { id: "analytics", label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { id: "reports", label: "Reports", href: "/admin/reports", icon: FileText },
   { id: "settings", label: "Settings", href: "/admin/settings", icon: Settings },

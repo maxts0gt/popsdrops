@@ -16,21 +16,17 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
   facebook: "Facebook",
 };
 
-/** Platforms that support OAuth connection (MVP — no Facebook) */
-export const OAUTH_PLATFORMS: Platform[] = [
-  "instagram",
-  "tiktok",
-  "youtube",
-  "snapchat",
-];
+export function getPlatformLabel(platform: string): string {
+  if (platform in PLATFORM_LABELS) {
+    return PLATFORM_LABELS[platform as Platform];
+  }
 
-/** Branded button labels for OAuth connect */
-export const PLATFORM_CONNECT_LABELS: Partial<Record<Platform, string>> = {
-  instagram: "Connect Instagram",
-  tiktok: "Connect TikTok",
-  youtube: "Connect YouTube",
-  snapchat: "Connect Snapchat",
-};
+  return platform
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
 
 export const PLATFORM_COLORS: Record<Platform, string> = {
   tiktok: "bg-black text-white",
@@ -80,102 +76,604 @@ export const NICHE_LABELS: Record<Niche, string> = {
 };
 
 export const MARKETS = [
-  "argentina",
-  "australia",
-  "bahrain",
-  "bangladesh",
-  "brazil",
-  "canada",
-  "chile",
-  "china",
-  "colombia",
-  "egypt",
-  "france",
-  "germany",
-  "india",
-  "indonesia",
-  "iraq",
-  "italy",
-  "japan",
-  "jordan",
-  "kazakhstan",
-  "kenya",
-  "kuwait",
-  "malaysia",
-  "mexico",
-  "morocco",
-  "netherlands",
-  "nigeria",
-  "oman",
-  "pakistan",
-  "philippines",
-  "poland",
-  "qatar",
-  "russia",
-  "saudi_arabia",
-  "singapore",
-  "south_africa",
-  "south_korea",
-  "spain",
-  "sweden",
-  "thailand",
-  "turkey",
-  "uae",
-  "uk",
+  "af",
+  "ax",
+  "al",
+  "dz",
+  "as",
+  "ad",
+  "ao",
+  "ai",
+  "aq",
+  "ag",
+  "ar",
+  "am",
+  "aw",
+  "au",
+  "at",
+  "az",
+  "bs",
+  "bh",
+  "bd",
+  "bb",
+  "by",
+  "be",
+  "bz",
+  "bj",
+  "bm",
+  "bt",
+  "bo",
+  "bq",
+  "ba",
+  "bw",
+  "bv",
+  "br",
+  "io",
+  "bn",
+  "bg",
+  "bf",
+  "bi",
+  "kh",
+  "cm",
+  "ca",
+  "cv",
+  "ky",
+  "cf",
+  "td",
+  "cl",
+  "cn",
+  "cx",
+  "cc",
+  "co",
+  "km",
+  "cg",
+  "cd",
+  "ck",
+  "cr",
+  "ci",
+  "hr",
+  "cu",
+  "cw",
+  "cy",
+  "cz",
+  "dk",
+  "dj",
+  "dm",
+  "do",
+  "ec",
+  "eg",
+  "sv",
+  "gq",
+  "er",
+  "ee",
+  "sz",
+  "et",
+  "fk",
+  "fo",
+  "fj",
+  "fi",
+  "fr",
+  "gf",
+  "pf",
+  "tf",
+  "ga",
+  "gm",
+  "ge",
+  "de",
+  "gh",
+  "gi",
+  "gr",
+  "gl",
+  "gd",
+  "gp",
+  "gu",
+  "gt",
+  "gg",
+  "gn",
+  "gw",
+  "gy",
+  "ht",
+  "hm",
+  "va",
+  "hn",
+  "hk",
+  "hu",
+  "is",
+  "in",
+  "id",
+  "ir",
+  "iq",
+  "ie",
+  "im",
+  "il",
+  "it",
+  "jm",
+  "jp",
+  "je",
+  "jo",
+  "kz",
+  "ke",
+  "ki",
+  "kp",
+  "kr",
+  "kw",
+  "kg",
+  "la",
+  "lv",
+  "lb",
+  "ls",
+  "lr",
+  "ly",
+  "li",
+  "lt",
+  "lu",
+  "mo",
+  "mg",
+  "mw",
+  "my",
+  "mv",
+  "ml",
+  "mt",
+  "mh",
+  "mq",
+  "mr",
+  "mu",
+  "yt",
+  "mx",
+  "fm",
+  "md",
+  "mc",
+  "mn",
+  "me",
+  "ms",
+  "ma",
+  "mz",
+  "mm",
+  "na",
+  "nr",
+  "np",
+  "nl",
+  "nc",
+  "nz",
+  "ni",
+  "ne",
+  "ng",
+  "nu",
+  "nf",
+  "mk",
+  "mp",
+  "no",
+  "om",
+  "pk",
+  "pw",
+  "ps",
+  "pa",
+  "pg",
+  "py",
+  "pe",
+  "ph",
+  "pn",
+  "pl",
+  "pt",
+  "pr",
+  "qa",
+  "re",
+  "ro",
+  "ru",
+  "rw",
+  "bl",
+  "sh",
+  "kn",
+  "lc",
+  "mf",
+  "pm",
+  "vc",
+  "ws",
+  "sm",
+  "st",
+  "sa",
+  "sn",
+  "rs",
+  "sc",
+  "sl",
+  "sg",
+  "sx",
+  "sk",
+  "si",
+  "sb",
+  "so",
+  "za",
+  "gs",
+  "ss",
+  "es",
+  "lk",
+  "sd",
+  "sr",
+  "sj",
+  "se",
+  "ch",
+  "sy",
+  "tw",
+  "tj",
+  "tz",
+  "th",
+  "tl",
+  "tg",
+  "tk",
+  "to",
+  "tt",
+  "tn",
+  "tr",
+  "tm",
+  "tc",
+  "tv",
+  "ug",
+  "ua",
+  "ae",
+  "gb",
   "us",
-  "uzbekistan",
-  "vietnam",
+  "um",
+  "uy",
+  "uz",
+  "vu",
+  "ve",
+  "vn",
+  "vg",
+  "vi",
+  "wf",
+  "eh",
+  "ye",
+  "zm",
+  "zw",
 ] as const;
 
 export type Market = (typeof MARKETS)[number];
 
-export const MARKET_LABELS: Record<Market, string> = {
-  argentina: "Argentina",
-  australia: "Australia",
-  bahrain: "Bahrain",
-  bangladesh: "Bangladesh",
-  brazil: "Brazil",
-  canada: "Canada",
-  chile: "Chile",
-  china: "China",
-  colombia: "Colombia",
-  egypt: "Egypt",
-  france: "France",
-  germany: "Germany",
-  india: "India",
-  indonesia: "Indonesia",
-  iraq: "Iraq",
-  italy: "Italy",
-  japan: "Japan",
-  jordan: "Jordan",
-  kazakhstan: "Kazakhstan",
-  kenya: "Kenya",
-  kuwait: "Kuwait",
-  malaysia: "Malaysia",
-  mexico: "Mexico",
-  morocco: "Morocco",
-  netherlands: "Netherlands",
-  nigeria: "Nigeria",
-  oman: "Oman",
-  pakistan: "Pakistan",
-  philippines: "Philippines",
-  poland: "Poland",
-  qatar: "Qatar",
-  russia: "Russia",
-  saudi_arabia: "Saudi Arabia",
-  singapore: "Singapore",
-  south_africa: "South Africa",
-  south_korea: "South Korea",
-  spain: "Spain",
-  sweden: "Sweden",
-  thailand: "Thailand",
-  turkey: "Turkey",
-  uae: "UAE",
-  uk: "United Kingdom",
-  us: "United States",
-  uzbekistan: "Uzbekistan",
-  vietnam: "Vietnam",
+export const MARKET_SCOPES = [
+  "global",
+  "region:apac",
+  "region:emea",
+  "region:americas",
+  "region:latam",
+] as const;
+
+export type MarketScope = (typeof MARKET_SCOPES)[number];
+export type CampaignMarket = Market | MarketScope;
+
+export const CAMPAIGN_MARKETS = [...MARKET_SCOPES, ...MARKETS] as const;
+
+export const MARKET_SCOPE_LABELS: Record<MarketScope, string> = {
+  global: "Global",
+  "region:apac": "APAC",
+  "region:emea": "EMEA",
+  "region:americas": "Americas",
+  "region:latam": "LATAM",
 };
+
+export const MARKET_SCOPE_OPTIONS = MARKET_SCOPES.map((scope) => ({
+  value: scope,
+  label: MARKET_SCOPE_LABELS[scope],
+}));
+
+const APAC_MARKETS = [
+  "as",
+  "au",
+  "bd",
+  "bn",
+  "bt",
+  "cc",
+  "ck",
+  "cn",
+  "cx",
+  "fj",
+  "fm",
+  "gu",
+  "hk",
+  "id",
+  "in",
+  "io",
+  "jp",
+  "kh",
+  "ki",
+  "kp",
+  "kr",
+  "la",
+  "lk",
+  "mh",
+  "mm",
+  "mn",
+  "mo",
+  "mp",
+  "mv",
+  "my",
+  "nc",
+  "nf",
+  "np",
+  "nr",
+  "nu",
+  "nz",
+  "pf",
+  "pg",
+  "ph",
+  "pn",
+  "pw",
+  "sb",
+  "sg",
+  "th",
+  "tk",
+  "tl",
+  "to",
+  "tv",
+  "tw",
+  "um",
+  "vn",
+  "vu",
+  "wf",
+  "ws",
+] as const satisfies readonly Market[];
+
+const EMEA_MARKETS = [
+  "ad",
+  "ae",
+  "af",
+  "al",
+  "am",
+  "ao",
+  "at",
+  "ax",
+  "az",
+  "ba",
+  "be",
+  "bf",
+  "bg",
+  "bh",
+  "bi",
+  "bj",
+  "bv",
+  "bw",
+  "by",
+  "cd",
+  "cf",
+  "cg",
+  "ch",
+  "ci",
+  "cm",
+  "cv",
+  "cy",
+  "cz",
+  "de",
+  "dj",
+  "dk",
+  "dz",
+  "ee",
+  "eg",
+  "eh",
+  "er",
+  "es",
+  "et",
+  "fi",
+  "fo",
+  "fr",
+  "ga",
+  "gb",
+  "ge",
+  "gg",
+  "gh",
+  "gi",
+  "gm",
+  "gn",
+  "gq",
+  "gr",
+  "gw",
+  "hr",
+  "hu",
+  "ie",
+  "il",
+  "im",
+  "iq",
+  "ir",
+  "is",
+  "it",
+  "je",
+  "jo",
+  "ke",
+  "kg",
+  "km",
+  "kw",
+  "kz",
+  "lb",
+  "li",
+  "lr",
+  "ls",
+  "lt",
+  "lu",
+  "lv",
+  "ly",
+  "ma",
+  "mc",
+  "md",
+  "me",
+  "mf",
+  "mg",
+  "mk",
+  "ml",
+  "mr",
+  "mt",
+  "mu",
+  "mw",
+  "mz",
+  "na",
+  "ne",
+  "ng",
+  "nl",
+  "no",
+  "om",
+  "ps",
+  "pl",
+  "pt",
+  "qa",
+  "re",
+  "ro",
+  "rs",
+  "ru",
+  "rw",
+  "sa",
+  "sc",
+  "sd",
+  "se",
+  "sh",
+  "si",
+  "sj",
+  "sk",
+  "sl",
+  "sm",
+  "sn",
+  "so",
+  "ss",
+  "st",
+  "sy",
+  "sz",
+  "td",
+  "tf",
+  "tg",
+  "tj",
+  "tm",
+  "tn",
+  "tr",
+  "tz",
+  "ua",
+  "ug",
+  "uz",
+  "va",
+  "yt",
+  "za",
+  "zm",
+  "zw",
+] as const satisfies readonly Market[];
+
+const LATAM_MARKETS = [
+  "ag",
+  "ai",
+  "ar",
+  "aw",
+  "bb",
+  "bl",
+  "bm",
+  "bo",
+  "bq",
+  "br",
+  "bs",
+  "bz",
+  "cl",
+  "co",
+  "cr",
+  "cu",
+  "cw",
+  "dm",
+  "do",
+  "ec",
+  "fk",
+  "gf",
+  "gd",
+  "gl",
+  "gp",
+  "gs",
+  "gt",
+  "gy",
+  "hn",
+  "ht",
+  "jm",
+  "kn",
+  "ky",
+  "lc",
+  "ms",
+  "mq",
+  "mx",
+  "ni",
+  "pa",
+  "pe",
+  "pr",
+  "pm",
+  "py",
+  "sr",
+  "sv",
+  "sx",
+  "tc",
+  "tt",
+  "uy",
+  "vc",
+  "ve",
+  "vg",
+  "vi",
+] as const satisfies readonly Market[];
+
+const AMERICAS_MARKETS = [
+  "ca",
+  "pm",
+  "us",
+  ...LATAM_MARKETS,
+] as const satisfies readonly Market[];
+
+const MARKET_SCOPE_MEMBERS: Record<
+  Exclude<MarketScope, "global">,
+  readonly Market[]
+> = {
+  "region:apac": APAC_MARKETS,
+  "region:emea": EMEA_MARKETS,
+  "region:americas": AMERICAS_MARKETS,
+  "region:latam": LATAM_MARKETS,
+};
+
+export function isMarketScope(market: string): market is MarketScope {
+  return MARKET_SCOPES.includes(market as MarketScope);
+}
+
+export function isCampaignMarket(market: string): market is CampaignMarket {
+  return (CAMPAIGN_MARKETS as readonly string[]).includes(
+    market.toLowerCase(),
+  );
+}
+
+export function sanitizeCampaignMarkets(
+  markets: readonly string[] | null | undefined,
+): CampaignMarket[] {
+  const cleanMarkets: CampaignMarket[] = [];
+
+  for (const market of markets ?? []) {
+    const normalized = market.trim().toLowerCase();
+    if (!isCampaignMarket(normalized)) continue;
+    if (normalized === "global") return ["global"];
+    if (!cleanMarkets.includes(normalized)) {
+      cleanMarkets.push(normalized);
+    }
+  }
+
+  return cleanMarkets;
+}
+
+const ENGLISH_REGION_NAMES = new Intl.DisplayNames(["en"], { type: "region" });
+const ENGLISH_REGION_NAME_OVERRIDES: Record<string, string> = {
+  FK: "Falkland Islands",
+  HK: "Hong Kong",
+  MO: "Macao",
+  PS: "Palestine",
+};
+
+export function normalizeEnglishRegionName(code: string, label: string): string {
+  return ENGLISH_REGION_NAME_OVERRIDES[code.toUpperCase()] ?? label;
+}
+
+export const MARKET_REGION_CODES = Object.fromEntries(
+  MARKETS.map((market) => [market, market.toUpperCase()]),
+) as Record<Market, string>;
+
+export const MARKET_LABELS = Object.fromEntries(
+  MARKETS.map((market) => {
+    const code = MARKET_REGION_CODES[market];
+    const label = ENGLISH_REGION_NAMES.of(code) || code;
+    return [market, normalizeEnglishRegionName(code, label)];
+  }),
+) as Record<Market, string>;
 
 export const LANGUAGES = [
   "arabic",
@@ -362,34 +860,118 @@ export const CREATOR_TIER_COLORS: Record<CreatorTier, string> = {
   top: "bg-amber-200 text-amber-800 dark:bg-amber-900 dark:text-amber-200",
 };
 
-// ISO 3166-1 alpha-2 codes for Intl.DisplayNames translation
-const MARKET_REGION_CODES: Record<Market, string> = {
-  argentina: "AR", australia: "AU", bahrain: "BH", bangladesh: "BD",
-  brazil: "BR", canada: "CA", chile: "CL", china: "CN",
-  colombia: "CO", egypt: "EG", france: "FR", germany: "DE",
-  india: "IN", indonesia: "ID", iraq: "IQ", italy: "IT",
-  japan: "JP", jordan: "JO", kazakhstan: "KZ", kenya: "KE",
-  kuwait: "KW", malaysia: "MY", mexico: "MX", morocco: "MA",
-  netherlands: "NL", nigeria: "NG", oman: "OM", pakistan: "PK",
-  philippines: "PH", poland: "PL", qatar: "QA", russia: "RU", saudi_arabia: "SA",
-  singapore: "SG", south_africa: "ZA", south_korea: "KR", spain: "ES",
-  sweden: "SE", thailand: "TH", turkey: "TR", uae: "AE",
-  uk: "GB", us: "US", uzbekistan: "UZ", vietnam: "VN",
+const LEGACY_MARKET_REGION_CODES: Record<string, string> = {
+  argentina: "AR",
+  australia: "AU",
+  bahrain: "BH",
+  bangladesh: "BD",
+  brazil: "BR",
+  canada: "CA",
+  chile: "CL",
+  china: "CN",
+  colombia: "CO",
+  egypt: "EG",
+  france: "FR",
+  germany: "DE",
+  india: "IN",
+  indonesia: "ID",
+  iraq: "IQ",
+  italy: "IT",
+  japan: "JP",
+  jordan: "JO",
+  kazakhstan: "KZ",
+  kenya: "KE",
+  kuwait: "KW",
+  malaysia: "MY",
+  mexico: "MX",
+  morocco: "MA",
+  netherlands: "NL",
+  nigeria: "NG",
+  oman: "OM",
+  pakistan: "PK",
+  philippines: "PH",
+  poland: "PL",
+  qatar: "QA",
+  russia: "RU",
+  saudi_arabia: "SA",
+  singapore: "SG",
+  south_africa: "ZA",
+  south_korea: "KR",
+  spain: "ES",
+  sweden: "SE",
+  thailand: "TH",
+  turkey: "TR",
+  uae: "AE",
+  uk: "GB",
+  us: "US",
+  uzbekistan: "UZ",
+  vietnam: "VN",
 };
+
+function getMarketRegionCode(market: string): string | undefined {
+  const normalized = market.toLowerCase();
+
+  if (normalized in MARKET_REGION_CODES) {
+    return MARKET_REGION_CODES[normalized as Market];
+  }
+
+  if (/^[a-z]{2}$/.test(normalized)) {
+    return normalized.toUpperCase();
+  }
+
+  return LEGACY_MARKET_REGION_CODES[normalized];
+}
+
+function getNormalizedMarket(market: string): Market | undefined {
+  const code = getMarketRegionCode(market);
+  if (!code) return undefined;
+
+  const normalized = code.toLowerCase();
+  return MARKETS.includes(normalized as Market) ? (normalized as Market) : undefined;
+}
 
 /**
  * Get market name in the user's locale. Falls back to English label.
- * Uses Intl.DisplayNames — translates "japan" → "日本" for ja locale.
+ * Uses Intl.DisplayNames for locale-specific country names.
  */
 export function getMarketLabel(market: string, locale = "en"): string {
-  const code = MARKET_REGION_CODES[market as Market];
-  if (!code) return MARKET_LABELS[market as Market] || market;
+  if (isMarketScope(market)) {
+    return MARKET_SCOPE_LABELS[market];
+  }
+
+  const code = getMarketRegionCode(market);
+  if (!code) return market;
+
   try {
     const dn = new Intl.DisplayNames([locale], { type: "region" });
-    return dn.of(code) || MARKET_LABELS[market as Market] || market;
+    const label = dn.of(code) || MARKET_LABELS[market as Market] || market;
+    return locale === "en" ? normalizeEnglishRegionName(code, label) : label;
   } catch {
     return MARKET_LABELS[market as Market] || market;
   }
+}
+
+export function campaignMarketsIncludeCreatorMarket(
+  campaignMarkets: readonly string[],
+  creatorMarket: string,
+): boolean {
+  const normalizedCreatorMarket = getNormalizedMarket(creatorMarket);
+  if (!normalizedCreatorMarket) return false;
+
+  const normalizedCampaignMarkets = new Set(
+    campaignMarkets.map((market) => market.toLowerCase()),
+  );
+
+  if (normalizedCampaignMarkets.has("global")) return true;
+  if (normalizedCampaignMarkets.has(normalizedCreatorMarket)) return true;
+
+  return (Object.entries(MARKET_SCOPE_MEMBERS) as Array<
+    [Exclude<MarketScope, "global">, readonly Market[]]
+  >).some(
+    ([scope, scopeMarkets]) =>
+      normalizedCampaignMarkets.has(scope) &&
+      scopeMarkets.includes(normalizedCreatorMarket),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -418,10 +1000,39 @@ export function formatBudgetRange(
   currency = "USD",
 ): string {
   const fmt = (n: number) => formatCurrency(n, locale, currency);
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
-  if (min) return fmt(min) + "+";
-  if (max) return `≤ ${fmt(max)}`;
-  return "—";
+  if (min != null && max != null) {
+    if (min === max) return fmt(min);
+    return `${fmt(min)} - ${fmt(max)}`;
+  }
+  if (min != null) return fmt(min) + "+";
+  if (max != null) return `<= ${fmt(max)}`;
+  return "-";
+}
+
+/** Divide total creator cash by planned creator count for creator-facing pay. */
+export function getBudgetPerCreatorAmount(
+  amount: number | null,
+  maxCreators: number | null | undefined,
+): number | null {
+  if (amount == null) return null;
+  const creatorCount = maxCreators && maxCreators > 0 ? maxCreators : 1;
+  return amount / creatorCount;
+}
+
+/** Locale-aware per-creator pay range derived from total campaign creator cash. */
+export function formatBudgetPerCreatorRange(
+  min: number | null,
+  max: number | null,
+  maxCreators: number | null | undefined,
+  locale = "en",
+  currency = "USD",
+): string {
+  return formatBudgetRange(
+    getBudgetPerCreatorAmount(min, maxCreators),
+    getBudgetPerCreatorAmount(max, maxCreators),
+    locale,
+    currency,
+  );
 }
 
 // Niche and content format string keys for i18n (resolved via t())
@@ -440,7 +1051,7 @@ export const FORMAT_KEYS: Record<ContentFormat, string> = {
   reel: "format.reel", carousel: "format.carousel", live: "format.live",
 };
 
-// Market rate multiplier (vs US rates) — used for rate benchmarking
+// Market rate multiplier (vs US rates) - used for rate benchmarking
 export const MARKET_RATE_MULTIPLIER: Record<string, number> = {
   us: 1.0,
   uk: 0.85,

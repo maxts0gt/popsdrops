@@ -25,22 +25,6 @@ export const PLATFORM_LABELS: Record<Platform, string> = {
   facebook: "Facebook",
 };
 
-/** Platforms that support OAuth connection (MVP — no Facebook) */
-export const OAUTH_PLATFORMS: Platform[] = [
-  "instagram",
-  "tiktok",
-  "youtube",
-  "snapchat",
-];
-
-/** Branded button labels for OAuth connect */
-export const PLATFORM_CONNECT_LABELS: Partial<Record<Platform, string>> = {
-  instagram: "Connect Instagram",
-  tiktok: "Connect TikTok",
-  youtube: "Connect YouTube",
-  snapchat: "Connect Snapchat",
-};
-
 export const PLATFORM_COLORS: Record<Platform, string> = {
   tiktok: "bg-black text-white",
   instagram:
@@ -226,7 +210,7 @@ export const MARKET_REGION_CODES: Record<Market, string> = {
   uk: "GB", us: "US", uzbekistan: "UZ", vietnam: "VN",
 };
 
-// Market rate multiplier (vs US rates) — used for rate benchmarking
+// Market rate multiplier (vs US rates) - used for rate benchmarking
 export const MARKET_RATE_MULTIPLIER: Record<string, number> = {
   us: 1.0,
   uk: 0.85,
@@ -512,7 +496,7 @@ export const ER_BENCHMARKS: Record<
 
 /**
  * Get market name in the user's locale. Falls back to English label.
- * Uses Intl.DisplayNames — translates "japan" to its native name for the given locale.
+ * Uses Intl.DisplayNames - translates "japan" to its native name for the given locale.
  */
 export function getMarketLabel(market: string, locale = "en"): string {
   const code = MARKET_REGION_CODES[market as Market];
@@ -547,10 +531,10 @@ export function formatBudgetRange(
   currency = "USD",
 ): string {
   const fmt = (n: number) => formatCurrency(n, locale, currency);
-  if (min && max) return `${fmt(min)} – ${fmt(max)}`;
+  if (min && max) return `${fmt(min)} to ${fmt(max)}`;
   if (min) return fmt(min) + "+";
   if (max) return `≤ ${fmt(max)}`;
-  return "—";
+  return "-";
 }
 
 /** Follower tier definitions */

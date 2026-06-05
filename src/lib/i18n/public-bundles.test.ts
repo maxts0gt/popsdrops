@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 
 import type { PageKey } from "./strings";
 import {
+  PUBLIC_TRANSLATION_BUNDLES,
+} from "./generated/public-translation-manifest";
+import { PUBLIC_TRANSLATION_LOCALES } from "./generated/public-translation-locales";
+import {
   PUBLIC_BUNDLE_PAGE_KEYS,
   buildPublicBundleFallback,
   resolvePublicBundleTranslations,
@@ -18,6 +22,7 @@ describe("public translation bundles", () => {
     });
 
     expect(bundled["ui.common"]?.["nav.login"]).toBe("로그인");
+    expect(bundled["public.apply"]?.["privateInvite.title"]).toBe("Private invite");
   });
 
   it("applies editorial overrides for premium public copy", () => {
@@ -43,7 +48,7 @@ describe("public translation bundles", () => {
       [...PUBLIC_BUNDLE_PAGE_KEYS].sort(),
     );
     expect(fallback["marketing.landing"]?.headline).toBe(
-      "Creator campaigns.\nAny market. Any language.",
+      "Run private creator campaigns.\nIn markets you cannot reach alone.",
     );
   });
 
@@ -52,5 +57,16 @@ describe("public translation bundles", () => {
 
     expect(fallback["brand.home"]).toBeUndefined();
     expect(fallback["public.apply"]).toBeDefined();
+  });
+
+  it("keeps generated public common bundles free of message navigation copy", () => {
+    for (const locale of PUBLIC_TRANSLATION_LOCALES) {
+      const bundle = PUBLIC_TRANSLATION_BUNDLES[locale]!;
+
+      expect(bundle["ui.common"]?.["nav.communications"]).toBeTruthy();
+      expect(bundle["ui.common"]?.["nav.messages"]).toBeUndefined();
+      expect(bundle["ui.common"]?.["empty.noUpdates"]).toBeTruthy();
+      expect(bundle["ui.common"]?.["empty.noMessages"]).toBeUndefined();
+    }
   });
 });

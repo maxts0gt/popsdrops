@@ -1,810 +1,624 @@
-"use client";
-
-import { useState, useEffect, useCallback } from "react";
+import { notFound } from "next/navigation";
 import {
+  AlertTriangle,
+  CheckCircle2,
   Clock,
-  Download,
-  ExternalLink,
-  Flag,
-  Inbox,
-  Mail,
-  RefreshCw,
-  ShieldBan,
-  Star,
+  FileWarning,
+  ShieldCheck,
+  UploadCloud,
 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
+import { getUser } from "@/app/actions/auth";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { createClient } from "@/lib/supabase/client";
-import { getSingleRelation } from "@/lib/supabase/relations";
-import { suspendUser, extendContentDeadline } from "@/app/actions/admin";
-import { toast } from "sonner";
+  buildReportCommandCenter,
+  formatReportCommandDateTime as formatDateTime,
+  toneForReportCommandKind as toneForKind,
+  type ReportCommandCampaignMeta as CampaignMeta,
+  type ReportCommandCenter as ReportCommandCenter,
+  type ReportCommandEvidenceRow as EvidenceRow,
+  type ReportCommandExportJobRow as ReportExportJobRow,
+  type ReportCommandTaskRow as ReportTaskRow,
+} from "@/lib/admin/report-command-center";
+import { createAdminClient } from "@/lib/supabase/admin";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+export const dynamic = "force-dynamic";
 
-interface FlaggedSubmission {
-  id: string;
-  revision_count: number;
-  status: string;
-  campaign_title: string;
-  campaign_id: string;
-  creator_name: string;
-  creator_id: string;
-  creator_email: string;
-  updated_at: string;
+async function assertAdmin() {
+  const user = await getUser();
+  const admin = createAdminClient();
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (profile?.role !== "admin") notFound();
 }
 
-interface OverdueCampaign {
-  id: string;
-  title: string;
-  content_due_date: string;
-  pending_submissions: number;
-  brand_name: string;
-  brand_email: string;
+function singleRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
 }
 
-interface LowReview {
-  id: string;
-  rating: number;
-  comment: string | null;
-  reviewer_name: string;
-  reviewee_name: string;
-  reviewee_id: string;
-  reviewee_email: string;
-  campaign_title: string;
-  campaign_id: string;
-  created_at: string;
-}
+async function loadCampaigns(campaignIds: string[]): Promise<Map<string, CampaignMeta>> {
+  const admin = createAdminClient();
+  if (campaignIds.length === 0) return new Map();
 
-interface ProfileRelationRecord {
-  id?: string | null;
-  full_name: string | null;
-  email?: string | null;
-}
+  const { data, error } = await admin
+    .from("campaigns")
+    .select("id, title, status, brand:profiles!campaigns_brand_id_fkey(full_name)")
+    .in("id", campaignIds);
 
-interface CampaignRelationRecord {
-  id: string;
-  title: string | null;
-}
+  if (error) throw new Error(error.message);
 
-interface CampaignMemberRelationRecord {
-  campaign:
-    | CampaignRelationRecord
-    | CampaignRelationRecord[]
-    | null;
-  creator:
-    | ProfileRelationRecord
-    | ProfileRelationRecord[]
-    | null;
-}
-
-interface FlaggedSubmissionRow {
-  id: string;
-  revision_count: number;
-  status: string;
-  updated_at: string;
-  campaign_member:
-    | CampaignMemberRelationRecord
-    | CampaignMemberRelationRecord[]
-    | null;
-}
-
-interface OverdueCampaignRow {
-  id: string;
-  title: string;
-  content_due_date: string;
-  brand:
-    | ProfileRelationRecord
-    | ProfileRelationRecord[]
-    | null;
-}
-
-interface CampaignMemberIdRow {
-  id: string;
-}
-
-interface LowReviewRow {
-  id: string;
-  rating: number;
-  comment: string | null;
-  created_at: string;
-  reviewer:
-    | ProfileRelationRecord
-    | ProfileRelationRecord[]
-    | null;
-  reviewee:
-    | ProfileRelationRecord
-    | ProfileRelationRecord[]
-    | null;
-  campaign:
-    | CampaignRelationRecord
-    | CampaignRelationRecord[]
-    | null;
-}
-
-// ---------------------------------------------------------------------------
-// Empty state
-// ---------------------------------------------------------------------------
-
-function EmptyState({ message, detail }: { message: string; detail?: string }) {
-  return (
-    <div className="rounded-lg border border-dashed border-border py-12 text-center">
-      <Inbox className="mx-auto mb-3 size-8 text-muted-foreground/50" />
-      <p className="text-sm text-muted-foreground">{message}</p>
-      {detail && (
-        <p className="mt-1 text-xs text-muted-foreground/70">{detail}</p>
-      )}
-    </div>
+  return new Map(
+    ((data ?? []) as Array<{
+      id: string;
+      title: string | null;
+      status: string | null;
+      brand?: { full_name: string | null } | Array<{ full_name: string | null }> | null;
+    }>).map((campaign) => {
+      const brand = singleRelation(campaign.brand);
+      return [
+        campaign.id,
+        {
+          brandName: brand?.full_name ?? "Unknown brand",
+          id: campaign.id,
+          status: campaign.status ?? "unknown",
+          title: campaign.title ?? "Unknown campaign",
+        },
+      ];
+    }),
   );
 }
 
-// ---------------------------------------------------------------------------
-// CSV Export
-// ---------------------------------------------------------------------------
+async function fetchReportCommandCenter(): Promise<ReportCommandCenter> {
+  const admin = createAdminClient();
+  const [
+    { data: taskData, error: taskError },
+    { data: evidenceData, error: evidenceError },
+    { data: exportData, error: exportError },
+  ] = await Promise.all([
+    admin
+      .from("campaign_report_tasks")
+      .select(
+        "id, campaign_id, campaign_member_id, due_at, missed_at, review_note, status, submitted_at, updated_at",
+      )
+      .in("status", ["submitted", "missed", "needs_revision"])
+      .order("updated_at", { ascending: false })
+      .limit(80),
+    admin
+      .from("content_performance_evidence")
+      .select(
+        "id, campaign_id, campaign_member_id, report_task_id, file_name, verification_status, review_note, created_at",
+      )
+      .in("verification_status", ["submitted", "rejected"])
+      .order("created_at", { ascending: false })
+      .limit(80),
+    admin
+      .from("report_export_jobs")
+      .select("id, campaign_id, format, status, file_name, error_message, created_at")
+      .eq("status", "failed")
+      .order("created_at", { ascending: false })
+      .limit(40),
+  ]);
 
-function exportCSV(
-  flagged: FlaggedSubmission[],
-  overdue: OverdueCampaign[],
-  lowReviews: LowReview[]
-) {
-  const headers = ["Category", "Title", "Detail", "Person", "Email", "Date"];
-  const rows: string[][] = [];
+  if (taskError) throw new Error(taskError.message);
+  if (evidenceError) throw new Error(evidenceError.message);
+  if (exportError) throw new Error(exportError.message);
 
-  for (const item of flagged) {
-    rows.push([
-      "Flagged Content",
-      `${item.revision_count} revisions`,
-      item.campaign_title,
-      item.creator_name,
-      item.creator_email,
-      new Date(item.updated_at).toISOString(),
-    ]);
-  }
+  const tasks = (taskData ?? []) as ReportTaskRow[];
+  const evidenceRows = (evidenceData ?? []) as EvidenceRow[];
+  const exportRows = (exportData ?? []) as ReportExportJobRow[];
+  const campaignIds = Array.from(
+    new Set([
+      ...tasks.map((row) => row.campaign_id),
+      ...evidenceRows.map((row) => row.campaign_id),
+      ...exportRows.map((row) => row.campaign_id),
+    ]),
+  );
+  const campaignMap = await loadCampaigns(campaignIds);
 
-  for (const item of overdue) {
-    rows.push([
-      "Overdue Campaign",
-      item.title,
-      `${item.pending_submissions} pending submissions`,
-      item.brand_name,
-      item.brand_email,
-      item.content_due_date,
-    ]);
-  }
-
-  for (const item of lowReviews) {
-    rows.push([
-      "Low Review",
-      `${item.rating}/5 - ${item.campaign_title}`,
-      item.comment ?? "",
-      `${item.reviewer_name} rated ${item.reviewee_name}`,
-      item.reviewee_email,
-      new Date(item.created_at).toISOString(),
-    ]);
-  }
-
-  const csv = [headers, ...rows]
-    .map((r) =>
-      r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")
-    )
-    .join("\n");
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `reports-${new Date().toISOString().split("T")[0]}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
+  return buildReportCommandCenter({
+    campaigns: campaignMap,
+    evidenceRows,
+    exportRows,
+    tasks,
+  });
 }
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
-
-export default function AdminReportsPage() {
-  const [flagged, setFlagged] = useState<FlaggedSubmission[]>([]);
-  const [overdue, setOverdue] = useState<OverdueCampaign[]>([]);
-  const [lowReviews, setLowReviews] = useState<LowReview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // Suspend dialog state
-  const [suspendTarget, setSuspendTarget] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
-  const [suspendReason, setSuspendReason] = useState("");
-  const [suspendSubmitting, setSuspendSubmitting] = useState(false);
-
-  // Extend deadline dialog state
-  const [deadlineTarget, setDeadlineTarget] = useState<{
-    id: string;
-    title: string;
-    currentDeadline: string;
-  } | null>(null);
-  const [newDeadline, setNewDeadline] = useState("");
-  const [deadlineSubmitting, setDeadlineSubmitting] = useState(false);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    const supabase = createClient();
-
-    // 1. Flagged content: revision_requested submissions with revision_count >= 2
-    const { data: flaggedData } = await supabase
-      .from("content_submissions")
-      .select(
-        `id, revision_count, status, updated_at,
-         campaign_member:campaign_members!inner(
-           campaign:campaigns!inner(id, title),
-           creator:profiles!campaign_members_creator_id_fkey(id, full_name, email)
-         )`
-      )
-      .eq("status", "revision_requested")
-      .gte("revision_count", 2)
-      .order("updated_at", { ascending: false })
-      .limit(50);
-
-    const flaggedRows: FlaggedSubmission[] = (flaggedData ?? []).map((row) => {
-      const submission = row as FlaggedSubmissionRow;
-      const member = getSingleRelation(submission.campaign_member);
-      const campaign = getSingleRelation(member?.campaign);
-      const creator = getSingleRelation(member?.creator);
-
-      return {
-        id: submission.id,
-        revision_count: submission.revision_count,
-        status: submission.status,
-        campaign_title: campaign?.title ?? "Unknown",
-        campaign_id: campaign?.id ?? "",
-        creator_name: creator?.full_name ?? "Unknown",
-        creator_id: creator?.id ?? "",
-        creator_email: creator?.email ?? "",
-        updated_at: submission.updated_at,
-      };
-    });
-    setFlagged(flaggedRows);
-
-    // 2. Overdue campaigns: content_due_date < now, with pending/submitted content
-    const now = new Date().toISOString();
-    const { data: overdueCampaigns } = await supabase
-      .from("campaigns")
-      .select(
-        `id, title, content_due_date,
-         brand:profiles!campaigns_brand_id_fkey(full_name, email)`
-      )
-      .lt("content_due_date", now)
-      .not("status", "in", '("completed","cancelled")')
-      .order("content_due_date", { ascending: true })
-      .limit(50);
-
-    const overdueRows: OverdueCampaign[] = [];
-    for (const camp of (overdueCampaigns ?? []) as OverdueCampaignRow[]) {
-      const brand = getSingleRelation(camp.brand);
-      const { data: memberRows } = await supabase
-        .from("campaign_members")
-        .select("id")
-        .eq("campaign_id", camp.id);
-
-      const { count } = await supabase
-        .from("content_submissions")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["draft", "submitted", "revision_requested"])
-        .in(
-          "campaign_member_id",
-          ((memberRows ?? []) as CampaignMemberIdRow[]).map(
-            (member) => member.id,
-          ),
-        );
-
-      if ((count ?? 0) > 0) {
-        overdueRows.push({
-          id: camp.id,
-          title: camp.title,
-          content_due_date: camp.content_due_date,
-          pending_submissions: count ?? 0,
-          brand_name: brand?.full_name ?? "Unknown",
-          brand_email: brand?.email ?? "",
-        });
-      }
-    }
-    setOverdue(overdueRows);
-
-    // 3. Low-rated reviews (rating <= 2)
-    const { data: lowReviewData } = await supabase
-      .from("reviews")
-      .select(
-        `id, rating, comment, created_at,
-         reviewer:profiles!reviews_reviewer_id_fkey(full_name),
-         reviewee:profiles!reviews_reviewee_id_fkey(id, full_name, email),
-         campaign:campaigns!inner(id, title)`
-      )
-      .lte("rating", 2)
-      .order("created_at", { ascending: false })
-      .limit(50);
-
-    const lowRows: LowReview[] = (lowReviewData ?? []).map((row) => {
-      const review = row as LowReviewRow;
-      const reviewer = getSingleRelation(review.reviewer);
-      const reviewee = getSingleRelation(review.reviewee);
-      const campaign = getSingleRelation(review.campaign);
-
-      return {
-        id: review.id,
-        rating: review.rating,
-        comment: review.comment,
-        reviewer_name: reviewer?.full_name ?? "Unknown",
-        reviewee_name: reviewee?.full_name ?? "Unknown",
-        reviewee_id: reviewee?.id ?? "",
-        reviewee_email: reviewee?.email ?? "",
-        campaign_title: campaign?.title ?? "Unknown",
-        campaign_id: campaign?.id ?? "",
-        created_at: review.created_at,
-      };
-    });
-    setLowReviews(lowRows);
-
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load, refreshKey]);
-
-  // ---------------------------------------------------------------------------
-  // Handlers
-  // ---------------------------------------------------------------------------
-
-  function handleRefresh() {
-    setRefreshKey((k) => k + 1);
-  }
-
-  async function handleSuspend() {
-    if (!suspendTarget || !suspendReason.trim()) return;
-    setSuspendSubmitting(true);
-    try {
-      await suspendUser(suspendTarget.id, suspendReason.trim());
-      toast.success(`${suspendTarget.name} suspended`);
-      setSuspendTarget(null);
-      setSuspendReason("");
-      handleRefresh();
-    } catch {
-      toast.error("Failed to suspend user");
-    } finally {
-      setSuspendSubmitting(false);
-    }
-  }
-
-  async function handleExtendDeadline() {
-    if (!deadlineTarget || !newDeadline) return;
-    setDeadlineSubmitting(true);
-    try {
-      await extendContentDeadline(deadlineTarget.id, newDeadline);
-      toast.success(`Deadline extended for "${deadlineTarget.title}"`);
-      setDeadlineTarget(null);
-      setNewDeadline("");
-      handleRefresh();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Failed to extend deadline",
-      );
-    } finally {
-      setDeadlineSubmitting(false);
-    }
-  }
-
-  const totalActive = flagged.length + overdue.length + lowReviews.length;
-  const hasData =
-    flagged.length > 0 || overdue.length > 0 || lowReviews.length > 0;
-
+function SummaryCard({
+  detail,
+  icon: Icon,
+  label,
+  value,
+  valueTestId,
+}: {
+  detail: string;
+  icon: typeof ShieldCheck;
+  label: string;
+  value: number;
+  valueTestId?: string;
+}) {
   return (
-    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Reports & Disputes
-          </h1>
-          <div className="text-sm text-muted-foreground">
-            {loading ? (
-              <Skeleton className="inline-block h-4 w-32" />
-            ) : (
-              `${totalActive} item${totalActive !== 1 ? "s" : ""} requiring attention`
-            )}
+    <Card>
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">{label}</p>
+            <p
+              data-testid={valueTestId}
+              className="mt-2 text-2xl font-semibold tabular-nums text-slate-800"
+            >
+              {value}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+          </div>
+          <div className="flex size-9 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+            <Icon className="size-4" />
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => exportCSV(flagged, overdue, lowReviews)}
-            disabled={loading || !hasData}
-          >
-            <Download className="me-1.5 size-4" />
-            Export CSV
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={loading}
-          >
-            <RefreshCw
-              className={`me-1.5 size-4 ${loading ? "animate-spin" : ""}`}
-            />
-            Refresh
-          </Button>
+      </CardContent>
+    </Card>
+  );
+}
+
+export default async function AdminReportsPage() {
+  await assertAdmin();
+  const command = await fetchReportCommandCenter();
+  const priorityException = command.rows[0] ?? null;
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Proof room exceptions
+          </p>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900">
+            Report command center
+          </h1>
+          <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+            Evidence review, missed report tasks, correction requests, and failed
+            exports before they reach leadership.
+          </p>
+        </div>
+        <LinkButton href="/admin/campaigns" variant="outline" size="sm">
+          Open campaign queue
+        </LinkButton>
+      </div>
+
+      <div
+        data-testid="admin-report-priority-rail"
+        className="overflow-hidden rounded-xl border border-slate-900 bg-slate-950 text-white shadow-sm"
+      >
+        <div className="grid gap-4 p-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-400">
+              Priority intervention
+            </p>
+            {priorityException ? (
+              <>
+                <div className="mt-3 flex min-w-0 flex-wrap items-center gap-2">
+                  <span
+                    data-testid="admin-report-priority-kind"
+                    className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${toneForKind(priorityException.kind)}`}
+                  >
+                    {priorityException.label}
+                  </span>
+                  <p
+                    data-testid="admin-report-priority-title"
+                    className="truncate text-lg font-semibold leading-tight text-white"
+                  >
+                    {priorityException.title}
+                  </p>
+                </div>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                  {priorityException.detail}
+                </p>
+                <div className="mt-4 grid gap-3 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1.45fr)]">
+                  <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Leadership impact
+                    </p>
+                    <p
+                      data-testid="admin-report-priority-impact"
+                      className="mt-1 text-xs leading-5 text-slate-200"
+                    >
+                      {priorityException.impact}
+                    </p>
+                  </div>
+                  <div
+                    data-testid="admin-report-priority-share-gate-panel"
+                    className="rounded-xl border border-white/15 bg-white/[0.07] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Leadership share gate
+                    </p>
+                    <p
+                      data-testid="admin-report-priority-share-gate"
+                      className="mt-1 text-sm font-medium leading-6 text-white"
+                    >
+                      {priorityException.shareGate}
+                    </p>
+                    <p className="mt-1 text-xs leading-5 text-slate-400">
+                      Keep the report out of leadership handoff until this gate clears.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  data-testid="admin-report-priority-operations"
+                  className="mt-2 grid gap-2 sm:grid-cols-2 xl:grid-cols-4"
+                >
+                  <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Waiting
+                    </p>
+                    <p
+                      data-testid="admin-report-priority-age"
+                      className="mt-1 text-xs leading-5 text-slate-200"
+                    >
+                      {priorityException.waitingLabel}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Next move
+                    </p>
+                    <p
+                      data-testid="admin-report-priority-next-step"
+                      className="mt-1 text-xs leading-5 text-slate-200"
+                    >
+                      {priorityException.nextStep}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Escalation owner
+                    </p>
+                    <p
+                      data-testid="admin-report-priority-owner"
+                      className="mt-1 text-xs leading-5 text-slate-200"
+                    >
+                      {priorityException.owner}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                      Clears when
+                    </p>
+                    <p
+                      data-testid="admin-report-priority-clearance"
+                      className="mt-1 text-xs leading-5 text-slate-200"
+                    >
+                      {priorityException.clearance}
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 text-xs text-slate-400">
+                  {priorityException.campaign.title} /{" "}
+                  {priorityException.campaign.brandName} /{" "}
+                  {formatDateTime(priorityException.createdAt)}
+                </p>
+              </>
+            ) : (
+              <>
+                <p
+                  data-testid="admin-report-priority-title"
+                  className="mt-3 text-lg font-semibold leading-tight text-white"
+                >
+                  No open report exceptions
+                </p>
+                <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-300">
+                  Evidence review, missed-task, correction, and export queues are clear.
+                </p>
+              </>
+            )}
+          </div>
+          <div className="grid gap-2 sm:grid-cols-3 lg:w-[360px]">
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <p className="text-[11px] font-medium text-slate-400">Open</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-white">
+                {command.rows.length}
+              </p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <p className="text-[11px] font-medium text-slate-400">SLA</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-white">
+                {command.reviewSlaBreachCount}
+              </p>
+            </div>
+            <div className="rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2">
+              <p className="text-[11px] font-medium text-slate-400">Exports</p>
+              <p className="mt-1 text-xl font-semibold tabular-nums text-white">
+                {command.exportFailureCount}
+              </p>
+            </div>
+          </div>
+          {priorityException ? (
+            <div className="lg:col-start-2 lg:flex lg:justify-end">
+              <LinkButton
+                href={priorityException.actionHref}
+                variant="secondary"
+                size="sm"
+              >
+                {priorityException.actionLabel}
+              </LinkButton>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      <Tabs defaultValue="flagged">
-        <TabsList variant="line" className="mb-6">
-          <TabsTrigger value="flagged">
-            Flagged Content ({loading ? "..." : flagged.length})
-          </TabsTrigger>
-          <TabsTrigger value="overdue">
-            Overdue ({loading ? "..." : overdue.length})
-          </TabsTrigger>
-          <TabsTrigger value="low_reviews">
-            Low Reviews ({loading ? "..." : lowReviews.length})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Flagged Content */}
-        <TabsContent value="flagged">
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : flagged.length === 0 ? (
-            <EmptyState
-              message="No flagged content"
-              detail="Submissions with 2+ revisions requested will appear here"
-            />
-          ) : (
-            <div className="space-y-4">
-              {flagged.map((item) => (
-                <Card key={item.id}>
-                  <CardContent>
-                    <div className="flex items-start gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
-                        <Flag className="size-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-foreground">
-                            {item.revision_count} revisions requested
-                          </h3>
-                          <Badge variant="secondary" className="text-xs">
-                            {item.revision_count} revisions
-                          </Badge>
-                        </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{item.creator_name}</span>
-                          <span className="text-muted-foreground/50">|</span>
-                          <span>{item.campaign_title}</span>
-                        </div>
-                        <p className="mt-1 text-xs text-muted-foreground/70">
-                          Last updated{" "}
-                          {new Date(item.updated_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        {item.creator_email && (
-                          <a
-                            className={buttonVariants({
-                              variant: "ghost",
-                              size: "sm",
-                            })}
-                            href={`mailto:${item.creator_email}?subject=${encodeURIComponent(`Content Submission Reminder - ${item.campaign_title}`)}&body=${encodeURIComponent(`Hi ${item.creator_name},\n\nThis is a reminder regarding your content submission for "${item.campaign_title}". Your submission has had ${item.revision_count} revision requests.\n\nPlease review the feedback and submit your revised content at your earliest convenience.\n\nBest regards,\nPopsDrops Team`)}`}
-                          >
-                            <Mail className="me-1.5 size-4" />
-                            Contact Creator
-                          </a>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() =>
-                            setSuspendTarget({
-                              id: item.creator_id,
-                              name: item.creator_name,
-                            })
-                          }
-                        >
-                          <ShieldBan className="me-1.5 size-4" />
-                          Suspend
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Overdue Campaigns */}
-        <TabsContent value="overdue">
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : overdue.length === 0 ? (
-            <EmptyState
-              message="No overdue content"
-              detail="Campaigns past their content due date with pending submissions will appear here"
-            />
-          ) : (
-            <div className="space-y-4">
-              {overdue.map((item) => (
-                <Card key={item.id}>
-                  <CardContent>
-                    <div className="flex items-start gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                        <Clock className="size-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-medium text-foreground">
-                          {item.title}
-                        </h3>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>
-                            Due{" "}
-                            {new Date(
-                              item.content_due_date
-                            ).toLocaleDateString()}
-                          </span>
-                          <span className="text-muted-foreground/50">|</span>
-                          <span className="text-red-600">
-                            {item.pending_submissions} pending submission
-                            {item.pending_submissions !== 1 ? "s" : ""}
-                          </span>
-                          <span className="text-muted-foreground/50">|</span>
-                          <span>{item.brand_name}</span>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() =>
-                            setDeadlineTarget({
-                              id: item.id,
-                              title: item.title,
-                              currentDeadline: item.content_due_date,
-                            })
-                          }
-                        >
-                          <Clock className="me-1.5 size-4" />
-                          Extend Deadline
-                        </Button>
-                        {item.brand_email && (
-                          <a
-                            className={buttonVariants({
-                              variant: "ghost",
-                              size: "sm",
-                            })}
-                            href={`mailto:${item.brand_email}?subject=${encodeURIComponent(`Campaign Update - ${item.title}`)}&body=${encodeURIComponent(`Hi ${item.brand_name},\n\nWe wanted to follow up regarding your campaign "${item.title}". The content due date of ${new Date(item.content_due_date).toLocaleDateString()} has passed and there are still ${item.pending_submissions} pending submission(s).\n\nPlease let us know how you would like to proceed.\n\nBest regards,\nPopsDrops Team`)}`}
-                          >
-                            <Mail className="me-1.5 size-4" />
-                            Contact Brand
-                          </a>
-                        )}
-                        <LinkButton
-                          href="/admin/campaigns"
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <ExternalLink className="me-1.5 size-4" />
-                          View Campaign
-                        </LinkButton>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Low Reviews */}
-        <TabsContent value="low_reviews">
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : lowReviews.length === 0 ? (
-            <EmptyState
-              message="No low-rated reviews"
-              detail="Reviews with a rating of 2 or below will appear here"
-            />
-          ) : (
-            <div className="space-y-4">
-              {lowReviews.map((item) => (
-                <Card key={item.id}>
-                  <CardContent>
-                    <div className="flex items-start gap-3">
-                      <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-red-50 text-red-600">
-                        <Star className="size-4" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium text-foreground">
-                            {item.rating}/5 rating
-                          </h3>
-                          <Badge variant="secondary" className="text-xs">
-                            {item.campaign_title}
-                          </Badge>
-                        </div>
-                        <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
-                          <span>{item.reviewer_name}</span>
-                          <span className="text-muted-foreground/50">
-                            rated
-                          </span>
-                          <span>{item.reviewee_name}</span>
-                        </div>
-                        {item.comment && (
-                          <p className="mt-1.5 text-sm text-muted-foreground">
-                            &ldquo;{item.comment}&rdquo;
-                          </p>
-                        )}
-                        <p className="mt-1 text-xs text-muted-foreground/70">
-                          {new Date(item.created_at).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-1">
-                        <LinkButton
-                          href="/admin/campaigns"
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <ExternalLink className="me-1.5 size-4" />
-                          View Campaign
-                        </LinkButton>
-                        <LinkButton
-                          href="/admin/users"
-                          variant="ghost"
-                          size="sm"
-                        >
-                          <ExternalLink className="me-1.5 size-4" />
-                          View User
-                        </LinkButton>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-600 hover:text-red-700"
-                          onClick={() =>
-                            setSuspendTarget({
-                              id: item.reviewee_id,
-                              name: item.reviewee_name,
-                            })
-                          }
-                        >
-                          <ShieldBan className="me-1.5 size-4" />
-                          Suspend
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
-
-      {/* Suspend Dialog */}
-      <Dialog
-        open={suspendTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setSuspendTarget(null);
-            setSuspendReason("");
-          }
-        }}
+      <div
+        data-testid="admin-report-command-summary"
+        className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5"
       >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Suspend {suspendTarget?.name}</DialogTitle>
-            <DialogDescription>
-              This will suspend the user, withdraw their pending applications,
-              and notify affected parties. Provide a reason for the suspension.
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            placeholder="Reason for suspension..."
-            value={suspendReason}
-            onChange={(e) => setSuspendReason(e.target.value)}
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setSuspendTarget(null);
-                setSuspendReason("");
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={handleSuspend}
-              disabled={!suspendReason.trim() || suspendSubmitting}
-            >
-              {suspendSubmitting ? "Suspending..." : "Suspend User"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <SummaryCard
+          detail="Creator proof submitted, brand review pending"
+          icon={UploadCloud}
+          label="Needs brand review"
+          value={command.evidenceReviewCount}
+        />
+        <SummaryCard
+          detail="Creator reads missed their reporting window"
+          icon={Clock}
+          label="Missed reports"
+          value={command.missedCount}
+        />
+        <SummaryCard
+          detail="Rejected evidence or correction tasks still open"
+          icon={FileWarning}
+          label="Correction requests"
+          value={command.correctionCount}
+        />
+        <SummaryCard
+          detail="Submitted proof waiting more than 24 hours"
+          icon={Clock}
+          label="SLA breaches"
+          value={command.reviewSlaBreachCount}
+          valueTestId="admin-report-sla-breach-count"
+        />
+        <SummaryCard
+          detail="Report artifacts that failed to generate"
+          icon={AlertTriangle}
+          label="Export failures"
+          value={command.exportFailureCount}
+        />
+      </div>
 
-      {/* Extend Deadline Dialog */}
-      <Dialog
-        open={deadlineTarget !== null}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeadlineTarget(null);
-            setNewDeadline("");
-          }
-        }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Extend Deadline</DialogTitle>
-            <DialogDescription>
-              Extend the content due date for &ldquo;{deadlineTarget?.title}
-              &rdquo;. Current deadline:{" "}
-              {deadlineTarget
-                ? new Date(
-                    deadlineTarget.currentDeadline
-                  ).toLocaleDateString()
-                : ""}
-            </DialogDescription>
-          </DialogHeader>
-          <Input
-            type="date"
-            value={newDeadline}
-            min={new Date().toISOString().split("T")[0]}
-            onChange={(e) => setNewDeadline(e.target.value)}
-          />
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeadlineTarget(null);
-                setNewDeadline("");
-              }}
+      <Card data-testid="admin-report-campaign-readiness">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Campaign leadership readiness</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Campaigns held from leadership sharing, grouped by top proof-room
+                blocker.
+              </p>
+            </div>
+            <Badge
+              data-testid="admin-report-campaign-readiness-count"
+              variant="secondary"
+              className="shrink-0"
             >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleExtendDeadline}
-              disabled={!newDeadline || deadlineSubmitting}
+              {command.campaignHoldCount} on hold
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {command.campaignReadiness.length === 0 ? (
+            <div className="rounded-lg border border-dashed border-slate-200 px-4 py-8 text-center">
+              <CheckCircle2 className="mx-auto size-7 text-slate-400" />
+              <p className="mt-3 text-sm font-semibold text-slate-900">
+                Every campaign is leadership-shareable
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                No report blockers are holding executive handoff.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border rounded-lg border border-border">
+              {command.campaignReadiness.map((row) => (
+                <div
+                  key={row.campaign.id}
+                  data-testid="admin-report-campaign-readiness-row"
+                  className="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(0,1fr)_minmax(11rem,0.35fr)_auto] lg:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span
+                        data-testid="admin-report-campaign-readiness-status"
+                        className="rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-700"
+                      >
+                        {row.leadershipStatus}
+                      </span>
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {row.campaign.title}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {row.campaign.brandName} / {row.campaign.status} /{" "}
+                      {row.blockerCount} blocker{row.blockerCount === 1 ? "" : "s"}
+                    </p>
+                    <p
+                      data-testid="admin-report-campaign-readiness-primary"
+                      className="mt-2 text-sm text-slate-700"
+                    >
+                      {row.summary}
+                    </p>
+                    <div className="mt-3 grid gap-2 md:grid-cols-2">
+                      <p
+                        data-testid="admin-report-campaign-readiness-share-gate"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Leadership share gate
+                        </span>
+                        {row.shareGate}
+                      </p>
+                      <p
+                        data-testid="admin-report-campaign-readiness-clearance"
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Clears when
+                        </span>
+                        {row.clearance}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                      Top gate
+                    </p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {row.primaryLabel}
+                    </p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {row.waitingLabel}
+                    </p>
+                  </div>
+                  <LinkButton href={row.actionHref} variant="outline" size="sm">
+                    {row.actionLabel}
+                  </LinkButton>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <CardTitle>Proof room exceptions</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Sorted by newest operational risk. Every row drills into the
+                exact campaign reporting blocker.
+              </p>
+            </div>
+            <Badge variant="secondary" className="shrink-0">
+              {command.rows.length} open
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {command.rows.length === 0 ? (
+            <div
+              data-testid="admin-report-empty-state"
+              className="rounded-lg border border-dashed border-slate-200 px-4 py-10 text-center"
             >
-              {deadlineSubmitting ? "Extending..." : "Extend Deadline"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+              <CheckCircle2 className="mx-auto size-7 text-slate-400" />
+              <p className="mt-3 text-sm font-semibold text-slate-900">
+                No open report exceptions
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Evidence review, correction, missed-task, and export queues are clear.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border rounded-lg border border-border">
+              {command.rows.map((row) => (
+                <div
+                  key={row.id}
+                  data-testid="admin-report-exception-row"
+                  className="grid gap-3 px-4 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${toneForKind(row.kind)}`}
+                      >
+                        {row.label}
+                      </span>
+                      <p className="truncate text-sm font-semibold text-slate-900">
+                        {row.title}
+                      </p>
+                    </div>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {row.detail}
+                    </p>
+                    <div
+                      data-testid="admin-report-exception-decision-grid"
+                      className="mt-3 grid gap-2 lg:grid-cols-2"
+                    >
+                      <p
+                        data-testid="admin-report-exception-impact"
+                        className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Leadership impact
+                        </span>
+                        {row.impact}
+                      </p>
+                      <p
+                        data-testid="admin-report-exception-share-gate"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Leadership share gate
+                        </span>
+                        {row.shareGate}
+                      </p>
+                    </div>
+                    <div
+                      data-testid="admin-report-exception-operations-grid"
+                      className="mt-2 grid gap-2 md:grid-cols-2 xl:grid-cols-4"
+                    >
+                      <p
+                        data-testid="admin-report-exception-age"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Waiting
+                        </span>
+                        {row.waitingLabel}
+                      </p>
+                      <p
+                        data-testid="admin-report-exception-next-step"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Next move
+                        </span>
+                        {row.nextStep}
+                      </p>
+                      <p
+                        data-testid="admin-report-exception-owner"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Escalation owner
+                        </span>
+                        {row.owner}
+                      </p>
+                      <p
+                        data-testid="admin-report-exception-clearance"
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs leading-5 text-slate-600"
+                      >
+                        <span className="block text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          Clears when
+                        </span>
+                        {row.clearance}
+                      </p>
+                    </div>
+                    <p className="mt-2 text-xs text-muted-foreground">
+                      {row.campaign.title} / {row.campaign.brandName} /{" "}
+                      {formatDateTime(row.createdAt)}
+                    </p>
+                  </div>
+                  <LinkButton href={row.actionHref} variant="outline" size="sm">
+                    {row.actionLabel}
+                  </LinkButton>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

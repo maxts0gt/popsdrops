@@ -42,7 +42,7 @@ export default function ForCreatorsPage() {
         </div>
       </section>
 
-      {/* FEATURES — title-only chips */}
+      {/* FEATURES - title-only chips */}
       <section className="pb-16">
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -61,7 +61,7 @@ export default function ForCreatorsPage() {
         </motion.div>
       </section>
 
-      {/* HOW IT WORKS — 4 steps */}
+      {/* HOW IT WORKS - 4 steps */}
       <section className="border-y border-slate-100 bg-slate-50/50 py-20 sm:py-24">
         <div className="mx-auto max-w-4xl px-6">
           <motion.div {...fade} className="mb-12 text-center">

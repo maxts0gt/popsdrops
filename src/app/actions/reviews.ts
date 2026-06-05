@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { getBrandWorkspaceForCurrentUser } from "@/lib/brand-workspace";
 import { createClient } from "@/lib/supabase/server";
 import { createPrivilegedNotification } from "@/lib/supabase/privileged";
 import { getUser } from "./auth";
@@ -31,7 +32,8 @@ export async function submitReview(input: {
 
   if (!campaign) throw new Error("Campaign not found");
 
-  const isBrand = campaign.brand_id === user.id;
+  const workspace = await getBrandWorkspaceForCurrentUser(supabase, user.id);
+  const isBrand = campaign.brand_id === workspace?.brandId;
 
   if (isBrand) {
     const { data: membership } = await supabase

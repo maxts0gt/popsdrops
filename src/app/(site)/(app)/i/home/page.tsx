@@ -5,19 +5,22 @@ import Link from "next/link";
 import {
   AlertTriangle,
   ArrowRight,
+  Briefcase,
+  CheckCircle2,
   Clock,
   FileEdit,
   Search,
   Star,
   TrendingUp,
-  Zap,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/link-button";
 import { PlatformChip } from "@/components/platform-icons";
 import { useI18n, useTranslation } from "@/lib/i18n";
+import { getCurrentUserId } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
-import { formatBudgetRange, type Platform } from "@/lib/constants";
+import { getCampaignApplicationDeadlineDaysLeft } from "@/lib/campaigns/application-deadline";
+import { formatBudgetPerCreatorRange, type Platform } from "@/lib/constants";
 import { getSingleRelation } from "@/lib/supabase/relations";
 
 // ---------------------------------------------------------------------------
@@ -47,6 +50,7 @@ interface CampaignMatch {
   platforms: Platform[];
   budget_min: number | null;
   budget_max: number | null;
+  max_creators: number | null;
   application_deadline: string | null;
 }
 
@@ -87,6 +91,7 @@ interface RecommendationRecord {
   platforms: Platform[] | null;
   budget_min: number | null;
   budget_max: number | null;
+  max_creators: number | null;
   application_deadline: string | null;
   profiles: BrandRelationRecord | BrandRelationRecord[] | null;
 }
@@ -140,33 +145,40 @@ export default function CreatorHomePage() {
   const [renderNow, setRenderNow] = useState(() => Date.now());
 
   useEffect(() => {
+    let isMounted = true;
     async function load() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      const userId = await getCurrentUserId().catch(() => null);
+      if (!isMounted) return;
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
 
       const [profileRes, creatorRes, membersRes, appsRes, campaignsRes] = await Promise.all([
-        supabase.from("profiles").select("full_name, avatar_url").eq("id", user.id).single(),
-        supabase.from("creator_profiles").select("bio, tiktok, instagram, snapchat, youtube, facebook, niches, rate_card, primary_market, languages, profile_completeness, rating, avg_response_time_hours").eq("profile_id", user.id).single(),
+        supabase.from("profiles").select("full_name, avatar_url").eq("id", userId).single(),
+        supabase.from("creator_profiles").select("bio, tiktok, instagram, snapchat, youtube, facebook, niches, rate_card, primary_market, languages, profile_completeness, rating, avg_response_time_hours").eq("profile_id", userId).single(),
         // Active campaign memberships
         supabase
           .from("campaign_members")
           .select(`campaign_id, campaigns ( id, title, content_due_date, status, profiles!campaigns_brand_id_fkey ( full_name ) )`)
-          .eq("creator_id", user.id),
+          .eq("creator_id", userId),
         // Pending/counter-offer applications
         supabase
           .from("campaign_applications")
           .select(`id, campaign_id, status, counter_rate, proposed_rate, campaigns ( title, profiles!campaigns_brand_id_fkey ( full_name ) )`)
-          .eq("creator_id", user.id)
+          .eq("creator_id", userId)
           .in("status", ["pending", "counter_offer"]),
         // Recruiting campaigns for recommendations
         supabase
           .from("campaigns")
-          .select(`id, title, platforms, budget_min, budget_max, application_deadline, profiles!campaigns_brand_id_fkey ( full_name )`)
+          .select(`id, title, platforms, budget_min, budget_max, max_creators, application_deadline, profiles!campaigns_brand_id_fkey ( full_name )`)
           .eq("status", "recruiting")
           .order("application_deadline", { ascending: true })
           .limit(3),
       ]);
+
+      if (!isMounted) return;
 
       // Profile summary
       if (profileRes.data && creatorRes.data) {
@@ -262,6 +274,7 @@ export default function CreatorHomePage() {
             platforms: campaign.platforms || [],
             budget_min: campaign.budget_min,
             budget_max: campaign.budget_max,
+            max_creators: campaign.max_creators,
             application_deadline: campaign.application_deadline,
           }))
         );
@@ -270,6 +283,9 @@ export default function CreatorHomePage() {
       setLoading(false);
     }
     load();
+    return () => {
+      isMounted = false;
+    };
   }, [t]);
 
   useEffect(() => {
@@ -285,10 +301,10 @@ export default function CreatorHomePage() {
   const greetingKey = getGreetingKey(renderNow);
 
   const stats = [
-    { labelKey: "stat.active", value: String(activeCampaignCount), icon: Zap, color: "text-foreground" },
+    { labelKey: "stat.active", value: String(activeCampaignCount), icon: Briefcase, color: "text-foreground" },
     { labelKey: "stat.pending", value: String(pendingAppCount), icon: Clock, color: "text-amber-500" },
-    { labelKey: "stat.rating", value: creatorRating && creatorRating > 0 ? creatorRating.toFixed(1) : "—", icon: Star, color: "text-amber-500" },
-    { labelKey: "stat.response", value: creatorResponseTime ? `${creatorResponseTime}h` : "—", icon: TrendingUp, color: "text-foreground" },
+    { labelKey: "stat.rating", value: creatorRating && creatorRating > 0 ? creatorRating.toFixed(1) : "-", icon: Star, color: "text-amber-500" },
+    { labelKey: "stat.response", value: creatorResponseTime ? `${creatorResponseTime}h` : "-", icon: TrendingUp, color: "text-foreground" },
   ];
 
   const actionIcon = {
@@ -467,11 +483,11 @@ export default function CreatorHomePage() {
           </div>
         </section>
       ) : (
-        /* Empty state — no actions */
+        /* Empty state - no actions */
         <Card>
           <CardContent className="py-8 text-center">
             <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted/50">
-              <Zap className="size-5 text-muted-foreground/70" />
+              <CheckCircle2 className="size-5 text-muted-foreground/70" />
             </div>
             <p className="text-sm font-medium text-foreground">
               {t("empty.noTasks")}
@@ -505,17 +521,16 @@ export default function CreatorHomePage() {
           </div>
           <div className="space-y-2">
             {campaigns.map((c) => {
-              const budgetStr = formatBudgetRange(c.budget_min, c.budget_max, locale);
-              const daysLeft = c.application_deadline
-                ? Math.max(
-                    0,
-                    Math.ceil(
-                      (new Date(c.application_deadline).getTime() -
-                        renderNow) /
-                        (1000 * 60 * 60 * 24)
-                    )
-                  )
-                : null;
+              const budgetStr = formatBudgetPerCreatorRange(
+                c.budget_min,
+                c.budget_max,
+                c.max_creators,
+                locale,
+              );
+              const daysLeft = getCampaignApplicationDeadlineDaysLeft(
+                c.application_deadline,
+                renderNow,
+              );
               return (
                 <Link
                   key={c.id}
@@ -537,7 +552,7 @@ export default function CreatorHomePage() {
                         {c.platforms.map((p) => (
                           <PlatformChip key={p} platform={p} />
                         ))}
-                        {budgetStr !== "—" && (
+                        {budgetStr !== "-" && (
                           <span className="text-xs font-medium tabular-nums text-muted-foreground">
                             {budgetStr}
                           </span>
@@ -562,7 +577,7 @@ export default function CreatorHomePage() {
           </div>
         </section>
       ) : (
-        /* Empty state — no campaigns yet, show explore CTA */
+        /* Empty state - no campaigns yet, show explore CTA */
         <Card>
             <CardContent className="py-8 text-center">
               <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-full bg-muted/50">

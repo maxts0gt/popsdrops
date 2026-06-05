@@ -11,13 +11,13 @@ import {
   AlertTriangle,
   BarChart3,
   DollarSign,
-  MessageSquare,
+  MailCheck,
   Settings,
   ScrollText,
+  BriefcaseBusiness,
   Menu,
 } from "lucide-react";
 import { AdminSearch } from "@/components/admin-search";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -31,13 +31,14 @@ const navItems = [
   { href: "/admin/approvals", label: "Approvals", icon: ShieldCheck },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/campaigns", label: "Campaigns", icon: Megaphone },
+  { href: "/admin/concierge", label: "Concierge", icon: BriefcaseBusiness },
   { href: "/admin/reports", label: "Reports", icon: AlertTriangle },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/revenue", label: "Revenue", icon: DollarSign },
   {
     href: "/admin/communications",
     label: "Communications",
-    icon: MessageSquare,
+    icon: MailCheck,
   },
   { href: "/admin/settings", label: "Settings", icon: Settings },
   { href: "/admin/audit", label: "Audit", icon: ScrollText },
@@ -92,7 +93,6 @@ function SidebarContent({
       </nav>
       <div className="flex items-center justify-between border-t border-border px-5 py-3">
         <p className="text-xs text-muted-foreground">Admin Panel</p>
-        <ThemeToggle />
       </div>
     </>
   );

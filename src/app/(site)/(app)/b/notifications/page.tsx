@@ -1,35 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Bell,
+  BarChart3,
   Users,
   FileCheck,
-  MessageSquare,
+  Megaphone,
   Star,
   CheckCircle,
   TrendingUp,
-  Zap,
+  CircleAlert,
+  UserCheck,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { NotificationEmailPreferencesPanel } from "@/components/shared/notification-email-preferences-panel";
+import { getBrandNotificationHref } from "@/lib/campaigns/brand-campaign-links";
 import { useI18n, useTranslation } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getBrowserUser } from "@/lib/supabase/client";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type NotificationType =
+  | "application_received"
   | "new_application"
   | "content_submitted"
   | "content_published"
-  | "new_message"
+  | "campaign_update"
+  | "review_received"
   | "new_review"
   | "campaign_completed"
   | "performance_submitted"
-  | "account_approved";
+  | "report_ready_for_review"
+  | "report_correction_resubmitted"
+  | "account_approved"
+  | "account_suspended"
+  | "account_restored"
+  | "account_review_reopened";
 
 interface Notification {
   id: string;
@@ -49,14 +62,21 @@ const iconMap: Record<
   string,
   { icon: typeof Bell; color: string }
 > = {
+  application_received: { icon: Users, color: "bg-muted/50 text-muted-foreground" },
   new_application: { icon: Users, color: "bg-muted/50 text-muted-foreground" },
   content_submitted: { icon: FileCheck, color: "bg-muted/50 text-muted-foreground" },
   content_published: { icon: TrendingUp, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
-  new_message: { icon: MessageSquare, color: "bg-muted/50 text-muted-foreground" },
+  campaign_update: { icon: Megaphone, color: "bg-muted/50 text-muted-foreground" },
+  review_received: { icon: Star, color: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
   new_review: { icon: Star, color: "bg-amber-50 text-amber-600 dark:bg-amber-950 dark:text-amber-400" },
   campaign_completed: { icon: CheckCircle, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
-  performance_submitted: { icon: Zap, color: "bg-muted/50 text-muted-foreground" },
+  performance_submitted: { icon: BarChart3, color: "bg-muted/50 text-muted-foreground" },
+  report_ready_for_review: { icon: BarChart3, color: "bg-muted/50 text-muted-foreground" },
+  report_correction_resubmitted: { icon: BarChart3, color: "bg-muted/50 text-muted-foreground" },
   account_approved: { icon: CheckCircle, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
+  account_suspended: { icon: CircleAlert, color: "bg-red-50 text-red-600 dark:bg-red-950 dark:text-red-400" },
+  account_restored: { icon: UserCheck, color: "bg-emerald-50 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400" },
+  account_review_reopened: { icon: Bell, color: "bg-muted/50 text-muted-foreground" },
 };
 
 // ---------------------------------------------------------------------------
@@ -64,21 +84,20 @@ const iconMap: Record<
 // ---------------------------------------------------------------------------
 
 function hrefForNotification(n: Notification): string {
-  const data = n.data || {};
-  switch (n.type) {
-    case "new_application":
-    case "content_submitted":
-    case "content_published":
-    case "new_message":
-    case "performance_submitted":
-      return data?.campaign_id ? `/b/campaigns/${data.campaign_id}` : "/b/campaigns";
-    case "campaign_completed":
-      return data?.campaign_id ? `/b/campaigns/${data.campaign_id}/report` : "/b/campaigns";
-    case "new_review":
-      return "/b/home";
-    default:
-      return "/b/home";
-  }
+  return getBrandNotificationHref(n.type, n.data);
+}
+
+function shouldUseNativeLinkNavigation(
+  event: MouseEvent<HTMLAnchorElement>,
+): boolean {
+  return (
+    event.defaultPrevented ||
+    event.metaKey ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.button !== 0
+  );
 }
 
 function timeAgo(
@@ -106,6 +125,7 @@ function timeAgo(
 // ---------------------------------------------------------------------------
 
 export default function BrandNotificationsPage() {
+  const router = useRouter();
   const { t } = useTranslation("notifications");
   const { t: tc } = useTranslation("ui.common");
   const { locale } = useI18n();
@@ -117,7 +137,7 @@ export default function BrandNotificationsPage() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getBrowserUser();
       if (!user) return;
 
       const { data } = await supabase
@@ -136,19 +156,74 @@ export default function BrandNotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   async function markAllRead() {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", user.id)
-      .eq("read", false);
+    const previousNotifications = notifications;
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    if (unreadIds.length === 0) return;
 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await getBrowserUser();
+      if (!user) throw new Error("Missing user");
+
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .in("id", unreadIds);
+
+      if (error) throw error;
+    } catch {
+      setNotifications(previousNotifications);
+      toast.error(t("readUpdateError"));
+    }
+  }
+
+  async function markNotificationRead(notificationId: string) {
+    const notification = notifications.find((n) => n.id === notificationId);
+    if (!notification || notification.read) return;
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
+    );
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await getBrowserUser();
+      if (!user) throw new Error("Missing user");
+
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("id", notificationId);
+
+      if (error) throw error;
+    } catch {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, read: false } : n,
+        ),
+      );
+      toast.error(t("readUpdateError"));
+    }
+  }
+
+  async function handleNotificationClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    n: Notification,
+  ) {
+    if (shouldUseNativeLinkNavigation(event)) return;
+
+    event.preventDefault();
+    const href = hrefForNotification(n);
+    await markNotificationRead(n.id);
+    router.push(href);
   }
 
   if (loading) {
@@ -176,15 +251,27 @@ export default function BrandNotificationsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+    <div className="mx-auto max-w-3xl space-y-6 px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">{t("title")}</h1>
+          {notifications.length > 0 && unreadCount === 0 && (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("allCaughtUp")}
+            </p>
+          )}
+        </div>
         {unreadCount > 0 && (
           <Button variant="ghost" size="sm" onClick={markAllRead}>
             {t("markAllRead")}
           </Button>
         )}
       </div>
+
+      <NotificationEmailPreferencesPanel
+        variant="compact"
+        className="rounded-xl border border-border bg-card p-3 shadow-sm"
+      />
 
       {notifications.length === 0 ? (
         <div className="rounded-lg border border-dashed border-border py-16 text-center">
@@ -194,18 +281,27 @@ export default function BrandNotificationsPage() {
       ) : (
         <div className="space-y-2">
           {notifications.map((n) => {
-            const config = iconMap[n.type] || iconMap.new_application;
+            const config = iconMap[n.type] || iconMap.application_received;
             const Icon = config.icon;
             return (
-              <Link key={n.id} href={hrefForNotification(n)}>
+              <Link
+                key={n.id}
+                href={hrefForNotification(n)}
+                className="block"
+                onClick={(event) => handleNotificationClick(event, n)}
+              >
                 <Card
-                  className={`transition-colors hover:bg-muted/50 ${
-                    !n.read ? "border-s-2 border-s-foreground" : ""
+                  size="sm"
+                  data-read-state={!n.read ? "unread" : "read"}
+                  className={`transition-colors duration-150 hover:bg-slate-50/70 ${
+                    !n.read
+                      ? "bg-slate-50/70 ring-slate-900/10 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]"
+                      : "bg-card ring-border/70"
                   }`}
                 >
-                  <CardContent className="flex gap-3">
+                  <CardContent className="flex items-start gap-3">
                     <div
-                      className={`flex size-9 shrink-0 items-center justify-center rounded-lg ${config.color}`}
+                      className={`flex size-8 shrink-0 items-center justify-center rounded-lg ${config.color}`}
                     >
                       <Icon className="size-4" />
                     </div>
@@ -225,13 +321,13 @@ export default function BrandNotificationsPage() {
                         </span>
                       </div>
                       {n.body && (
-                        <p className="mt-0.5 text-sm text-muted-foreground">
+                        <p className="mt-0.5 line-clamp-2 text-sm text-muted-foreground">
                           {n.body}
                         </p>
                       )}
                     </div>
                     {!n.read && (
-                      <div className="mt-1 size-2 shrink-0 rounded-full bg-foreground" />
+                      <div className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground" />
                     )}
                   </CardContent>
                 </Card>

@@ -1,8 +1,9 @@
-// DEV ONLY — creates a campaign with a submitted content piece for the dev brand.
+// DEV ONLY - creates a campaign with a submitted content piece for the dev brand.
 // This lets us test the brand content review flow.
 
 import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { getDevUserEmail } from "@/lib/dev-users";
 
 export async function GET() {
   if (process.env.NODE_ENV === "production") {
@@ -18,7 +19,7 @@ export async function GET() {
   const { data: brandProfile } = await supabase
     .from("profiles")
     .select("id")
-    .eq("email", "dev-brand@popsdrops.test")
+    .eq("email", getDevUserEmail("brand"))
     .single();
 
   if (!brandProfile) {
@@ -29,7 +30,7 @@ export async function GET() {
   const { data: creatorProfile } = await supabase
     .from("profiles")
     .select("id, full_name")
-    .eq("email", "dev-creator@popsdrops.test")
+    .eq("email", getDevUserEmail("creator"))
     .single();
 
   if (!creatorProfile) {
@@ -41,7 +42,7 @@ export async function GET() {
     .from("campaigns")
     .select("id")
     .eq("brand_id", brandProfile.id)
-    .eq("title", "Summer Glow Collection — UGC Campaign")
+    .eq("title", "Summer Glow Collection - UGC Campaign")
     .limit(1)
     .single();
 
@@ -55,7 +56,7 @@ export async function GET() {
       .from("campaigns")
       .insert({
         brand_id: brandProfile.id,
-        title: "Summer Glow Collection — UGC Campaign",
+        title: "Summer Glow Collection - UGC Campaign",
         brief_description:
           "Create authentic unboxing and review content featuring our new Summer Glow skincare line. Show your morning routine incorporating the products. Keep it natural and relatable.",
         brief_requirements:
@@ -139,7 +140,7 @@ export async function GET() {
       campaign_member_id: memberId,
       content_url: "https://www.tiktok.com/@summerglow/video/7345678901234567890",
       caption:
-        "My new morning routine is officially upgraded ☀️ These Summer Glow products are unreal — the Vitamin C serum has my skin GLOWING. Use code SUMMERGLOW20 for 20% off! #SummerGlow #Skincare #MorningRoutine",
+        "My new morning routine is officially upgraded ☀️ These Summer Glow products are unreal - the Vitamin C serum has my skin GLOWING. Use code SUMMERGLOW20 for 20% off! #SummerGlow #Skincare #MorningRoutine",
       platform: "tiktok",
       status: "submitted",
       version: 1,
@@ -156,7 +157,7 @@ export async function GET() {
       campaign_member_id: memberId,
       content_url: "https://www.instagram.com/reel/ABC123xyz/",
       caption:
-        "POV: You find a skincare routine that actually works ✨ Summer Glow Collection review — honest thoughts in the caption. Link in bio for 20% off with SUMMERGLOW20",
+        "POV: You find a skincare routine that actually works ✨ Summer Glow Collection review - honest thoughts in the caption. Link in bio for 20% off with SUMMERGLOW20",
       platform: "instagram",
       status: "submitted",
       version: 1,

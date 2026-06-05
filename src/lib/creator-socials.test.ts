@@ -10,7 +10,7 @@ describe("creator onboarding social accounts", () => {
   it("accepts multiple social accounts with bare handles", () => {
     const result = creatorOnboardingStep1Schema.safeParse({
       full_name: "Max Tsogt",
-      primary_market: "south_korea",
+      primary_market: "kr",
       social_accounts: [
         { platform: "tiktok", value: "max-tsogt" },
         { platform: "instagram", value: "@max.tsogt" },
@@ -23,7 +23,7 @@ describe("creator onboarding social accounts", () => {
   it("rejects duplicate platforms", () => {
     const result = creatorOnboardingStep1Schema.safeParse({
       full_name: "Max Tsogt",
-      primary_market: "south_korea",
+      primary_market: "kr",
       social_accounts: [
         { platform: "tiktok", value: "max-tsogt" },
         { platform: "tiktok", value: "another-max" },

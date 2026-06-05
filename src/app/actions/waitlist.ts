@@ -3,6 +3,7 @@
 import { protectWaitlistSubmission } from "@/lib/security/public-forms";
 import { createClient } from "@/lib/supabase/server";
 import { waitlistSchema, type WaitlistInput } from "@/lib/validations";
+import { recordLegalConsent } from "@/app/actions/compliance";
 
 export type WaitlistResult =
   | { success: true }
@@ -33,9 +34,22 @@ export async function submitWaitlistRequest(
     };
   }
 
+  try {
+    await recordLegalConsent({
+      email: data.email,
+      source: "request_invite",
+    });
+  } catch (error) {
+    console.error("Legal consent insert error:", error);
+    return {
+      success: false,
+      error: "Could not record privacy acknowledgement. Please try again.",
+    };
+  }
+
   const supabase = await createClient();
 
-  // Build the insert payload — only include fields relevant to the type
+  // Build the insert payload - only include fields relevant to the type
   const row: Record<string, unknown> = {
     type: data.type,
     email: data.email,
@@ -46,6 +60,7 @@ export async function submitWaitlistRequest(
 
   if (data.type === "brand") {
     row.company_name = data.company_name;
+    row.markets = data.markets;
     row.industry = data.industry || null;
     row.website = data.website || null;
     row.budget_range = data.budget_range || null;

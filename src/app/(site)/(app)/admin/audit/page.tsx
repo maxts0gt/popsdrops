@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Download, Inbox, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  Download,
+  Inbox,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,108 +29,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { createClient } from "@/lib/supabase/client";
-import { getSingleRelation } from "@/lib/supabase/relations";
+import {
+  fetchAdminAuditEntries,
+  type AdminAuditEntry,
+} from "@/app/actions/admin";
+import { getAdminAuditActionLabel } from "@/lib/admin/audit-action-labels";
+import {
+  getAdminAuditDetailsLabel,
+  getAdminAuditTargetLabel,
+} from "@/lib/admin/audit-entry-display";
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
 const PAGE_SIZE = 50;
-
-const ACTION_LABELS: Record<string, string> = {
-  approve_profile: "Approved profile",
-  reject_profile: "Rejected profile",
-  suspend_user: "Suspended user",
-  unsuspend_user: "Unsuspended user",
-  pause_campaign: "Paused campaign",
-  cancel_campaign: "Cancelled campaign",
-  resume_campaign: "Resumed campaign",
-  re_review_profile: "Sent to re-review",
-};
-
-const ACTION_FILTER_GROUPS: Record<string, string[]> = {
-  approvals: ["approve_profile", "reject_profile", "re_review_profile"],
-  suspensions: ["suspend_user", "unsuspend_user"],
-  campaigns: ["pause_campaign", "cancel_campaign", "resume_campaign"],
-};
-
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface AuditEntry {
-  id: string;
-  action: string;
-  target_type: string;
-  target_id: string;
-  metadata: Record<string, unknown> | null;
-  created_at: string;
-  admin: { full_name: string; email: string } | null;
-}
-
-interface AuditAdminRecord {
-  full_name: string | null;
-  email: string | null;
-}
-
-type AuditLogRow = Omit<AuditEntry, "admin"> & {
-  admin: AuditAdminRecord | AuditAdminRecord[] | null;
-};
-
-async function fetchAuditEntries(params: {
-  page: number;
-  actionFilter: string;
-  dateRange: string;
-}): Promise<{ entries: AuditEntry[]; totalCount: number }> {
-  const supabase = createClient();
-  const { page, actionFilter, dateRange } = params;
-
-  let query = supabase
-    .from("admin_audit_log")
-    .select(
-      `
-      id, action, target_type, target_id, metadata, created_at,
-      admin:profiles!admin_audit_log_admin_id_fkey (full_name, email)
-    `,
-      { count: "exact" },
-    )
-    .order("created_at", { ascending: false });
-
-  if (actionFilter !== "all") {
-    const actions = ACTION_FILTER_GROUPS[actionFilter];
-    if (actions) {
-      query = query.in("action", actions);
-    }
-  }
-
-  const dateFrom = getDateRangeFilter(dateRange);
-  if (dateFrom) {
-    query = query.gte("created_at", dateFrom);
-  }
-
-  query = query.range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-  const { data, count } = await query;
-
-  return {
-    entries: (data ?? []).map((row) => {
-      const entry = row as AuditLogRow;
-      const admin = getSingleRelation(entry.admin);
-
-      return {
-        ...entry,
-        admin: admin
-          ? {
-              full_name: admin.full_name ?? "Unknown",
-              email: admin.email ?? "",
-            }
-          : null,
-      };
-    }),
-    totalCount: count ?? 0,
-  };
-}
+type AuditSortKey = "created_at" | "admin" | "action" | "target" | "details";
+type AuditActionFilter = "all" | "approvals" | "suspensions" | "campaigns" | "team";
+type AuditDateRange = "all" | "today" | "7d" | "30d";
+type SortDir = "asc" | "desc";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -148,38 +78,57 @@ function relativeTime(dateStr: string): string {
   });
 }
 
-function getDateRangeFilter(range: string): string | null {
-  const now = new Date();
-  switch (range) {
-    case "today": {
-      const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      return start.toISOString();
-    }
-    case "7d": {
-      const start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      return start.toISOString();
-    }
-    case "30d": {
-      const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-      return start.toISOString();
-    }
-    default:
-      return null;
-  }
+function compareText(a: string, b: string) {
+  return a.localeCompare(b, "en-US", { numeric: true, sensitivity: "base" });
+}
+
+function AuditSortableHead({
+  label,
+  sortKey,
+  currentKey,
+  currentDir,
+  onSort,
+}: {
+  label: string;
+  sortKey: AuditSortKey;
+  currentKey: AuditSortKey;
+  currentDir: SortDir;
+  onSort: (key: AuditSortKey) => void;
+}) {
+  const isActive = currentKey === sortKey;
+  const ariaSort = isActive ? (currentDir === "asc" ? "ascending" : "descending") : "none";
+
+  return (
+    <TableHead aria-sort={ariaSort}>
+      <button
+        type="button"
+        data-testid="admin-audit-sort-header"
+        onClick={() => onSort(sortKey)}
+        className="inline-flex items-center gap-1 transition-colors hover:text-foreground"
+      >
+        {label}
+        {isActive ? (
+          currentDir === "asc" ? <ArrowUp className="size-3" /> : <ArrowDown className="size-3" />
+        ) : (
+          <ArrowUpDown className="size-3 opacity-30" />
+        )}
+      </button>
+    </TableHead>
+  );
 }
 
 // ---------------------------------------------------------------------------
 // CSV Export
 // ---------------------------------------------------------------------------
 
-function exportCSV(entries: AuditEntry[]) {
+function exportCSV(entries: AdminAuditEntry[]) {
   const headers = ["Date", "Admin", "Action", "Target", "Details"];
   const rows = entries.map((e) => [
     new Date(e.created_at).toISOString(),
     e.admin?.full_name ?? "Unknown",
-    ACTION_LABELS[e.action] ?? e.action,
-    typeof e.metadata?.target_name === "string" ? e.metadata.target_name : e.target_id,
-    typeof e.metadata?.reason === "string" ? e.metadata.reason : "",
+    getAdminAuditActionLabel(e.action),
+    getAdminAuditTargetLabel(e),
+    getAdminAuditDetailsLabel(e),
   ]);
   const csv = [headers, ...rows]
     .map((r) =>
@@ -200,19 +149,37 @@ function exportCSV(entries: AuditEntry[]) {
 // ---------------------------------------------------------------------------
 
 export default function AdminAuditPage() {
-  const [entries, setEntries] = useState<AuditEntry[]>([]);
+  const searchParams = useSearchParams();
+  const highlightedAuditEntryId = searchParams.get("entry");
+  const [entries, setEntries] = useState<AdminAuditEntry[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
-  const [actionFilter, setActionFilter] = useState("all");
-  const [dateRange, setDateRange] = useState("all");
+  const [actionFilter, setActionFilter] = useState<AuditActionFilter>("all");
+  const [dateRange, setDateRange] = useState<AuditDateRange>("all");
+  const [sortKey, setSortKey] = useState<AuditSortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+
+  function handleSort(key: AuditSortKey) {
+    if (sortKey === key) {
+      setSortDir((current) => (current === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
 
-    void fetchAuditEntries({ page, actionFilter, dateRange })
+    void fetchAdminAuditEntries({
+      page,
+      actionFilter,
+      dateRange,
+      highlightedAuditEntryId,
+    })
       .then((result) => {
         if (cancelled) return;
         setEntries(result.entries);
@@ -229,7 +196,50 @@ export default function AdminAuditPage() {
     return () => {
       cancelled = true;
     };
-  }, [page, actionFilter, dateRange]);
+  }, [page, actionFilter, dateRange, highlightedAuditEntryId]);
+
+  const sortedEntries = useMemo(() => {
+    const direction = sortDir === "asc" ? 1 : -1;
+
+    return [...entries].sort((a, b) => {
+      const getTarget = (entry: AdminAuditEntry) =>
+        getAdminAuditTargetLabel(entry);
+      const getDetails = (entry: AdminAuditEntry) =>
+        getAdminAuditDetailsLabel(entry);
+
+      let result = 0;
+      switch (sortKey) {
+        case "created_at":
+          result = new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+          break;
+        case "admin":
+          result = compareText(a.admin?.full_name ?? "Unknown", b.admin?.full_name ?? "Unknown");
+          break;
+        case "action":
+          result = compareText(
+            getAdminAuditActionLabel(a.action),
+            getAdminAuditActionLabel(b.action),
+          );
+          break;
+        case "target":
+          result = compareText(getTarget(a), getTarget(b));
+          break;
+        case "details":
+          result = compareText(getDetails(a), getDetails(b));
+          break;
+      }
+
+      return result * direction;
+    });
+  }, [entries, sortDir, sortKey]);
+
+  useEffect(() => {
+    if (loading || !highlightedAuditEntryId) return;
+
+    document
+      .getElementById(`audit-entry-${highlightedAuditEntryId}`)
+      ?.scrollIntoView({ block: "center" });
+  }, [loading, highlightedAuditEntryId, sortedEntries.length]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8">
@@ -271,6 +281,7 @@ export default function AdminAuditPage() {
               <SelectItem value="approvals">Approvals</SelectItem>
               <SelectItem value="suspensions">Suspensions</SelectItem>
               <SelectItem value="campaigns">Campaign Actions</SelectItem>
+              <SelectItem value="team">Team Access</SelectItem>
             </SelectContent>
           </Select>
           <Select
@@ -322,26 +333,31 @@ export default function AdminAuditPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>When</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Target</TableHead>
-                  <TableHead>Details</TableHead>
+                  <AuditSortableHead label="When" sortKey="created_at" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <AuditSortableHead label="Admin" sortKey="admin" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <AuditSortableHead label="Action" sortKey="action" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <AuditSortableHead label="Target" sortKey="target" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <AuditSortableHead label="Details" sortKey="details" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {entries.map((entry) => {
-                  const reason =
-                    typeof entry.metadata?.reason === "string"
-                      ? entry.metadata.reason
-                      : null;
-                  const targetName =
-                    typeof entry.metadata?.target_name === "string"
-                      ? entry.metadata.target_name
-                      : entry.target_id;
+                {sortedEntries.map((entry) => {
+                  const isHighlighted = entry.id === highlightedAuditEntryId;
+                  const targetName = getAdminAuditTargetLabel(entry);
+                  const details = getAdminAuditDetailsLabel(entry);
 
                   return (
-                    <TableRow key={entry.id}>
+                    <TableRow
+                      key={entry.id}
+                      id={`audit-entry-${entry.id}`}
+                      data-testid={`admin-audit-row-${entry.id}`}
+                      aria-current={isHighlighted ? "true" : undefined}
+                      className={
+                        isHighlighted
+                          ? "bg-slate-50 ring-1 ring-inset ring-slate-900"
+                          : undefined
+                      }
+                    >
                       <TableCell
                         className="whitespace-nowrap text-xs text-muted-foreground"
                         title={new Date(entry.created_at).toLocaleString()}
@@ -352,16 +368,16 @@ export default function AdminAuditPage() {
                         {entry.admin?.full_name ?? "Unknown"}
                       </TableCell>
                       <TableCell className="text-sm font-medium text-foreground">
-                        {ACTION_LABELS[entry.action] ?? entry.action}
+                        {getAdminAuditActionLabel(entry.action)}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {targetName}
                       </TableCell>
                       <TableCell
                         className="max-w-[250px] truncate text-xs text-muted-foreground"
-                        title={reason ?? ""}
+                        title={details}
                       >
-                        {reason ?? "—"}
+                        {details || "-"}
                       </TableCell>
                     </TableRow>
                   );

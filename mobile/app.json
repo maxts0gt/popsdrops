@@ -76,17 +76,17 @@
     "experiments": {
       "typedRoutes": true
     },
-    "owner": "maxts0gt",
+    "owner": "maxtsogt",
     "runtimeVersion": {
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/d574a88c-6eb5-41db-bce0-6303de56f8e5"
+      "url": "https://u.expo.dev/cd22a581-5b93-432b-a9cf-fdd8ee6c5012"
     },
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "d574a88c-6eb5-41db-bce0-6303de56f8e5"
+        "projectId": "cd22a581-5b93-432b-a9cf-fdd8ee6c5012"
       }
     }
   }

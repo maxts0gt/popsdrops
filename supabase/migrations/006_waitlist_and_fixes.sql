@@ -4,7 +4,7 @@
 -- ============================================================
 
 -- ============================================================
--- 1. WAITLIST TABLE — pre-auth interest form for brands + creators
+-- 1. WAITLIST TABLE - pre-auth interest form for brands + creators
 -- ============================================================
 
 CREATE TABLE waitlist (
@@ -86,7 +86,7 @@ ALTER TABLE creator_profiles ADD COLUMN IF NOT EXISTS platforms platform_type[] 
 ALTER TABLE content_submissions ADD COLUMN IF NOT EXISTS deliverable_id uuid REFERENCES campaign_deliverables(id);
 
 -- ============================================================
--- 3. VECTOR INDEXES (HNSW) — critical for AI matching
+-- 3. VECTOR INDEXES (HNSW) - critical for AI matching
 -- ============================================================
 
 CREATE INDEX IF NOT EXISTS idx_creator_profiles_embedding
@@ -98,7 +98,7 @@ CREATE INDEX IF NOT EXISTS idx_campaigns_embedding
   WITH (m = 16, ef_construction = 64);
 
 -- ============================================================
--- 4. TRIGRAM INDEXES — fuzzy search
+-- 4. TRIGRAM INDEXES - fuzzy search
 -- ============================================================
 
 CREATE INDEX IF NOT EXISTS idx_creator_profiles_slug_trgm
@@ -115,7 +115,7 @@ CREATE INDEX IF NOT EXISTS idx_creator_profiles_platforms
   ON creator_profiles USING GIN (platforms);
 
 -- ============================================================
--- 6. UNIQUE CONSTRAINT — prevent duplicate performance measurements
+-- 6. UNIQUE CONSTRAINT - prevent duplicate performance measurements
 -- ============================================================
 
 ALTER TABLE content_performance

@@ -9,7 +9,7 @@ export default function PrivacyPage() {
     <div className="bg-white pt-28 pb-20 sm:pt-36">
       <article className="prose prose-slate mx-auto max-w-3xl px-6 prose-headings:tracking-tight prose-h1:text-3xl prose-h2:text-xl prose-h3:text-base">
         <h1>Privacy Policy</h1>
-        <p className="text-sm text-slate-500">Last updated: March 29, 2026</p>
+        <p className="text-sm text-slate-500">Last updated: May 18, 2026</p>
 
         <p>
           Tengri Vertex, LLC (&quot;Company,&quot; &quot;we,&quot; &quot;us,&quot; or &quot;our&quot;)
@@ -28,9 +28,12 @@ export default function PrivacyPage() {
           <li><strong>Account information:</strong> Name, email address, and profile photo (via Google OAuth or email signup)</li>
           <li><strong>Profile information:</strong> Bio, primary market, languages spoken, niches, and profile photo (creators); company name, industry, website, target markets, and description (brands)</li>
           <li><strong>Social media accounts:</strong> Platform handles and publicly available metrics (follower counts, engagement rates) for TikTok, Instagram, Snapchat, YouTube, and Facebook</li>
-          <li><strong>Campaign data:</strong> Campaign briefs, content submissions, reviews, ratings, messages, and application details</li>
+          <li><strong>Access requests:</strong> Brand and creator request information, including company details, social profile links, target markets, and reasons for joining</li>
+          <li><strong>Campaign data:</strong> Campaign briefs, content submissions, reviews, ratings, application details, creator agreements, and reporting requirements</li>
+          <li><strong>Evidence files:</strong> Content URLs, screenshots, exports, PDFs, and other performance evidence submitted to support campaign reports</li>
+          <li><strong>Campaign service fee records:</strong> Checkout session identifiers, invoice status, payment status, and related campaign package details</li>
           <li><strong>Rate card:</strong> Per-platform, per-format pricing set by creators</li>
-          <li><strong>Communications:</strong> Messages sent through the platform and support requests</li>
+          <li><strong>Communications:</strong> Transactional emails, support requests, and admin review notes</li>
         </ul>
 
         <h3>Information collected automatically</h3>
@@ -44,7 +47,8 @@ export default function PrivacyPage() {
         <h3>Information we generate</h3>
         <ul>
           <li><strong>Performance metrics:</strong> Calculated engagement rates, response times, completion rates, and platform-specific performance scores</li>
-          <li><strong>AI-generated translations:</strong> Translations of campaign briefs and platform content into your preferred language</li>
+          <li><strong>AI-assisted evidence extraction:</strong> Draft metric values extracted from performance evidence for creator confirmation or correction before brand reports use them</li>
+          <li><strong>AI-generated translations:</strong> Translations of campaign briefs and dynamic campaign content into your preferred language</li>
           <li><strong>Embeddings:</strong> Mathematical representations of profiles and campaigns used for creator-campaign matching (not human-readable)</li>
           <li><strong>Creator tier:</strong> Classification (New, Rising, Established, Top) based on campaign history and ratings</li>
         </ul>
@@ -53,9 +57,10 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Provide the Service:</strong> Authenticate your identity, display your profile, match creators with campaigns, facilitate content review, and deliver translations</li>
           <li><strong>Communications:</strong> Send transactional emails (campaign updates, application status, content approvals) via AWS SES</li>
+          <li><strong>Payments:</strong> Create Stripe Checkout sessions, track campaign service fee status, and maintain required business records</li>
           <li><strong>Improvement:</strong> Analyze usage patterns to improve features, fix issues, and develop new functionality</li>
           <li><strong>Safety:</strong> Detect fraud, enforce our Terms of Service, and protect the security of the platform and its users</li>
-          <li><strong>Legal compliance:</strong> Comply with applicable laws, regulations, and legal processes</li>
+          <li><strong>Legal compliance:</strong> Record legal acknowledgements, process privacy requests, and comply with applicable laws, regulations, and legal processes</li>
         </ul>
         <p>
           We do not use your information for targeted advertising. We do not sell your personal information.
@@ -71,19 +76,23 @@ export default function PrivacyPage() {
           <li>Creator profiles (name, bio, social accounts, rates, niches, markets, ratings, and performance metrics) are visible to brands</li>
           <li>Brand profiles (company name, industry, and ratings) are visible to creators</li>
           <li>Campaign briefs are visible to creators who apply or are invited</li>
+          <li>Performance evidence and confirmed metrics are visible to the brand that runs the campaign and authorized admins</li>
           <li>Reviews and ratings are visible to all users</li>
         </ul>
 
         <h3>With service providers</h3>
         <p>We share information with third-party service providers that help us operate the Service:</p>
         <ul>
-          <li><strong>Supabase</strong> (database, authentication, storage) — stores your account data, campaign data, and files</li>
-          <li><strong>Vercel</strong> (hosting, analytics) — hosts the application and collects anonymous usage analytics</li>
-          <li><strong>Amazon Web Services (AWS SES)</strong> (email delivery) — processes transactional emails (receives your email address and message content)</li>
-          <li><strong>Google Gemini API</strong> (AI translation) — processes text for translation (campaign briefs and UI strings, no personal identifiers sent)</li>
-          <li><strong>Cohere</strong> (AI embeddings) — generates mathematical representations of profiles for matching (profile text sent, no direct identifiers)</li>
-          <li><strong>Cloudflare</strong> (DNS, bot protection) — processes network requests and provides Turnstile bot verification on public forms</li>
-          <li><strong>Upstash</strong> (rate limiting) — processes request metadata to prevent abuse</li>
+          <li><strong>Supabase</strong> (database, authentication, storage) - stores your account data, campaign data, and files</li>
+          <li><strong>Vercel</strong> (hosting, analytics) - hosts the application and collects anonymous usage analytics</li>
+          <li><strong>Amazon Web Services (AWS SES)</strong> (email delivery) - processes transactional emails (receives your email address and message content)</li>
+          <li><strong>Stripe</strong> (payments) - processes brand campaign service fee checkout sessions and payment events. We do not store full card numbers</li>
+          <li><strong>Google Gemini API</strong> (AI translation and evidence extraction) - processes dynamic campaign brief text and submitted performance evidence when the feature is used</li>
+          <li><strong>Cohere</strong> (AI embeddings) - generates mathematical representations of profiles for matching (profile text sent, no direct identifiers)</li>
+          <li><strong>Cloudflare</strong> (DNS, bot protection) - processes network requests and provides Turnstile bot verification on public forms</li>
+          <li><strong>Upstash</strong> (rate limiting) - processes request metadata to prevent abuse</li>
+          <li><strong>Axiom</strong> (monitoring) - processes application logs and telemetry so we can investigate errors and platform health</li>
+          <li><strong>Slack</strong> (internal alerts) - receives limited access-request and operational alerts for admin review</li>
         </ul>
         <p>
           These providers are contractually obligated to use your information only to provide services
@@ -119,8 +128,13 @@ export default function PrivacyPage() {
         <h2>5. Data Retention</h2>
         <ul>
           <li><strong>Active accounts:</strong> We retain your information for as long as your account is active.</li>
+          <li><strong>Access requests:</strong> We retain approved, rejected, and pending access request records for up to 2 years after the final decision unless a longer period is needed for fraud prevention, disputes, or legal compliance.</li>
+          <li><strong>Campaign records:</strong> We retain campaign briefs, applications, agreements, review history, and reporting records for the life of the campaign plus 2 years, unless a longer period is required for tax, legal, audit, or dispute reasons.</li>
+          <li><strong>Evidence files:</strong> We retain submitted performance evidence for the life of the campaign plus 2 years so brands can verify reports and creators can resolve disputes.</li>
+          <li><strong>Campaign service fee records:</strong> We retain payment, invoice, refund, dispute, and tax records as required by accounting, tax, and legal obligations.</li>
+          <li><strong>Consent records:</strong> We retain terms, privacy, retention, and data-rights acknowledgement records for as long as needed to demonstrate compliance and resolve disputes.</li>
           <li><strong>Deleted accounts:</strong> When you delete your account, we delete or anonymize your personal information within 30 days. Backups containing your data are purged within 90 days.</li>
-          <li><strong>Campaign records:</strong> Anonymized campaign performance data may be retained indefinitely for benchmarking and analytics purposes.</li>
+          <li><strong>Benchmarks:</strong> Aggregated or anonymized campaign performance data may be retained indefinitely for benchmarking and analytics purposes.</li>
           <li><strong>Legal obligations:</strong> We may retain certain information longer if required by law (such as tax or financial records) or to resolve disputes.</li>
         </ul>
 
@@ -149,14 +163,15 @@ export default function PrivacyPage() {
         <ul>
           <li><strong>Access:</strong> Request a copy of the personal information we hold about you</li>
           <li><strong>Correction:</strong> Request correction of inaccurate information</li>
-          <li><strong>Deletion:</strong> Request deletion of your personal information</li>
-          <li><strong>Portability:</strong> Request a machine-readable copy of your data</li>
+          <li><strong>Deletion:</strong> Request account deletion or deletion of personal information, subject to legal, tax, fraud-prevention, dispute, and contractual retention requirements</li>
+          <li><strong>Portability:</strong> Request a machine-readable data export</li>
           <li><strong>Objection:</strong> Object to certain processing of your information</li>
           <li><strong>Withdraw consent:</strong> Where processing is based on consent, withdraw that consent at any time</li>
         </ul>
         <p>
           To exercise any of these rights, contact us at legal@popsdrops.com. We will respond within
-          30 days. We may need to verify your identity before processing your request.
+          30 days. You may also submit data export and account deletion requests inside account settings
+          when available. We may need to verify your identity before processing your request.
         </p>
 
         <h3>California residents (CCPA/CPRA)</h3>
@@ -180,9 +195,9 @@ export default function PrivacyPage() {
         <p>
           We are based in the United States. If you access the Service from outside the United States,
           your information will be transferred to, stored, and processed in the United States and
-          potentially other countries where our service providers operate. By using the Service, you
-          consent to such transfers. We implement appropriate safeguards for international data transfers
-          as required by applicable law.
+          potentially other countries where our service providers operate. We rely on appropriate
+          safeguards, including service provider commitments, data processing terms, contractual
+          protections, and transfer mechanisms where required by applicable law.
         </p>
 
         <h2>9. Children</h2>

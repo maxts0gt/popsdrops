@@ -1,5 +1,5 @@
 import { Pressable, Text, View } from "react-native";
-import { Sparkles, ArrowRight } from "lucide-react-native";
+import { UserRound, ArrowRight } from "lucide-react-native";
 import { useI18n } from "../lib/i18n";
 import { useTheme } from "../lib/theme-context";
 
@@ -20,7 +20,7 @@ export function ProfileSetupCard({ onPress }: ProfileSetupCardProps) {
         className="mb-5 h-14 w-14 items-center justify-center rounded-2xl"
         style={{ backgroundColor: palette.buttonPrimaryBackground }}
       >
-        <Sparkles size={24} color={palette.buttonPrimaryText} />
+        <UserRound size={24} color={palette.buttonPrimaryText} />
       </View>
       <Text
         className="text-center text-lg"

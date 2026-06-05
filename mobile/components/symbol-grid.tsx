@@ -43,7 +43,7 @@ function seededRandom(seed: number) {
 }
 
 /**
- * A single animated character that twinkles — fades from base to bright and back.
+ * A single animated character that twinkles - fades from base to bright and back.
  * Uses Reanimated so animation runs on the UI thread.
  */
 function TwinkleChar({
@@ -119,7 +119,7 @@ function TwinkleWave({
   height: number;
 }) {
   const selected = useMemo(() => {
-    // Use seeded random for purity — waveKey changes each wave
+    // Use seeded random for purity - waveKey changes each wave
     const rand = seededRandom(waveKey * 7919 + 1);
     const originX = rand() * width;
     const originY = rand() * height * 0.7 + height * 0.1;
@@ -135,7 +135,7 @@ function TwinkleWave({
     }));
     withDist.sort((a, b) => a.dist - b.dist);
 
-    // Pick a cluster near the origin — the ripple's "splash zone"
+    // Pick a cluster near the origin - the ripple's "splash zone"
     const maxRadius = Math.min(width, height) * 0.45;
     const inRadius = withDist.filter((c) => c.dist < maxRadius);
 
@@ -147,7 +147,7 @@ function TwinkleWave({
       picked.push(inRadius[i]);
     }
 
-    // Delay based on distance from origin — closer = earlier = ripple
+    // Delay based on distance from origin - closer = earlier = ripple
     const maxDist = picked.length > 0 ? picked[picked.length - 1].dist : 1;
     return picked.map((c) => ({
       ...c,
@@ -172,7 +172,7 @@ function TwinkleWave({
 
 /**
  * Static character grid with animated twinkle waves.
- * Matches the web hero's SocialGrid, adapted for touch — no hover,
+ * Matches the web hero's SocialGrid, adapted for touch - no hover,
  * instead characters periodically catch light in rippling waves.
  */
 export function SymbolGrid() {

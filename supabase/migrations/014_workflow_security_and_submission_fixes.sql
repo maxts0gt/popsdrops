@@ -29,7 +29,7 @@ AS $$
       FROM campaigns
      WHERE id = campaign_uuid
        AND status = 'recruiting'
-       AND (application_deadline IS NULL OR application_deadline >= now())
+       AND (application_deadline IS NULL OR application_deadline >= current_date)
        AND brand_id <> auth.uid()
   );
 $$;

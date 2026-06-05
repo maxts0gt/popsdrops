@@ -1,23 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type MouseEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   Bell,
   CheckCircle2,
   Clock,
+  BadgeCheck,
   DollarSign,
   FileCheck,
-  MessageSquare,
+  Megaphone,
   Star,
-  UserCheck,
-  XCircle,
-  Zap,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { NotificationEmailPreferencesPanel } from "@/components/shared/notification-email-preferences-panel";
+import { getCreatorNotificationHref } from "@/lib/campaigns/creator-campaign-links";
+import {
+  getCreatorNotificationPresentation,
+  type CreatorNotificationIconKey,
+  type CreatorNotificationTone,
+} from "@/lib/campaigns/creator-notification-presentation";
 import { useI18n, useTranslation } from "@/lib/i18n";
-import { createClient } from "@/lib/supabase/client";
+import { createClient, getBrowserUser } from "@/lib/supabase/client";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,13 +35,22 @@ type NotificationType =
   | "application_accepted"
   | "application_rejected"
   | "revision_requested"
+  | "report_correction_requested"
+  | "report_follow_up_requested"
   | "content_approved"
-  | "new_message"
+  | "campaign_update"
+  | "payment_sent"
+  | "payment_received"
   | "payment"
+  | "review_received"
   | "review"
+  | "content_due_soon"
   | "deadline"
   | "tier_upgrade"
-  | "account_approved";
+  | "account_approved"
+  | "account_suspended"
+  | "account_restored"
+  | "account_review_reopened";
 
 interface Notification {
   id: string;
@@ -50,71 +66,53 @@ interface Notification {
 // Config
 // ---------------------------------------------------------------------------
 
-const notificationConfig: Record<
-  NotificationType,
-  { icon: typeof Bell; color: string; bg: string }
+const notificationIcons: Record<CreatorNotificationIconKey, typeof Bell> = {
+  announcement: Megaphone,
+  approval: CheckCircle2,
+  deadline: Clock,
+  payment: DollarSign,
+  profile: BadgeCheck,
+  review: Star,
+  task: FileCheck,
+};
+
+const notificationToneClasses: Record<
+  CreatorNotificationTone,
+  { color: string; bg: string }
 > = {
-  campaign_match: { icon: Zap, color: "text-muted-foreground", bg: "bg-muted/50" },
-  application_accepted: {
-    icon: CheckCircle2,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-950",
+  danger: {
+    color: "text-red-600",
+    bg: "bg-red-50 dark:bg-red-950",
   },
-  application_rejected: {
-    icon: XCircle,
+  neutral: {
     color: "text-muted-foreground",
     bg: "bg-muted/50",
   },
-  revision_requested: {
-    icon: FileCheck,
+  success: {
+    color: "text-emerald-600",
+    bg: "bg-emerald-50 dark:bg-emerald-950",
+  },
+  warning: {
     color: "text-amber-600",
     bg: "bg-amber-50 dark:bg-amber-950",
-  },
-  content_approved: {
-    icon: CheckCircle2,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-950",
-  },
-  new_message: {
-    icon: MessageSquare,
-    color: "text-muted-foreground",
-    bg: "bg-muted/50",
-  },
-  payment: {
-    icon: DollarSign,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-950",
-  },
-  review: { icon: Star, color: "text-amber-500", bg: "bg-amber-50 dark:bg-amber-950" },
-  deadline: { icon: Clock, color: "text-red-600", bg: "bg-red-50 dark:bg-red-950" },
-  tier_upgrade: { icon: Zap, color: "text-foreground", bg: "bg-muted" },
-  account_approved: {
-    icon: UserCheck,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50 dark:bg-emerald-950",
   },
 };
 
 function hrefForNotification(n: Notification): string {
-  const data = n.data as Record<string, string> | null;
-  switch (n.type) {
-    case "campaign_match":
-      return data?.campaign_id ? `/i/discover/${data.campaign_id}` : "/i/discover";
-    case "application_accepted":
-    case "revision_requested":
-    case "content_approved":
-    case "new_message":
-    case "deadline":
-      return data?.campaign_id ? `/i/campaigns/${data.campaign_id}` : "/i/campaigns";
-    case "application_rejected":
-      return "/i/campaigns";
-    case "payment":
-      return "/i/earnings";
-    case "review":
-      return "/i/profile";
-    default:
-      return "/i/home";
-  }
+  return getCreatorNotificationHref(n.type, n.data);
+}
+
+function shouldUseNativeLinkNavigation(
+  event: MouseEvent<HTMLAnchorElement>,
+): boolean {
+  return (
+    event.defaultPrevented ||
+    event.metaKey ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.shiftKey ||
+    event.button !== 0
+  );
 }
 
 function timeAgo(
@@ -142,6 +140,7 @@ function timeAgo(
 // ---------------------------------------------------------------------------
 
 export default function NotificationsPage() {
+  const router = useRouter();
   const { t } = useTranslation("notifications");
   const { t: tc } = useTranslation("ui.common");
   const { locale } = useI18n();
@@ -153,7 +152,7 @@ export default function NotificationsPage() {
       const supabase = createClient();
       const {
         data: { user },
-      } = await supabase.auth.getUser();
+      } = await getBrowserUser();
       if (!user) return;
 
       const { data } = await supabase
@@ -172,19 +171,74 @@ export default function NotificationsPage() {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   async function markAllRead() {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) return;
-
-    await supabase
-      .from("notifications")
-      .update({ read: true })
-      .eq("user_id", user.id)
-      .eq("read", false);
+    const previousNotifications = notifications;
+    const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+    if (unreadIds.length === 0) return;
 
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await getBrowserUser();
+      if (!user) throw new Error("Missing user");
+
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .in("id", unreadIds);
+
+      if (error) throw error;
+    } catch {
+      setNotifications(previousNotifications);
+      toast.error(t("readUpdateError"));
+    }
+  }
+
+  async function markNotificationRead(notificationId: string) {
+    const notification = notifications.find((n) => n.id === notificationId);
+    if (!notification || notification.read) return;
+
+    setNotifications((prev) =>
+      prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n)),
+    );
+
+    try {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await getBrowserUser();
+      if (!user) throw new Error("Missing user");
+
+      const { error } = await supabase
+        .from("notifications")
+        .update({ read: true })
+        .eq("user_id", user.id)
+        .eq("id", notificationId);
+
+      if (error) throw error;
+    } catch {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId ? { ...n, read: false } : n,
+        ),
+      );
+      toast.error(t("readUpdateError"));
+    }
+  }
+
+  async function handleNotificationClick(
+    event: MouseEvent<HTMLAnchorElement>,
+    n: Notification,
+  ) {
+    if (shouldUseNativeLinkNavigation(event)) return;
+
+    event.preventDefault();
+    const href = hrefForNotification(n);
+    await markNotificationRead(n.id);
+    router.push(href);
   }
 
   if (loading) {
@@ -225,6 +279,11 @@ export default function NotificationsPage() {
               {t("unreadCount", { count: String(unreadCount) })}
             </p>
           )}
+          {notifications.length > 0 && unreadCount === 0 && (
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {t("allCaughtUp")}
+            </p>
+          )}
         </div>
         {unreadCount > 0 && (
           <Button
@@ -238,26 +297,39 @@ export default function NotificationsPage() {
         )}
       </div>
 
+      <NotificationEmailPreferencesPanel
+        variant="compact"
+        className="rounded-xl border border-border bg-card p-3 shadow-sm"
+      />
+
       {notifications.length > 0 ? (
         <div className="space-y-2">
           {notifications.map((n) => {
-            const config =
-              notificationConfig[n.type] || notificationConfig.campaign_match;
-            const Icon = config.icon;
+            const presentation = getCreatorNotificationPresentation({
+              type: n.type,
+              data: n.data,
+            });
+            const Icon = notificationIcons[presentation.iconKey];
+            const tone = notificationToneClasses[presentation.tone];
             return (
               <Link
                 key={n.id}
                 href={hrefForNotification(n)}
                 className="block"
+                onClick={(event) => handleNotificationClick(event, n)}
               >
                 <Card
-                  className={`transition-shadow hover:shadow-md ${
-                    !n.read ? "border-s-2 border-s-foreground" : ""
+                  size="sm"
+                  data-read-state={!n.read ? "unread" : "read"}
+                  className={`transition-colors duration-150 hover:bg-slate-50/70 ${
+                    !n.read
+                      ? "bg-slate-50/70 ring-slate-900/10 shadow-[0_8px_24px_-22px_rgba(15,23,42,0.45)]"
+                      : "bg-card ring-border/70"
                   }`}
                 >
                   <CardContent className="flex items-start gap-3">
                     <div
-                      className={`mt-0.5 shrink-0 rounded-lg p-2 ${config.bg} ${config.color}`}
+                      className={`mt-0.5 shrink-0 rounded-lg p-2 ${tone.bg} ${tone.color}`}
                     >
                       <Icon className="size-4" />
                     </div>
@@ -273,7 +345,7 @@ export default function NotificationsPage() {
                           {n.title}
                         </p>
                         {!n.read && (
-                          <span className="mt-1.5 size-2 shrink-0 rounded-full bg-foreground" />
+                          <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-foreground" />
                         )}
                       </div>
                       {n.body && (

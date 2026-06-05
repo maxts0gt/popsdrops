@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Service role client — NEVER expose to the browser
+// Service role client - NEVER expose to the browser
 // Used in Server Actions for admin operations and Edge Functions
 export function createAdminClient() {
   return createClient(

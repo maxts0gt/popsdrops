@@ -8,7 +8,7 @@ import {
   MapPin,
   Users,
   Eye,
-  Zap,
+  Heart,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -318,7 +318,7 @@ export default function BrandCreatorsPage() {
                       )}
                       {creator.avg_engagement_rate > 0 && (
                         <span className="inline-flex items-center gap-1 tabular-nums">
-                          <Zap className="size-3 text-muted-foreground/70" />
+                          <Heart className="size-3 text-muted-foreground/70" />
                           {creator.avg_engagement_rate.toFixed(1)}%
                         </span>
                       )}

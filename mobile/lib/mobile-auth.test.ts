@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  buildMobileAuthCallbackUrlFromParams,
   completeMobileAuthSession,
   getMobileAuthRedirectUrl,
   parseMobileAuthCallback,
@@ -38,6 +39,17 @@ describe("parseMobileAuthCallback", () => {
     });
   });
 
+  it("parses Supabase code callbacks from query params", () => {
+    expect(
+      parseMobileAuthCallback(
+        "exp://127.0.0.1:8083/--/auth/callback?code=code-123",
+      ),
+    ).toEqual({
+      kind: "code",
+      code: "code-123",
+    });
+  });
+
   it("surfaces auth errors from the callback URL", () => {
     expect(
       parseMobileAuthCallback(
@@ -63,6 +75,36 @@ describe("parseMobileAuthCallback", () => {
     ).toEqual({
       kind: "empty",
     });
+  });
+});
+
+describe("buildMobileAuthCallbackUrlFromParams", () => {
+  it("builds a callback URL from Expo Router auth params", () => {
+    expect(
+      buildMobileAuthCallbackUrlFromParams({
+        access_token: "access-123",
+        refresh_token: "refresh-123",
+        ignored: "campaign-room",
+      }),
+    ).toBe(
+      "popsdrops://auth/callback?access_token=access-123&refresh_token=refresh-123",
+    );
+  });
+
+  it("uses the first value when Expo Router provides repeated params", () => {
+    expect(
+      buildMobileAuthCallbackUrlFromParams({
+        code: ["code-123", "code-456"],
+      }),
+    ).toBe("popsdrops://auth/callback?code=code-123");
+  });
+
+  it("returns null when the current route has no auth payload", () => {
+    expect(
+      buildMobileAuthCallbackUrlFromParams({
+        tab: "submit",
+      }),
+    ).toBeNull();
   });
 });
 
@@ -114,6 +156,42 @@ describe("completeMobileAuthSession", () => {
     ).resolves.toEqual({
       kind: "error",
       message: "Session invalid",
+    });
+  });
+
+  it("exchanges Supabase code callbacks for a session", async () => {
+    const setSession = vi.fn();
+    const exchangeCodeForSession = vi.fn().mockResolvedValue({ error: null });
+
+    await expect(
+      completeMobileAuthSession(
+        "exp://127.0.0.1:8083/--/auth/callback?code=code-123",
+        setSession,
+        exchangeCodeForSession,
+      ),
+    ).resolves.toEqual({
+      kind: "success",
+    });
+
+    expect(exchangeCodeForSession).toHaveBeenCalledWith("code-123");
+    expect(setSession).not.toHaveBeenCalled();
+  });
+
+  it("returns an error when Supabase rejects the auth code", async () => {
+    const setSession = vi.fn();
+    const exchangeCodeForSession = vi
+      .fn()
+      .mockResolvedValue({ error: { message: "Code invalid" } });
+
+    await expect(
+      completeMobileAuthSession(
+        "exp://127.0.0.1:8083/--/auth/callback?code=code-123",
+        setSession,
+        exchangeCodeForSession,
+      ),
+    ).resolves.toEqual({
+      kind: "error",
+      message: "Code invalid",
     });
   });
 

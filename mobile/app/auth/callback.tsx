@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useI18n } from "../../lib/i18n";
-import { completeMobileAuthSession } from "../../lib/mobile-auth";
+import {
+  buildMobileAuthCallbackUrlFromParams,
+  completeMobileAuthSession,
+} from "../../lib/mobile-auth";
 import { supabase } from "../../lib/supabase";
 import { useTheme } from "../../lib/theme-context";
 
@@ -13,13 +16,19 @@ export default function AuthCallbackScreen() {
   const { palette } = useTheme();
   const router = useRouter();
   const callbackUrl = Linking.useURL();
+  const callbackParams = useLocalSearchParams();
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const routeParamCallbackUrl = useMemo(
+    () => buildMobileAuthCallbackUrlFromParams(callbackParams),
+    [callbackParams],
+  );
 
   useEffect(() => {
     let cancelled = false;
 
     void (async () => {
-      const initialUrl = callbackUrl ?? (await Linking.getInitialURL());
+      const initialUrl =
+        routeParamCallbackUrl ?? callbackUrl ?? (await Linking.getInitialURL());
 
       if (!initialUrl) {
         if (!cancelled) {
@@ -31,7 +40,19 @@ export default function AuthCallbackScreen() {
       const completion = await completeMobileAuthSession(
         initialUrl,
         (session) => supabase.auth.setSession(session),
+        (code) => supabase.auth.exchangeCodeForSession(code),
       );
+
+      if (__DEV__) {
+        const urlForDebug = new URL(initialUrl);
+        const hashParams = new URLSearchParams(urlForDebug.hash.replace(/^#/, ""));
+        console.info("Mobile auth callback shape", {
+          pathname: urlForDebug.pathname,
+          searchKeys: Array.from(urlForDebug.searchParams.keys()),
+          hashKeys: Array.from(hashParams.keys()),
+          completionKind: completion.kind,
+        });
+      }
 
       if (cancelled) {
         return;
@@ -53,7 +74,7 @@ export default function AuthCallbackScreen() {
     return () => {
       cancelled = true;
     };
-  }, [callbackUrl, router, t]);
+  }, [callbackUrl, routeParamCallbackUrl, router, t]);
 
   if (!errorMessage) {
     return (

@@ -6,33 +6,7 @@ import { Button } from "@/components/ui/button";
 import { PlatformIcon } from "@/components/platform-icons";
 import { PLATFORM_LABELS, type Platform } from "@/lib/constants";
 import { submitContent } from "@/app/actions/content";
-
-// ---------------------------------------------------------------------------
-// URL validation patterns per platform
-// ---------------------------------------------------------------------------
-
-const PLATFORM_URL_PATTERNS: Record<Platform, { regex: RegExp; example: string }> = {
-  tiktok: {
-    regex: /^https?:\/\/(www\.|vm\.)?tiktok\.com\/.+/i,
-    example: "https://www.tiktok.com/@username/video/123...",
-  },
-  instagram: {
-    regex: /^https?:\/\/(www\.)?instagram\.com\/(p|reel|stories)\/.+/i,
-    example: "https://www.instagram.com/reel/ABC123...",
-  },
-  youtube: {
-    regex: /^https?:\/\/(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/shorts\/).+/i,
-    example: "https://www.youtube.com/watch?v=... or /shorts/...",
-  },
-  snapchat: {
-    regex: /^https?:\/\/(www\.|story\.)?snapchat\.com\/.+/i,
-    example: "https://story.snapchat.com/...",
-  },
-  facebook: {
-    regex: /^https?:\/\/(www\.|m\.)?facebook\.com\/.+/i,
-    example: "https://www.facebook.com/username/posts/...",
-  },
-};
+import { useTranslation } from "@/lib/i18n";
 
 // ---------------------------------------------------------------------------
 // Component
@@ -49,10 +23,11 @@ export function ContentSubmitForm({
   platforms,
   onSuccess,
 }: ContentSubmitFormProps) {
+  const { t } = useTranslation("creator.campaign");
   const [selectedPlatform, setSelectedPlatform] = useState<Platform | null>(
     platforms.length === 1 ? platforms[0] : null
   );
-  const [postUrl, setPostUrl] = useState("");
+  const [contentLink, setContentLink] = useState("");
   const [caption, setCaption] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -62,21 +37,19 @@ export function ContentSubmitForm({
     setError(null);
 
     if (!selectedPlatform) {
-      setError("Select a platform");
+      setError(t("submit.selectPlatformRequired"));
       return;
     }
 
-    if (!postUrl.trim()) {
-      setError("Paste the URL of your published post");
+    if (!contentLink.trim()) {
+      setError(t("submit.contentLinkRequired"));
       return;
     }
 
-    // Validate URL matches platform
-    const pattern = PLATFORM_URL_PATTERNS[selectedPlatform];
-    if (!pattern.regex.test(postUrl.trim())) {
-      setError(
-        `URL doesn't look like a ${PLATFORM_LABELS[selectedPlatform]} post. Expected: ${pattern.example}`
-      );
+    try {
+      new URL(contentLink.trim());
+    } catch {
+      setError(t("submit.contentLinkInvalid"));
       return;
     }
 
@@ -84,14 +57,14 @@ export function ContentSubmitForm({
       try {
         await submitContent({
           campaign_member_id: campaignMemberId,
-          content_url: postUrl.trim(),
+          content_url: contentLink.trim(),
           caption: caption.trim() || undefined,
           platform: selectedPlatform,
         });
         setSuccess(true);
         onSuccess?.();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to submit");
+        setError(e instanceof Error ? e.message : t("submit.failed"));
       }
     });
   }
@@ -100,9 +73,11 @@ export function ContentSubmitForm({
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
         <CheckCircle2 className="mx-auto mb-3 size-8 text-emerald-500" />
-        <p className="text-sm font-medium text-emerald-900">Content submitted</p>
+        <p className="text-sm font-medium text-emerald-900">
+          {t("submit.submittedTitle")}
+        </p>
         <p className="mt-1 text-xs text-emerald-700">
-          The brand will review your submission and provide feedback.
+          {t("submit.submittedDetail")}
         </p>
         <Button
           variant="outline"
@@ -110,12 +85,12 @@ export function ContentSubmitForm({
           className="mt-4"
           onClick={() => {
             setSuccess(false);
-            setPostUrl("");
+            setContentLink("");
             setCaption("");
             setSelectedPlatform(platforms.length === 1 ? platforms[0] : null);
           }}
         >
-          Submit another
+          {t("submit.submitAnother")}
         </Button>
       </div>
     );
@@ -127,7 +102,7 @@ export function ContentSubmitForm({
       {platforms.length > 1 && (
         <div>
           <label className="mb-2 block text-sm font-medium text-foreground">
-            Platform
+            {t("submit.selectPlatform")}
           </label>
           <div className="flex flex-wrap gap-2">
             {platforms.map((p) => {
@@ -166,29 +141,25 @@ export function ContentSubmitForm({
         </div>
       )}
 
-      {/* Post URL */}
+      {/* Content link */}
       <div>
         <label className="mb-1 block text-sm font-medium text-foreground">
-          Post URL <span className="text-xs text-red-400">*</span>
+          {t("submit.contentLink")} <span className="text-xs text-red-400">*</span>
         </label>
         <div className="relative">
           <Link2 className="absolute start-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/70" />
           <input
             type="url"
-            placeholder={
-              selectedPlatform
-                ? PLATFORM_URL_PATTERNS[selectedPlatform].example
-                : "Select a platform first..."
-            }
-            value={postUrl}
-            onChange={(e) => setPostUrl(e.target.value)}
+            placeholder={t("submit.contentLinkPlaceholder")}
+            value={contentLink}
+            onChange={(e) => setContentLink(e.target.value)}
             disabled={!selectedPlatform}
             className="w-full rounded-lg border border-border bg-card py-2.5 pe-3 ps-9 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400 disabled:opacity-50"
           />
         </div>
         {selectedPlatform && (
           <p className="mt-1 text-[11px] text-muted-foreground/70">
-            Paste the public URL of your published {PLATFORM_LABELS[selectedPlatform]} post
+            {t("submit.contentLinkHelp")}
           </p>
         )}
       </div>
@@ -196,11 +167,11 @@ export function ContentSubmitForm({
       {/* Caption / Notes */}
       <div>
         <label className="mb-1 block text-sm font-medium text-foreground">
-          Caption / Notes
+          {t("submit.notesLabel")}
         </label>
         <textarea
           rows={3}
-          placeholder="Optional: paste the caption you used, or add any notes for the brand..."
+          placeholder={t("submit.notesPlaceholder")}
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
           className="w-full resize-none rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground/70 focus:border-slate-400 focus:outline-none focus:ring-1 focus:ring-slate-400"
@@ -221,7 +192,7 @@ export function ContentSubmitForm({
         disabled={isPending || !selectedPlatform}
         className="w-full"
       >
-        {isPending ? "Submitting..." : "Submit for Review"}
+        {isPending ? t("submit.submittingDraft") : t("submit.submitDraft")}
       </Button>
     </div>
   );

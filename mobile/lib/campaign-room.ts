@@ -44,6 +44,32 @@ export type ContentSubmission = {
   submittedAt: string | null;
 };
 
+export type ContentPerformance = {
+  id: string;
+  submissionId: string;
+  reportTaskId: string | null;
+  measurementType: "initial_48h" | "final_7d" | "extended_30d";
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  saves: number | null;
+  screenshotUrl: string | null;
+  verificationStatus: string | null;
+  reportedAt: string | null;
+};
+
+export type CampaignReportTask = {
+  id: string;
+  campaignId: string;
+  campaignMemberId: string;
+  taskKey: string;
+  dueAt: string;
+  status: string;
+  submittedAt: string | null;
+  reviewNote: string | null;
+};
+
 export type CampaignMember = {
   id: string;
   campaignId: string;
@@ -51,11 +77,37 @@ export type CampaignMember = {
   acceptedRate: number | null;
 };
 
+export type CampaignAgreementStatus =
+  | "not_required"
+  | "pending"
+  | "signed"
+  | "needs_reacceptance";
+
+export type CampaignAgreement = {
+  id: string;
+  campaignId: string;
+  version: number;
+  title: string;
+  rules: Record<string, { title: string; body: string }>;
+  agreementBody: string | null;
+  fileName: string | null;
+  requiresTypedName: boolean;
+};
+
+export type CampaignAgreementMemberStatus = {
+  status: CampaignAgreementStatus;
+  agreementId: string | null;
+};
+
 export type CampaignRoomData = {
   brief: CampaignBrief;
   member: CampaignMember;
   deliverables: Deliverable[];
   submissions: ContentSubmission[];
+  performance: ContentPerformance[];
+  reportTasks: CampaignReportTask[];
+  agreement: CampaignAgreement | null;
+  agreementStatus: CampaignAgreementMemberStatus;
 };
 
 // ---------------------------------------------------------------------------
@@ -95,7 +147,6 @@ export async function loadCampaignRoom(
   const campaign = campaignRes.data;
   const member = memberRes.data;
 
-  // Now fetch submissions for this member
   const { data: submissionsData, error: subError } = await supabase
     .from("content_submissions")
     .select(
@@ -107,6 +158,69 @@ export async function loadCampaignRoom(
     .order("version", { ascending: false });
 
   if (subError) throw new Error(subError.message);
+
+  const submissionIds = (submissionsData ?? []).map((submission) => submission.id);
+
+  const [{ data: performanceData, error: performanceError }, { data: reportTaskData, error: reportTaskError }] =
+    await Promise.all([
+      submissionIds.length > 0
+        ? supabase
+            .from("content_performance")
+            .select(
+              `id, submission_id, report_task_id, measurement_type, views, likes,
+               comments, shares, saves, screenshot_url, verification_status, reported_at`,
+            )
+            .in("submission_id", submissionIds)
+            .order("reported_at", { ascending: false })
+        : Promise.resolve({ data: [], error: null }),
+      supabase
+        .from("campaign_report_tasks")
+        .select(
+          "id, campaign_id, campaign_member_id, task_key, due_at, status, submitted_at, review_note",
+        )
+        .eq("campaign_member_id", member.id)
+        .order("due_at", { ascending: true }),
+    ]);
+
+  if (performanceError) throw new Error(performanceError.message);
+  if (reportTaskError) throw new Error(reportTaskError.message);
+
+  const { data: agreementStatusData, error: agreementStatusError } = await supabase
+    .from("campaign_member_agreement_status")
+    .select("agreement_id, status")
+    .eq("campaign_member_id", member.id)
+    .maybeSingle();
+
+  if (agreementStatusError) throw new Error(agreementStatusError.message);
+
+  let agreement: CampaignAgreement | null = null;
+  if (
+    agreementStatusData?.agreement_id &&
+    agreementStatusData.status !== "not_required"
+  ) {
+    const { data: agreementData, error: agreementError } = await supabase
+      .from("campaign_agreements")
+      .select(
+        "id, campaign_id, version, title, rules, agreement_body, file_name, requires_typed_name",
+      )
+      .eq("id", agreementStatusData.agreement_id)
+      .eq("status", "published")
+      .maybeSingle();
+
+    if (agreementError) throw new Error(agreementError.message);
+    agreement = agreementData
+      ? {
+          id: agreementData.id,
+          campaignId: agreementData.campaign_id,
+          version: agreementData.version,
+          title: agreementData.title,
+          rules: agreementData.rules as Record<string, { title: string; body: string }>,
+          agreementBody: agreementData.agreement_body,
+          fileName: agreementData.file_name,
+          requiresTypedName: agreementData.requires_typed_name,
+        }
+      : null;
+  }
 
   // Extract brand name
   const brandProfile = Array.isArray(campaign.profiles)
@@ -161,5 +275,36 @@ export async function loadCampaignRoom(
       parentSubmissionId: s.parent_submission_id,
       submittedAt: s.submitted_at,
     })),
+    performance: (performanceData ?? []).map((row) => ({
+      id: row.id,
+      submissionId: row.submission_id,
+      reportTaskId: row.report_task_id,
+      measurementType: row.measurement_type,
+      views: row.views,
+      likes: row.likes,
+      comments: row.comments,
+      shares: row.shares,
+      saves: row.saves,
+      screenshotUrl: row.screenshot_url,
+      verificationStatus: row.verification_status,
+      reportedAt: row.reported_at,
+    })),
+    reportTasks: (reportTaskData ?? []).map((task) => ({
+      id: task.id,
+      campaignId: task.campaign_id,
+      campaignMemberId: task.campaign_member_id,
+      taskKey: task.task_key,
+      dueAt: task.due_at,
+      status: task.status,
+      submittedAt: task.submitted_at,
+      reviewNote: task.review_note,
+    })),
+    agreement,
+    agreementStatus: {
+      agreementId: agreementStatusData?.agreement_id ?? null,
+      status:
+        (agreementStatusData?.status as CampaignAgreementStatus | undefined) ??
+        "not_required",
+    },
   };
 }

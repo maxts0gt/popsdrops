@@ -47,7 +47,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- CREATOR PROFILES
 -- ============================================================
 
--- Sarah Kaya — Beauty & lifestyle, Istanbul
+-- Sarah Kaya - Beauty & lifestyle, Istanbul
 INSERT INTO creator_profiles (
   profile_id, slug, bio, primary_market,
   tiktok, instagram, youtube,
@@ -96,7 +96,7 @@ ON CONFLICT (profile_id) DO UPDATE SET
   total_earned = EXCLUDED.total_earned,
   profile_completeness = EXCLUDED.profile_completeness;
 
--- Youssef Benali — Food & travel, Dubai
+-- Youssef Benali - Food & travel, Dubai
 INSERT INTO creator_profiles (
   profile_id, slug, bio, primary_market,
   tiktok, instagram, snapchat,
@@ -145,7 +145,7 @@ ON CONFLICT (profile_id) DO UPDATE SET
   total_earned = EXCLUDED.total_earned,
   profile_completeness = EXCLUDED.profile_completeness;
 
--- Aiko Tanaka — Tech & gaming, Tokyo
+-- Aiko Tanaka - Tech & gaming, Tokyo
 INSERT INTO creator_profiles (
   profile_id, slug, bio, primary_market,
   tiktok, instagram, youtube,
@@ -194,7 +194,7 @@ ON CONFLICT (profile_id) DO UPDATE SET
   total_earned = EXCLUDED.total_earned,
   profile_completeness = EXCLUDED.profile_completeness;
 
--- Carlos Mendes — Fitness & lifestyle, São Paulo
+-- Carlos Mendes - Fitness & lifestyle, São Paulo
 INSERT INTO creator_profiles (
   profile_id, slug, bio, primary_market,
   tiktok, instagram, youtube,

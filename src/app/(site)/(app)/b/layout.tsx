@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Home,
   Megaphone,
   Users,
   Bell,
@@ -22,11 +21,9 @@ import {
 import { useTranslation } from "@/lib/i18n";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { PageTransition } from "@/components/page-transition";
 
 const navItems = [
-  { href: "/b/home", labelKey: "nav.home", icon: Home },
   { href: "/b/campaigns", labelKey: "nav.campaigns", icon: Megaphone },
   { href: "/b/creators", labelKey: "nav.creators", icon: Users },
   { href: "/b/notifications", labelKey: "nav.notifications", icon: Bell },
@@ -82,7 +79,6 @@ export default function BrandAppLayout({
         </div>
         <div className="flex items-center justify-between border-t border-border p-3">
           <LanguageSwitcher variant="minimal" />
-          <ThemeToggle />
         </div>
       </aside>
 
@@ -97,12 +93,12 @@ export default function BrandAppLayout({
               }
             >
               <Menu className="size-5" />
-              <span className="sr-only">{t("nav.home")}</span>
+              <span className="sr-only">{t("nav.campaigns")}</span>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
-              <SheetTitle className="sr-only">{t("nav.home")}</SheetTitle>
+              <SheetTitle className="sr-only">{t("nav.campaigns")}</SheetTitle>
               <SheetDescription className="sr-only">
-                {t("nav.home")}
+                {t("nav.campaigns")}
               </SheetDescription>
               <div className="flex h-14 items-center border-b border-border px-6">
                 <Link href="/">
@@ -117,7 +113,6 @@ export default function BrandAppLayout({
           <Link href="/" className="flex-1">
             <span className="text-lg font-bold text-foreground">PopsDrops</span>
           </Link>
-          <ThemeToggle />
           <NotificationBell href="/b/notifications" />
         </header>
 

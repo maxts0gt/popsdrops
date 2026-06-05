@@ -1,5 +1,5 @@
 import { Link, Section, Text } from "@react-email/components";
-import { EmailLayout, styles } from "./layout";
+import { EmailLayout, EmailSummary, styles } from "./layout";
 
 interface ContentSubmittedProps {
   brandName: string;
@@ -10,6 +10,7 @@ interface ContentSubmittedProps {
 }
 
 export function ContentSubmittedEmail({
+  brandName = "Brand team",
   creatorName = "Creator",
   campaignTitle = "Campaign",
   platform = "TikTok",
@@ -19,16 +20,18 @@ export function ContentSubmittedEmail({
     <EmailLayout preview={`Content submitted: ${campaignTitle}`}>
       <Text style={styles.heading}>Content ready for review.</Text>
       <Text style={styles.paragraph}>
-        {creatorName} has submitted {platform} content for review.
+        {brandName}, {creatorName} submitted {platform} content. Review the
+        work and approve it or request a specific correction.
       </Text>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Campaign</Text>
-        <Text style={styles.value}>{campaignTitle}</Text>
-      </Section>
-      <Text style={styles.paragraph}>
-        Review the submission and approve or request changes.
-      </Text>
-      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
+      <EmailSummary
+        items={[
+          { label: "Campaign", value: campaignTitle },
+          { label: "Creator", value: creatorName },
+          { label: "Platform", value: platform },
+          { label: "Next action", value: "Review content" },
+        ]}
+      />
+      <Section style={styles.ctaSection}>
         <Link href={campaignUrl} style={styles.button}>
           Review content
         </Link>

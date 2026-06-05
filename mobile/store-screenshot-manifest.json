@@ -1,0 +1,51 @@
+{
+  "outputDirectory": "output/android/store-screenshots",
+  "screens": [
+    {
+      "id": "01-login",
+      "title": "Login",
+      "file": "01-login.png",
+      "route": "/login",
+      "routeFile": "app/(auth)/login.tsx",
+      "auth": "signedOut",
+      "requiredText": ["PopsDrops", "Continue with Google"]
+    },
+    {
+      "id": "02-home",
+      "title": "Home",
+      "file": "02-home.png",
+      "route": "/home",
+      "routeFile": "app/(tabs)/home.tsx",
+      "auth": "creator",
+      "requiredText": ["Good", "overview"]
+    },
+    {
+      "id": "03-invites",
+      "title": "Invites",
+      "file": "03-invites.png",
+      "route": "/discover",
+      "routeFile": "app/(tabs)/discover.tsx",
+      "auth": "creator",
+      "requiredText": ["Invites", "Seoul Glow"]
+    },
+    {
+      "id": "04-campaign-detail",
+      "title": "Campaign Detail",
+      "file": "04-campaign-detail.png",
+      "route": "/campaign/[id]",
+      "routeFile": "app/campaign/[id].tsx",
+      "auth": "creator",
+      "seed": "recruitingCampaign",
+      "requiredText": ["Campaign", "Apply to Campaign"]
+    },
+    {
+      "id": "05-profile",
+      "title": "Profile",
+      "file": "05-profile.png",
+      "route": "/profile",
+      "routeFile": "app/(tabs)/profile.tsx",
+      "auth": "creator",
+      "requiredText": ["Dev Creator", "Profile Completeness"]
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 import { Link, Section, Text } from "@react-email/components";
-import { EmailLayout, styles } from "./layout";
+import { EmailLayout, EmailSummary, styles } from "./layout";
 
 interface ApplicationReceivedProps {
   brandName: string;
@@ -10,6 +10,7 @@ interface ApplicationReceivedProps {
 }
 
 export function ApplicationReceivedEmail({
+  brandName = "Brand team",
   creatorName = "Creator",
   campaignTitle = "Campaign",
   proposedRate = 200,
@@ -17,15 +18,20 @@ export function ApplicationReceivedEmail({
 }: ApplicationReceivedProps) {
   return (
     <EmailLayout preview={`New application: ${campaignTitle}`}>
-      <Text style={styles.heading}>New application.</Text>
+      <Text style={styles.heading}>New application received.</Text>
       <Text style={styles.paragraph}>
-        {creatorName} has applied to your campaign at ${proposedRate}.
+        {brandName}, {creatorName} applied to your campaign. Review the fit,
+        rate, and profile before accepting.
       </Text>
-      <Section style={styles.card}>
-        <Text style={styles.label}>Campaign</Text>
-        <Text style={styles.value}>{campaignTitle}</Text>
-      </Section>
-      <Section style={{ textAlign: "center" as const, margin: "28px 0 8px 0" }}>
+      <EmailSummary
+        items={[
+          { label: "Campaign", value: campaignTitle },
+          { label: "Creator", value: creatorName },
+          { label: "Proposed rate", value: `$${proposedRate}` },
+          { label: "Next action", value: "Review application" },
+        ]}
+      />
+      <Section style={styles.ctaSection}>
         <Link href={campaignUrl} style={styles.button}>
           Review application
         </Link>

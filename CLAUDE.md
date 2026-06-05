@@ -4,49 +4,51 @@ Global cross-border influencer marketing platform connecting brands with vetted 
 
 **Positioning:** PopsDrops is a GLOBAL platform. Not MENA. Not any specific region. Lead with cross-border capability, never geography. Think: the platform Chanel or Hermès would use to run creator campaigns in markets they can't reach.
 
-**Legal Entity:** Tengri Vertex, LLC — Delaware LLC, principal office San Francisco, California. D/b/a PopsDrops.
+**Legal Entity:** Tengri Vertex, LLC - Delaware LLC, principal office San Francisco, California. D/b/a PopsDrops.
 
 ## Tech Stack
 
-- **Framework:** Next.js 16.1.7+ (App Router, Turbopack, React Compiler, PPR) deployed on Vercel — pinned to ≥16.1.7 for CSRF fix (CVE-2026-27978)
+- **Framework:** Next.js 16.1.7+ (App Router, Turbopack, React Compiler, PPR) deployed on Vercel - pinned to ≥16.1.7 for CSRF fix (CVE-2026-27978)
 - **Database/Auth/Storage/Realtime:** Supabase (Postgres + Auth + Storage + Realtime + pgvector + pg_trgm)
 - **AI:** Vercel AI SDK (`ai` package) + Gemini API (translation, recommendations) + Cohere embed-v3 (multilingual embeddings for semantic search/matching)
-- **Email:** AWS SES + React Email templates — SPF/DKIM/DMARC/SNS bounce handling configured
-- **Translation:** Static bundled UI i18n — 30 curated locales generated offline with Gemini and checked into the repo. Runtime AI translation remains only for dynamic content like briefs.
-- **Search:** Hybrid — tsvector (keyword) + pg_trgm (fuzzy) + pgvector with HNSW (semantic)
-- **DNS:** Cloudflare (DNS only, no proxy — domain registered there)
+- **Email:** AWS SES + React Email templates - SPF/DKIM/DMARC/SNS bounce handling configured
+- **Translation:** Static bundled UI i18n - 30 curated locales generated offline with Gemini and checked into the repo. Runtime AI translation remains only for dynamic content like briefs.
+- **Search:** Hybrid - tsvector (keyword) + pg_trgm (fuzzy) + pgvector with HNSW (semantic)
+- **DNS:** Cloudflare (DNS only, no proxy - domain registered there)
 - **Analytics:** Vercel Analytics (free)
 - **Monitoring:** Axiom (OTel + Vercel log drains) + `function_execution_log` table
 - **Styling:** Tailwind CSS v4 + shadcn/ui
 - **Animation:** Motion v12 (`motion/react`)
 - **Icons:** Lucide React
-- **Fonts:** Inter (Latin/Cyrillic) + Cairo (Arabic) — both Google Fonts, variable
+- **Fonts:** Inter (Latin/Cyrillic) + Cairo (Arabic) - both Google Fonts, variable
 - **Forms:** React Hook Form + Zod (shared validation client + server)
 - **Tables:** TanStack Table v8 via shadcn DataTable
 - **Command Palette:** cmdk via shadcn Command
 - **Toasts:** Sonner
 - **Rate Limiting:** Upstash Redis + @upstash/ratelimit
 - **Bot Protection:** Cloudflare Turnstile (signup/public forms)
-- **Mobile:** Expo (React Native) app for creators in `mobile/` — shares types, constants, validations via `shared/`. NativeWind for styling, Expo Router for navigation.
+- **Mobile:** Expo (React Native) app for creators in `mobile/` - shares types, constants, validations via `shared/`. NativeWind for styling, Expo Router for navigation.
 - **Testing:** Playwright (E2E) + Vitest (unit/component)
-- **CI/CD:** GitHub Actions — lint + type check + test on every PR
+- **CI/CD:** GitHub Actions is reserved for post-merge production deploys only. Before merging, run focused local checks plus the relevant smoke command; use `npm run smoke:release` as the full private-beta release gate when the change touches the product loop.
 
 ## What This Is NOT
 
-- NO Stripe Connect — we do NOT handle payments (payment status tracking only: pending/invoiced/paid)
-- NO PostHog — use Vercel Analytics only
-- NO passwords — Google OAuth + magic link + OTP fallback only
-- NO Cloudflare proxy — DNS only mode, Vercel handles CDN/edge
-- NO Novel/Tiptap — broken RTL, XSS CVEs. Use structured forms for briefs
-- NO WhatsApp integration for MVP — email is the only notification channel
-- NO dark mode for MVP — light only
-- NO PWA / Capacitor — Expo (React Native) for mobile
-- NO self-serve signup for brands — invite-only, vetted, concierge onboarded
-- NO chat system for MVP — email notifications only
-- NO payment processing — status tracking only
-- NO placeholder pages — every page must have real, intentional content
+- NO Stripe Connect - we do NOT process creator payments (payment status tracking only: pending/invoiced/paid)
+- NO PostHog - use Vercel Analytics only
+- NO passwords - Google OAuth + magic link + OTP fallback only
+- NO Cloudflare proxy - DNS only mode, Vercel handles CDN/edge
+- NO Novel/Tiptap - broken RTL, XSS CVEs. Use structured forms for briefs
+- NO WhatsApp integration for the current product scope - email is the only notification channel
+- NO broad web dark mode for the current product scope - web app stays light; mobile creator surfaces may use intentional luxury dark styling
+- NO PWA / Capacitor - Expo (React Native) for mobile
+- NO self-serve signup for brands - invite-only, vetted, concierge onboarded
+- NO chat system for the current product scope - email notifications only
+- NO creator payment processing - status tracking only
+- NO placeholder pages - every page must have real, intentional content
 
 ## Design System
+
+Canonical UI/UX source: read `DESIGN.md` before changing product flows, interface behavior, visual design, or user-facing copy.
 
 ### Visual Identity
 
@@ -56,67 +58,67 @@ Global cross-border influencer marketing platform connecting brands with vetted 
 
 **Components:** rounded-xl cards, rounded-lg buttons, shadow-sm default, 8px spacing grid. Cards use `ring-1 ring-slate-900/[0.03]` for subtle depth.
 
-### Philosophy — "Refined Confidence"
+### Philosophy - "Refined Confidence"
 
-Premium, global, minimal. The kind of platform luxury brands would trust. Not flashy, not minimal-boring — intentional in every detail. Like Linear meets Stripe.
+Premium, global, minimal. The kind of platform luxury brands would trust. Not flashy, not minimal-boring - intentional in every detail. Like Linear meets Stripe.
 
-**NOT:** Middle Eastern themed, Silicon Valley generic, or AI-slop aesthetic. No gradients on buttons. No teal/amber colored UI elements. No feature cards with descriptions — use title-only chips.
+**NOT:** Middle Eastern themed, Silicon Valley generic, or AI-slop aesthetic. No gradients on buttons. No teal/amber colored UI elements. No feature cards with descriptions - use title-only chips.
 
 ### Landing Page Pattern
 
-Dark hero (`slate-950`) with atmospheric gradient orbs → clean white content sections. Header is transparent on dark hero, transitions to solid white on scroll. This pattern is ONLY for the landing page — all other pages have white backgrounds with solid headers.
+Dark hero (`slate-950`) with atmospheric gradient orbs → clean white content sections. Header is transparent on dark hero, transitions to solid white on scroll. This pattern is ONLY for the landing page - all other pages have white backgrounds with solid headers.
 
 ### Key Patterns
 
-- **Dark hero** — Landing page only. `bg-slate-950` with subtle `teal-500/[0.07]` and `amber-500/[0.05]` gradient orbs. Grid texture at 3% opacity.
-- **Adaptive header** — `fixed`, transparent with white text on dark hero, `bg-white/90 backdrop-blur-xl` on scroll or on light pages. Uses `usePathname()` to detect.
-- **Feature chips** — Title-only (`rounded-full border border-slate-200 px-4 py-2 text-sm`). No descriptions. Fewer strings to translate.
-- **Mock UI previews** — Report (landing), Dashboard (for-brands), Media kit (for-creators). Each page has ONE unique visual. Zero overlap.
-- **Path cards** — Icons + title + description + "Learn more →". Hover lift with `-translate-y-0.5`.
-- **Window chrome** — Colored dots (red/amber/green), dark active tab, tabs for context.
+- **Dark hero** - Landing page only. `bg-slate-950` with subtle `teal-500/[0.07]` and `amber-500/[0.05]` gradient orbs. Grid texture at 3% opacity.
+- **Adaptive header** - `fixed`, transparent with white text on dark hero, `bg-white/90 backdrop-blur-xl` on scroll or on light pages. Uses `usePathname()` to detect.
+- **Feature chips** - Title-only (`rounded-full border border-slate-200 px-4 py-2 text-sm`). No descriptions. Fewer strings to translate.
+- **Mock UI previews** - Report (landing), Dashboard (for-brands), Media kit (for-creators). Each page has ONE unique visual. Zero overlap.
+- **Path cards** - Icons + title + description + "Learn more →". Hover lift with `-translate-y-0.5`.
+- **Window chrome** - Colored dots (red/amber/green), dark active tab, tabs for context.
 
 ## Architecture
 
 ### Four products
 
-- `/` — Marketing site: landing, /for-brands, /for-creators, /partners, /terms, /privacy
-- `/i/*` — Creator app (mobile-first, bottom nav)
-- `/b/*` — Brand dashboard (desktop-first, sidebar nav)
-- `/admin/*` — Admin center (desktop, sidebar) — build later, use Supabase dashboard initially
+- `/` - Marketing site: landing, /for-brands, /for-creators, /partners, /terms, /privacy
+- `/i/*` - Creator app (mobile-first, bottom nav)
+- `/b/*` - Brand dashboard (desktop-first, sidebar nav)
+- `/admin/*` - Admin center (desktop, sidebar) - internal control tower for exceptions, queue health, revenue, audit, and user review
 
 ### Access Model
 
 - **Brands:** Invite-only. Submit request form → admin reviews → approve/reject → magic link email → onboarding
 - **Creators:** Open signup. Profile must meet quality threshold (real social accounts, minimums) to appear in brand search results. Incomplete profiles exist but are invisible to brands.
-- **Admin:** Max only, initially via Supabase dashboard
+- **Admin:** Max only, internal control tower for approvals, queue health, revenue, audit, and exceptions
 
 ### Key Entities
 
-- **Waitlist** — brand/creator requests with company info, social handles, reason for joining. Status: pending/approved/rejected
-- **Profiles** — extends Supabase Auth, role-based (creator/brand/admin)
-- **Creator Profiles** — social accounts (TikTok, Instagram, Snapchat, YouTube, Facebook), niches, markets, rate card (per-platform per-format), tier, ranking score, profile embedding (vector)
-- **Brand Profiles** — company info, target markets, industry, rating
-- **Campaigns** — 6-phase lifecycle: draft → recruiting → in_progress → publishing → monitoring → completed (+ paused/cancelled). Structured brief, deliverables, usage rights, budget tracking
-- **Campaign Applications** — rate + pitch, with counter-offer support
-- **Campaign Members** — accepted creators with payment status tracking
-- **Content Submissions** — version history, revision count (max enforced), state machine
-- **Content Performance** — platform-specific fields, multiple measurement reads
-- **Reviews** — bidirectional post-campaign ratings
-- **Notifications** — outbox pattern for reliable email delivery
+- **Waitlist** - brand/creator requests with company info, social handles, reason for joining. Status: pending/approved/rejected
+- **Profiles** - extends Supabase Auth, role-based (creator/brand/admin)
+- **Creator Profiles** - social accounts (TikTok, Instagram, Snapchat, YouTube, Facebook), niches, markets, rate card (per-platform per-format), tier, ranking score, profile embedding (vector)
+- **Brand Profiles** - company info, target markets, industry, rating
+- **Campaigns** - 6-phase lifecycle: draft → recruiting → in_progress → publishing → monitoring → completed (+ paused/cancelled). Structured brief, deliverables, usage rights, budget tracking
+- **Campaign Applications** - rate + pitch, with counter-offer support
+- **Campaign Members** - accepted creators with payment status tracking
+- **Content Submissions** - version history, revision count (max enforced), state machine
+- **Content Performance** - platform-specific fields, multiple measurement reads
+- **Reviews** - bidirectional post-campaign ratings
+- **Notifications** - outbox pattern for reliable email delivery
 
-### 5 Supported Platforms
+### Supported Platforms
 
-TikTok, Instagram, Snapchat, YouTube, Facebook. Each has different view/engagement definitions — metrics are NEVER mixed cross-platform.
+Campaign setup supports TikTok, Instagram, Snapchat, YouTube, and Facebook as publishing platforms. Reporting templates also support X and Generic proof entries because creators may submit evidence from a required channel that is not a first-class campaign platform yet. Each platform has different view/engagement definitions - metrics are NEVER mixed cross-platform.
 
-### Build Order
+### Current Build Order
 
-1. **Database schema** — all tables, RLS policies, TypeScript types
-2. **Auth + Waitlist** — Google OAuth + magic link, brand request form, approval flow
-3. **Creator side** — onboarding, profile, campaign discovery (supply first)
-4. **Brand side** — onboarding, campaign creation, creator discovery, content review
-5. **Core loop** — applications, content submissions, approvals, reports
-6. **Admin** — only when manual Supabase operations become painful (~100+ users)
-7. **Flutter mobile** — creator app, month 3-4
+1. **Database schema** - all tables, RLS policies, TypeScript types
+2. **Auth + Waitlist** - Google OAuth + magic link, brand request form, approval flow
+3. **Creator side** - onboarding, profile, campaign discovery (supply first)
+4. **Brand side** - onboarding, campaign creation, creator discovery, content review
+5. **Core loop** - applications, content submissions, approvals, reports
+6. **Admin** - control tower for exceptions, queue health, revenue, audit, and user review
+7. **Expo mobile** - creator app for creator-first workflows after the web loop is solid
 
 ## Auth Flow
 
@@ -135,7 +137,7 @@ New users → progressive onboarding (2 steps only, rest collected over time).
 
 ### Dev Login (Local Development Only)
 
-For local testing, use the dev login bypass at **`/dev/login`**. One-click sign-in as any role — no password auth needed.
+For local testing, use the dev login bypass at **`/dev/login`**. One-click sign-in as any role - no password auth needed.
 
 **How it works:**
 - `/dev/login` page shows role cards (Creator, Brand, Admin)
@@ -163,6 +165,12 @@ For local testing, use the dev login bypass at **`/dev/login`**. One-click sign-
 11. **No placeholders.** Every page ships with real content or doesn't ship.
 12. **Fewer words.** Charts and dashboards speak better than copy. Less text = less to translate.
 13. **Premium positioning.** Design as if Chanel is evaluating us. Every pixel matters.
+
+## Engineering Quality
+
+Code that does not work as expected is worse than garbage - it is tech debt. Every implementation must include the smallest practical proof that it behaves correctly: failing tests before behavior changes, fresh verification before completion claims, and browser smoke tests for user-facing flows.
+
+Never promote dormant scaffolding into architecture. Do not add cron jobs, token refresh jobs, platform API metric fetchers, database scheduler extensions, Vault secrets, or backend automation because old code, tables, or helpers exist. Start from the product workflow first, then implement only the smallest backend needed for that workflow. For creator reporting, the default is evidence-first submission and confirmation, never platform-token sync or automatic metric fetching.
 
 ## What Creators Need
 
@@ -198,15 +206,15 @@ Every platform measures differently. We NEVER sum or average raw metrics cross-p
 - **Engagement**: Platform-specific interactions weighted differently (saves 12x, shares 6x, comments 4x a like).
 - **CPM**: Different denominators per platform. Use CPE (Cost Per Engagement) as cross-platform equalizer.
 
-### Campaign Lifecycle — 6 Phases
+### Campaign Lifecycle - 6 Phases
 
 Draft → Recruiting → In Progress → Publishing → Monitoring → Completed (+ Paused/Cancelled)
 
 ### Creator Tiers
 
-New → Rising (3+ campaigns, 4.0+ rating) → Established (10+, 4.5+) → Top (25+, 4.7+, manual review). MVP ships New + Rising only.
+New → Rising (3+ campaigns, 4.0+ rating) → Established (10+, 4.5+) → Top (25+, 4.7+, manual review). Current launch scope ships New + Rising only.
 
-## i18n — Static, Premium, Fast
+## i18n - Static, Premium, Fast
 
 The platform ships with 30 reviewed UI locales bundled into the web and mobile apps. Language switching is instant and does not call Gemini or the database at runtime for fixed interface copy.
 
@@ -215,9 +223,9 @@ The platform ships with 30 reviewed UI locales bundled into the web and mobile a
 English source strings live in `src/lib/i18n/strings.ts` organized by page key. Locale bundles are generated offline into checked-in JSON artifacts for public web, signed-in web, and mobile. Route shells seed those bundles at render time, so UI copy is served directly from the app bundle.
 
 **Runtime behavior:**
-1. Build-time bundle generation — Gemini generates locale JSON offline
-2. App bundle / prerendered HTML — web serves bundled copy directly
-3. In-memory UI state — switching locales is just a bundle swap, no network translation call
+1. Build-time bundle generation - Gemini generates locale JSON offline
+2. App bundle / prerendered HTML - web serves bundled copy directly
+3. In-memory UI state - switching locales is just a bundle swap, no network translation call
 
 **Locale detection:** Cookie → profile preference → Accept-Language header → English default. Unsupported locales fall back to English; UI does not generate new locales on demand.
 
@@ -231,10 +239,10 @@ English source strings live in `src/lib/i18n/strings.ts` organized by page key. 
 4. **Flexible layouts.** Never fixed widths on text. Arabic/Russian = 30% longer. CJK = shorter.
 5. **Directional icons flip in RTL.** Use `isRTL` from `useI18n()` or `rtl:rotate-180`.
 6. **Variables use `{braces}`.** e.g. `t("greeting", { name })`.
-7. **Platform names stay in English.** TikTok, Instagram, CPM, CPE — never translated.
+7. **Platform names stay in English.** TikTok, Instagram, CPM, CPE - never translated.
 8. **Numbers stay in Western Arabic numerals.** Use `Intl.NumberFormat` for formatting.
 9. **Legal pages are English-only.** No translation. No i18n hooks.
-10. **Demo/mock data stays in English.** Creator names, country names in previews — universal.
+10. **Demo/mock data stays in English.** Creator names, country names in previews - universal.
 
 ### Language switcher
 
@@ -248,25 +256,37 @@ en, ar, bn, de, el, es, fa, fr, he, hi, id, it, ja, kk, ko, ms, nl, pl, pt, ro, 
 
 ### i18n File Map
 
-- `src/lib/i18n/strings.ts` — English source strings, `LOCALE_DISPLAY_NAMES`, `getLocaleDisplayName()`, `isRTLLocale()`
-- `src/lib/i18n/context.tsx` — `I18nProvider`, `useI18n()`, `useTranslation()` hooks
-- `src/lib/i18n/server.ts` — `getLocale()`, `getDetectedLocales()`, bundle resolvers
-- `src/lib/i18n/generated/public-bundles/*` — public marketing locale bundles
-- `src/lib/i18n/generated/platform-bundles/*` — signed-in web locale bundles
-- `mobile/lib/generated/mobile-bundles/*` — mobile locale bundles
-- `src/lib/supabase/middleware.ts` — Locale detection from cookie → Accept-Language
-- `src/components/language-switcher.tsx` — Globe dropdown (default, minimal, dark, header variants)
-- `scripts/generate-public-translation-bundles.mjs` — regenerate public locale bundles
-- `scripts/generate-platform-translation-bundles.mjs` — regenerate signed-in web locale bundles
-- `scripts/generate-mobile-translation-bundles.mjs` — regenerate mobile locale bundles
+- `src/lib/i18n/strings.ts` - English source strings, `LOCALE_DISPLAY_NAMES`, `getLocaleDisplayName()`, `isRTLLocale()`
+- `src/lib/i18n/context.tsx` - `I18nProvider`, `useI18n()`, `useTranslation()` hooks
+- `src/lib/i18n/server.ts` - `getLocale()`, `getDetectedLocales()`, bundle resolvers
+- `src/lib/i18n/generated/public-bundles/*` - public marketing locale bundles
+- `src/lib/i18n/generated/platform-bundles/*` - signed-in web locale bundles
+- `mobile/lib/generated/mobile-bundles/*` - mobile locale bundles
+- `src/lib/supabase/middleware.ts` - Locale detection from cookie → Accept-Language
+- `src/components/language-switcher.tsx` - Globe dropdown (default, minimal, dark, header variants)
+- `scripts/generate-public-translation-bundles.mjs` - regenerate public locale bundles
+- `scripts/generate-platform-translation-bundles.mjs` - regenerate signed-in web locale bundles
+- `scripts/generate-mobile-translation-bundles.mjs` - regenerate mobile locale bundles
 
 ## Backend Architecture
 
-### Vercel Server Actions (Node.js)
-- `translate-brief` — Gemini API on campaign publish
-- `match-creators` — Cohere embed-v3 similarity search
-- `generate-report` — Vercel AI SDK generateObject
-- `generate-embeddings` — Cohere embed-v3 on profile/campaign changes
+### Runtime Boundary
+
+Next.js is the product interface layer. Supabase is the operational backend.
+
+Next.js owns page rendering, app shell, forms, dashboard presentation, and thin orchestration. Supabase owns Postgres, Auth, Storage, RLS, Realtime, project secrets, Edge Functions, audit/event writes, AI extraction, dynamic translation, report generation, email dispatch, and explicitly approved lifecycle automation.
+
+Do not put secret-heavy, scheduled, long-running, high-volume, Storage-processing, or lifecycle-critical business logic in Next.js Server Actions by default. Build those operations as Supabase Edge Functions or Postgres functions when the logic belongs close to data. Any background automation needs an explicit product workflow and cannot be inferred from old scaffolding.
+
+For 1M-user scale, avoid creating two backend cost centers. Supabase should absorb operational backend scale because database compute, Auth MAU, Storage, egress, RLS, Edge Functions, and secrets live there. Vercel/Next.js should not become the place where expensive background jobs, AI jobs, or repeated report processing run.
+
+### Supabase Operational Workloads
+- `analyze-performance-evidence` - Gemini evidence extraction from private Storage files
+- `translate-brief` - Gemini translation for dynamic campaign brief fields
+- `generate-report` - report export jobs and durable artifacts
+- `send-email` - transactional email dispatch through AWS SES
+
+Creator reporting is evidence-first. Creators submit the content URL, evidence screenshot or platform export, and metric values. Gemini can extract screenshot values, but the creator confirms or corrects them before the brand report uses the data. Platform-token connections are not part of the current reporting architecture; any future verification layer needs a new product decision, privacy model, and written workflow.
 
 ### Security (Non-Negotiable)
 - Pin Next.js ≥16.1.7, configure `serverActions.allowedOrigins`

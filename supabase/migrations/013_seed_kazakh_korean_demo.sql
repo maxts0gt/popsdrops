@@ -111,7 +111,7 @@ ON CONFLICT (profile_id) DO UPDATE SET
 
 
 -- ============================================================
--- CAMPAIGN 1: K-Beauty Glow Ritual — Central Asia Launch
+-- CAMPAIGN 1: K-Beauty Glow Ritual - Central Asia Launch
 -- Korean brand targeting Kazakhstan creators.
 -- ============================================================
 
@@ -128,11 +128,11 @@ INSERT INTO campaigns (
 ) VALUES (
   kbeauty_campaign_id,
   haneul_id,
-  'Glass Skin Ritual — Central Asia Launch',
-  'Introduce the Haneul Glass Skin Set to your audience. Show your real morning or evening skincare routine using all 3 products: Toner, Serum, and Moisture Barrier Cream. We want authentic "get ready with me" content that feels natural and relatable — not a product review, but a lifestyle moment.',
+  'Glass Skin Ritual - Central Asia Launch',
+  'Introduce the Haneul Glass Skin Set to your audience. Show your real morning or evening skincare routine using all 3 products: Toner, Serum, and Moisture Barrier Cream. We want authentic "get ready with me" content that feels natural and relatable - not a product review, but a lifestyle moment.',
   E'Use all 3 products from the Glass Skin Set in order (toner → serum → cream).\nShow before/after skin texture if comfortable.\nMention @haneulcosmetics and #GlassSkinRitual.\nInclude the link in bio or swipe-up where available.',
-  E'Film in natural light — golden hour, window light, or bathroom mirror.\nShare your honest first impression.\nSpeak in your native language (Kazakh, Russian, or both).\nShow the product packaging and texture close-ups.',
-  E'No filters that alter skin texture.\nNo competitor products in frame.\nNo medical or dermatological claims.\nNo AI-generated voiceover — we want your real voice.',
+  E'Film in natural light - golden hour, window light, or bathroom mirror.\nShare your honest first impression.\nSpeak in your native language (Kazakh, Russian, or both).\nShow the product packaging and texture close-ups.',
+  E'No filters that alter skin texture.\nNo competitor products in frame.\nNo medical or dermatological claims.\nNo AI-generated voiceover - we want your real voice.',
   ARRAY['tiktok', 'instagram']::platform_type[],
   ARRAY['kazakhstan', 'uzbekistan', 'russia']::text[],
   ARRAY['beauty', 'lifestyle']::text[],
@@ -160,7 +160,7 @@ INSERT INTO campaigns (
 
 -- Deliverables for Glass Skin campaign
 INSERT INTO campaign_deliverables (campaign_id, platform, content_type, quantity, notes) VALUES
-  (kbeauty_campaign_id, 'tiktok', 'short_video', 1, 'GRWM skincare routine — 30 to 60 seconds'),
+  (kbeauty_campaign_id, 'tiktok', 'short_video', 1, 'GRWM skincare routine - 30 to 60 seconds'),
   (kbeauty_campaign_id, 'instagram', 'reel', 1, 'Before/after skin texture or routine close-up')
 ON CONFLICT DO NOTHING;
 
@@ -183,10 +183,10 @@ INSERT INTO campaigns (
 ) VALUES (
   central_asia_campaign_id,
   haneul_id,
-  'Haneul × Almaty — City Skin Diaries',
-  'Document your day in Almaty while incorporating the Haneul Moisture Barrier Cream into your routine. We want to see the city through your eyes — your morning coffee, the mountains, the streets — with one moment featuring the product naturally. Think lifestyle content with a skincare beat, not a product ad.',
-  E'Feature the Moisture Barrier Cream at least once in the video.\nTag @haneulcosmetics and #CityGlow.\nCaption in your language — no translation needed.',
-  E'Show real Almaty — the places you actually go.\nKeep it candid and cinematic.\nYour voice, your style.',
+  'Haneul × Almaty - City Skin Diaries',
+  'Document your day in Almaty while incorporating the Haneul Moisture Barrier Cream into your routine. We want to see the city through your eyes - your morning coffee, the mountains, the streets - with one moment featuring the product naturally. Think lifestyle content with a skincare beat, not a product ad.',
+  E'Feature the Moisture Barrier Cream at least once in the video.\nTag @haneulcosmetics and #CityGlow.\nCaption in your language - no translation needed.',
+  E'Show real Almaty - the places you actually go.\nKeep it candid and cinematic.\nYour voice, your style.',
   E'No studio setups.\nNo hard-sell voiceover.\nNo product-only shots without lifestyle context.',
   ARRAY['tiktok', 'instagram']::platform_type[],
   ARRAY['kazakhstan']::text[],
@@ -206,7 +206,7 @@ INSERT INTO campaigns (
 
 -- Deliverables for City Skin Diaries
 INSERT INTO campaign_deliverables (campaign_id, platform, content_type, quantity, notes) VALUES
-  (central_asia_campaign_id, 'tiktok', 'short_video', 1, 'Day-in-my-life Almaty vlog with product moment — 30 to 90 seconds'),
+  (central_asia_campaign_id, 'tiktok', 'short_video', 1, 'Day-in-my-life Almaty vlog with product moment - 30 to 90 seconds'),
   (central_asia_campaign_id, 'instagram', 'story', 3, 'Story series: morning routine → city moment → evening wind-down')
 ON CONFLICT DO NOTHING;
 

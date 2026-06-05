@@ -86,19 +86,19 @@ export function I18nProvider({
 
   const t = useCallback(
     (pageKey: PageKey, key: string, vars?: Record<string, string>): string => {
-      // English — return source directly
+      // English - return source directly
       if (locale === DEFAULT_LOCALE) {
         const source = getSourceStrings(pageKey);
         return interpolate(source[key] || key, vars);
       }
 
-      // Other locale — check cache
+      // Other locale - check cache
       const translated = cache.current[locale]?.[pageKey]?.[key];
       if (translated) {
         return interpolate(translated, vars);
       }
 
-      // Cache miss — return English fallback. Route shells seed bundle translations.
+      // Cache miss - return English fallback. Route shells seed bundle translations.
       const source = getSourceStrings(pageKey);
       return interpolate(source[key] || key, vars);
     },
@@ -134,9 +134,13 @@ export function useI18n() {
  */
 export function useTranslation(pageKey: PageKey) {
   const { t, locale, isRTL, dir, isLoading, isLocaleReady } = useI18n();
+  const scopedT = useCallback(
+    (key: string, vars?: Record<string, string>) => t(pageKey, key, vars),
+    [t, pageKey],
+  );
 
   return {
-    t: (key: string, vars?: Record<string, string>) => t(pageKey, key, vars),
+    t: scopedT,
     locale,
     isRTL,
     dir,

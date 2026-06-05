@@ -28,7 +28,7 @@
 ### How Top Platforms Structure Campaign Creation
 
 #### CreatorIQ (Enterprise)
-- **Instant campaign setup** with modular configuration — brands input campaign requirements, choose which modules their team needs, and follow a step-by-step flow aligned with campaign objectives.
+- **Instant campaign setup** with modular configuration - brands input campaign requirements, choose which modules their team needs, and follow a step-by-step flow aligned with campaign objectives.
 - Configurable dashboards allow monitoring of objectives, timelines, budgets, influencer activities, and campaign status in real-time.
 - The brief, creator communication, and content approval all happen without leaving the campaign page.
 - Automates contract creation, payment approvals, and content oversight as part of the campaign setup.
@@ -40,7 +40,7 @@
 - Supports running multiple campaigns simultaneously from one dashboard.
 
 #### Aspire
-- Brands build a **custom, branded application page** for each campaign — creators learn about the brand and apply directly.
+- Brands build a **custom, branded application page** for each campaign - creators learn about the brand and apply directly.
 - Campaign brief acts as the central artifact that creators respond to.
 - Automates 90% of manual tasks: briefings, contract generation, content approvals, affiliate link creation, payment processing.
 - Campaigns can be duplicated for repeat use.
@@ -48,23 +48,23 @@
 #### impact.com (Task-Based Model)
 - Campaign configuration via a structured checklist: Campaign Manager > Creator > Create Campaign.
 - **Two task definition modes:**
-  - **Brand Defines** — brands assign specific tasks to creators, can add custom tasks during negotiation.
-  - **Creator Defines** — creators propose tasks based on their strengths (must add at least one task when applying).
+  - **Brand Defines** - brands assign specific tasks to creators, can add custom tasks during negotiation.
+  - **Creator Defines** - creators propose tasks based on their strengths (must add at least one task when applying).
 - Task timeline options: **Absolute Dates** (fixed deadlines) or **Relative Dates** (due X days after hiring or task creation).
 - Task activity logs track draft rejections, metric submissions, deliverable updates.
 - Brands can add/remove tasks from a creator's to-do list mid-campaign.
 
 #### #paid (Curated Model)
 - Steps 1-2: Define ideal audience and ideal creator.
-- Content type selection via checkboxes — Instagram: Photos, Stories, Carousels, Reels; TikTok: Videos.
+- Content type selection via checkboxes - Instagram: Photos, Stories, Carousels, Reels; TikTok: Videos.
 - Algorithm broadcasts opportunity to creators with proven history in selected content types.
 - Budget definition, sales tracking, store traffic analysis all configured centrally.
 - "Require draft approval" toggle for pre-publication review.
 
 #### Insense (UGC-First)
-- Interactive brief template that auto-adapts based on selections — can be completed in minutes.
+- Interactive brief template that auto-adapts based on selections - can be completed in minutes.
 - Brief includes campaign info, product info, creator requirements, content requirements.
-- **Brief acts as legal contract** — creators agree to terms when they apply, eliminating separate contracts.
+- **Brief acts as legal contract** - creators agree to terms when they apply, eliminating separate contracts.
 - Campaigns can be duplicated for successful repeats.
 - Unlimited campaign launches on paid plans.
 
@@ -74,7 +74,7 @@
 - Define budgets, timelines, deliverables.
 - Up to 5 screening questions for Open Application campaigns (brand partnership history, product experience, etc.).
 
-### Brief Structure — Standard Fields Across Platforms
+### Brief Structure - Standard Fields Across Platforms
 
 Based on analysis of all platforms and industry templates, the standard brief includes:
 
@@ -118,7 +118,7 @@ Based on analysis of all platforms and industry templates, the standard brief in
 - **Traackr** supports multi-currency and cross-market spend tracking, analyzing performance globally while managing at local level.
 - **KOL Radar (iKala)** covers 190 countries with 300M+ influencers, consolidating all interactions and records across markets.
 - **Humanz** powers creator programs in 40+ markets with cross-market coordination.
-- Most platforms do NOT have first-class multi-market support — they handle it via separate campaigns per market, which is a pain point.
+- Most platforms do NOT have first-class multi-market support - they handle it via separate campaigns per market, which is a pain point.
 
 ### Key Insight for PopsDrops
 
@@ -147,7 +147,7 @@ Based on analysis of all platforms and industry templates, the standard brief in
 
 Based on cross-platform analysis, the critical filters are:
 
-**Tier 1 — Must Have:**
+**Tier 1 - Must Have:**
 - Platform (Instagram, TikTok, YouTube, etc.)
 - Location/market (country, city-level on some platforms)
 - Follower count / audience size range
@@ -155,14 +155,14 @@ Based on cross-platform analysis, the critical filters are:
 - Content category / niche
 - Language
 
-**Tier 2 — High Value:**
+**Tier 2 - High Value:**
 - Audience demographics (age, gender, location of followers)
 - Audience authenticity score
 - Content type history (Reels, Stories, long-form, etc.)
 - Brand affinity / past brand mentions
 - Growth rate
 
-**Tier 3 — Advanced/Differentiating:**
+**Tier 3 - Advanced/Differentiating:**
 - Image/visual style matching (Aspire's image search)
 - Natural language search ("find me fitness creators in Dubai who post in Arabic")
 - Lookalike / similar influencer suggestions (Klear)
@@ -177,7 +177,7 @@ Based on cross-platform analysis, the critical filters are:
 | **Aspire** | Natural language search + Meta/TikTok API | Converts natural language to targeted filters, surfaces relevant creators |
 | **Aspire** | Organic mention detection | Identifies creators already mentioning your brand on TikTok, even untagged |
 | **Aspire** | Image search | Upload top-performing content, find creators matching that aesthetic |
-| **Aspire** | Quickmatch | "Tinder for Influencers" — swipe-based creator suggestions |
+| **Aspire** | Quickmatch | "Tinder for Influencers" - swipe-based creator suggestions |
 | **Klear** | Similar Influencers | AI-powered suggestions for creators with similar content |
 | **GRIN** | Gia AI Assistant | Trained on industry's largest dataset, surfaces recommendations |
 | **Upfluence** | AI interpretation | Analyzes audience demographics, brand affinity, engagement quality, content behavior |
@@ -185,7 +185,7 @@ Based on cross-platform analysis, the critical filters are:
 | **HypeAuditor** | Fraud detection | Identifies inauthentic audiences using hundreds of parameters |
 | **Popular Pays** | SafeCollab | AI brand safety evaluation before engagement |
 
-#### Creator Cards — What Brands See in Search Results
+#### Creator Cards - What Brands See in Search Results
 
 Across platforms, creator cards in search results typically show:
 
@@ -216,24 +216,24 @@ Across platforms, creator cards in search results typically show:
 #### Creator Profile View (Full Detail from Brand Perspective)
 
 When a brand clicks into a creator's full profile:
-- **Bio & overview** — name, photo, bio, location, languages spoken
-- **Social accounts** — connected platforms with individual metrics per platform
-- **Audience analytics** — follower demographics (age, gender, location), authenticity score, audience interests
-- **Content samples** — recent posts with engagement data
-- **Performance metrics** — average engagement rate, average views, reach estimates
-- **Rate card** — pricing per content type per platform
-- **Collaboration history** — past campaigns, brands worked with, performance in those campaigns
-- **Brand safety** — content screening results, flagged content history
-- **Notes & tags** — internal brand notes, custom tags (Traackr, GRIN)
+- **Bio & overview** - name, photo, bio, location, languages spoken
+- **Social accounts** - connected platforms with individual metrics per platform
+- **Audience analytics** - follower demographics (age, gender, location), authenticity score, audience interests
+- **Content samples** - recent posts with engagement data
+- **Performance metrics** - average engagement rate, average views, reach estimates
+- **Rate card** - pricing per content type per platform
+- **Collaboration history** - past campaigns, brands worked with, performance in those campaigns
+- **Brand safety** - content screening results, flagged content history
+- **Notes & tags** - internal brand notes, custom tags (Traackr, GRIN)
 
 #### Shortlisting / Favorites / Lists
 
-- **GRIN** — Add to custom lists, tag creators, track in CRM pipeline stages
-- **Aspire** — Custom lists of favorite creators, visibility into previous collaborations
-- **Traackr** — Assign relationship owners, shared notes, custom fields (birthdays, product preferences)
-- **TikTok Creator Marketplace** — "Add to list" to keep top creators in one spot
-- **Klear** — Similar Influencers feature to expand shortlists
-- **KOL Radar** — "Directory" function consolidating all interactions, records, and previously collaborated influencers
+- **GRIN** - Add to custom lists, tag creators, track in CRM pipeline stages
+- **Aspire** - Custom lists of favorite creators, visibility into previous collaborations
+- **Traackr** - Assign relationship owners, shared notes, custom fields (birthdays, product preferences)
+- **TikTok Creator Marketplace** - "Add to list" to keep top creators in one spot
+- **Klear** - Similar Influencers feature to expand shortlists
+- **KOL Radar** - "Directory" function consolidating all interactions, records, and previously collaborated influencers
 
 #### Authenticity & Quality Evaluation
 
@@ -241,14 +241,14 @@ When a brand clicks into a creator's full profile:
 |----------|----------|
 | **HypeAuditor** | 35+ metrics, audience quality scoring |
 | **Klear** | AI identifies inauthentic audiences using hundreds of parameters |
-| **CreatorIQ** | SafeIQ — multimodal AI analyzing text, images, video, audio across languages |
+| **CreatorIQ** | SafeIQ - multimodal AI analyzing text, images, video, audio across languages |
 | **Aspire** | Follower authenticity score based on avatar/bio authenticity analysis |
-| **Popular Pays** | SafeCollab — AI brand safety evaluation pre-engagement |
+| **Popular Pays** | SafeCollab - AI brand safety evaluation pre-engagement |
 | **#paid** | Human curation team manually vets every Handraise before brand sees them |
 
 ### Key Insight for PopsDrops
 
-> Discovery is converging on **hybrid search**: structured filters + natural language + AI matching. The most valued features are audience authenticity scoring, visual/aesthetic matching, and organic brand mention detection. PopsDrops should invest in: (1) semantic search via embeddings (already planned with Cohere), (2) audience quality scoring, (3) "already talking about your brand" detection, and (4) image-based aesthetic matching. The creator card must show: photo, name, platform, followers, engagement rate, location, niche, authenticity score, and a quick-add-to-list action. Skip the "Tinder swipe" gimmick — it's cute but not premium.
+> Discovery is converging on **hybrid search**: structured filters + natural language + AI matching. The most valued features are audience authenticity scoring, visual/aesthetic matching, and organic brand mention detection. PopsDrops should invest in: (1) semantic search via embeddings (already planned with Cohere), (2) audience quality scoring, (3) "already talking about your brand" detection, and (4) image-based aesthetic matching. The creator card must show: photo, name, platform, followers, engagement rate, location, niche, authenticity score, and a quick-add-to-list action. Skip the "Tinder swipe" gimmick - it's cute but not premium.
 
 ---
 
@@ -256,26 +256,26 @@ When a brand clicks into a creator's full profile:
 
 ### Application Review Patterns
 
-#### #paid — The Curated Model
+#### #paid - The Curated Model
 - Creators submit Handraises with strategy pitches explaining why they're a good fit.
-- **#paid's team pre-vets every application** before brands see them — reviewing background, audience, past content, and pitch quality.
+- **#paid's team pre-vets every application** before brands see them - reviewing background, audience, past content, and pitch quality.
 - Only a filtered portion of applicants reaches the brand.
 - Recommended creators are marked with a checkmark.
 - Campaign projections shown based on selected creator combinations.
 
-#### TikTok Creator Marketplace — Open Application
+#### TikTok Creator Marketplace - Open Application
 - Brands post campaign details for creators to apply.
 - Up to 5 screening questions (brand history, product experience).
 - Creators must answer all screening questions.
 - Brands can also directly invite specific creators.
 - Invite links for creators not yet on the marketplace.
 
-#### Aspire — Marketplace + Search Hybrid
+#### Aspire - Marketplace + Search Hybrid
 - Creator Marketplace with opt-in creators who apply to campaigns.
 - Branded application pages per campaign.
 - Quickmatch suggestions alongside self-service search.
 
-#### impact.com — Structured Review
+#### impact.com - Structured Review
 - Creators submit applications with proposed tasks (in "Creator Defines" mode).
 - Brands review tasks, deliverables, and rates.
 - In-app notification + email when applications arrive.
@@ -302,27 +302,27 @@ When a brand clicks into a creator's full profile:
 | **impact.com** | Custom tasks can be added during negotiation; flexible contract terms |
 | **Insense** | In-app Direct Chat for real-time negotiation on pricing and feedback |
 | **Collabstr** | Brands purchase preset packages OR create custom offers |
-| **#paid** | Curated model reduces negotiation — pricing set during campaign setup |
+| **#paid** | Curated model reduces negotiation - pricing set during campaign setup |
 | **GRIN** | Full CRM tracking of every interaction, proposal via branded landing pages |
 
 **Industry negotiation norms (2026):**
 - Open at 75-85% of asking price, plan to meet at 90-95%.
 - 10-20% movement typical in honest negotiations.
 - Alternative to price reduction: negotiate usage rights, deliverable count, or add performance bonuses ("Hit 500K impressions = $500 bonus").
-- Engagement rate is the true pricing driver — a 100K follower creator with 8% engagement outearns a 500K follower creator with 1% engagement.
+- Engagement rate is the true pricing driver - a 100K follower creator with 8% engagement outearns a 500K follower creator with 1% engagement.
 
 ### Contract & Agreement Generation
 
-- **Insense** — Brief acts as legal contract; creators agree when applying.
-- **GRIN** — Integrated with DocuSign for contract signing.
-- **CreatorIQ** — Automated contract creation as part of campaign workflow.
-- **impact.com** — Negotiable contract terms within platform, task-based agreements.
+- **Insense** - Brief acts as legal contract; creators agree when applying.
+- **GRIN** - Integrated with DocuSign for contract signing.
+- **CreatorIQ** - Automated contract creation as part of campaign workflow.
+- **impact.com** - Negotiable contract terms within platform, task-based agreements.
 - **Industry standard** components: deliverables, timeline, compensation, usage rights, exclusivity, FTC disclosure, termination clause.
 - Average contract execution time without a platform: 45 days. Platforms reduce this to hours.
 
 ### Key Insight for PopsDrops
 
-> #paid's curated model (human pre-vetting before brand review) is the highest-quality approach and aligns with PopsDrops' premium positioning. Combine this with impact.com's structured review (applications with proposed tasks + rejection reasons). For negotiation, Insense's "brief as contract" + in-app messaging is cleanest. Counter-offers should be structured (not free-text chat) — brand proposes rate, creator accepts/counters, brand final-accepts/rejects. Skip bulk operations at launch — premium brands review individually.
+> #paid's curated model (human pre-vetting before brand review) is the highest-quality approach and aligns with PopsDrops' premium positioning. Combine this with impact.com's structured review (applications with proposed tasks + rejection reasons). For negotiation, Insense's "brief as contract" + in-app messaging is cleanest. Counter-offers should be structured (not free-text chat) - brand proposes rate, creator accepts/counters, brand final-accepts/rejects. Skip bulk operations at launch - premium brands review individually.
 
 ---
 
@@ -352,25 +352,25 @@ Submission → Initial Review → Feedback/Revision → Final Approval → Publi
 
 ### Content Approval UX Patterns
 
-#### #paid — Preview-First
+#### #paid - Preview-First
 - Brands preview content in its **exact look and feel** before it goes live on any platform.
 - Direct feedback to creators within the platform.
 - Know when content is due live.
 - Track usage rights compliance from the same view.
 
-#### impact.com — Task-Based Review
+#### impact.com - Task-Based Review
 - View, review, and approve task drafts and deliverables.
 - In-app notification + email when creator saves a draft or submits a deliverable.
 - Approve or Reject buttons with **mandatory rejection reason**.
 - Detailed rejection reasons help creators improve for future work.
 
-#### GRIN — Collaborative Workflow
+#### GRIN - Collaborative Workflow
 - Collaborative workflow for feedback, suggested edits, revision requests.
 - Content automatically pulled in and cataloged by campaign, creator, and platform.
 - Searchable content library with tags, keywords, content type, even color search.
 - Syncs with Google Drive, Dropbox, Box for a real-time content hub.
 
-#### Insense — Chat-Based
+#### Insense - Chat-Based
 - In-app Direct Chat for feedback and revision discussion.
 - Consolidated view: briefs, chat, deadlines, and revisions in one place.
 - UGC delivery within 14 days standard.
@@ -379,11 +379,11 @@ Submission → Initial Review → Feedback/Revision → Final Approval → Publi
 
 **From cross-platform analysis:**
 
-1. **Annotation tools** — Point directly at problems in content. Explain *why* something needs to change, not just that it does.
-2. **Version control** — Clear naming: `Post_v1_Initial.mp4` → `Post_v2_Revised.mp4`. Track what changed between versions with side-by-side comparison.
-3. **Structured feedback templates** — Consistent feedback format, offer solutions when possible.
-4. **Revision limits** — Industry standard is 2-3 revision rounds. More indicates a brief clarity problem, not a creator quality problem.
-5. **SLAs** — Set 4-8 hour response times for reviewers. Auto-escalate after 24 hours.
+1. **Annotation tools** - Point directly at problems in content. Explain *why* something needs to change, not just that it does.
+2. **Version control** - Clear naming: `Post_v1_Initial.mp4` → `Post_v2_Revised.mp4`. Track what changed between versions with side-by-side comparison.
+3. **Structured feedback templates** - Consistent feedback format, offer solutions when possible.
+4. **Revision limits** - Industry standard is 2-3 revision rounds. More indicates a brief clarity problem, not a creator quality problem.
+5. **SLAs** - Set 4-8 hour response times for reviewers. Auto-escalate after 24 hours.
 
 ### Automated Checks
 
@@ -402,7 +402,7 @@ Leading platforms implement:
 | **GRIN** | Auto-catalogs by campaign/creator/platform, searchable by tag/keyword/type/color, syncs with Google Drive/Dropbox/Box |
 | **Later Influence** | Integrates with Later's content scheduling, unified workflow from approval to publishing |
 | **Aspire** | Social listening captures every mention, tag, and hashtag about the brand |
-| **CreatorIQ** | AI content tracking — automatically collects all posts mentioning brand during campaign window |
+| **CreatorIQ** | AI content tracking - automatically collects all posts mentioning brand during campaign window |
 
 ### Approval Status Indicators
 
@@ -415,7 +415,7 @@ Leading platforms implement:
 
 ### Key Insight for PopsDrops
 
-> Content review needs: (1) preview in platform-native format (show what it'll look like on TikTok/Instagram), (2) structured feedback with annotation capability, (3) version tracking with side-by-side comparison, (4) mandatory rejection reasons (impact.com pattern), (5) auto-escalation after SLA breach. For MVP, skip content library — focus on the review loop. The status indicator pattern (color-coded: overdue/pending/approved/draft/revision) is universally understood.
+> Content review needs: (1) preview in platform-native format (show what it'll look like on TikTok/Instagram), (2) structured feedback with annotation capability, (3) version tracking with side-by-side comparison, (4) mandatory rejection reasons (impact.com pattern), (5) auto-escalation after SLA breach. For MVP, skip content library - focus on the review loop. The status indicator pattern (color-coded: overdue/pending/approved/draft/revision) is universally understood.
 
 ---
 
@@ -444,7 +444,7 @@ Leading platforms implement:
 
 ### Metrics That Matter Most to Brands (2026)
 
-**Tier 1 — Critical (reported by majority of platforms):**
+**Tier 1 - Critical (reported by majority of platforms):**
 
 | Metric | Definition | Why It Matters |
 |--------|-----------|---------------|
@@ -455,7 +455,7 @@ Leading platforms implement:
 | **ROI / ROAS** | (Revenue - Cost) / Cost | Justifies spend |
 | **CPE (Cost Per Engagement)** | Total spend / total engagements | Cross-platform efficiency equalizer |
 
-**Tier 2 — High Value:**
+**Tier 2 - High Value:**
 
 | Metric | Definition | Why It Matters |
 |--------|-----------|---------------|
@@ -465,7 +465,7 @@ Leading platforms implement:
 | **Click-through Rate** | Clicks / impressions | Content effectiveness |
 | **Video Completion Rate** | Full views / total plays | Content quality signal |
 
-**Tier 3 — Advanced:**
+**Tier 3 - Advanced:**
 
 | Metric | Definition |
 |--------|-----------|
@@ -492,8 +492,8 @@ Leading platforms implement:
 
 ### Benchmarking
 
-- **CreatorIQ** — Benchmark against competitors on impressions, engagements, EMV.
-- **Traackr** — Compare spend efficiency across markets, brands, campaigns, tiers.
+- **CreatorIQ** - Benchmark against competitors on impressions, engagements, EMV.
+- **Traackr** - Compare spend efficiency across markets, brands, campaigns, tiers.
 - Year-over-year comparisons show seasonal patterns (Q4 highest, summer lowest).
 - Benchmark against historical campaign data, not just industry averages.
 
@@ -511,7 +511,7 @@ Leading platforms implement:
 **Industry challenge:** 42% of brands can't accurately attribute sales to specific influencers (2024 study).
 
 **Best practice approach:**
-1. UTM parameters — unique tracking URL per influencer.
+1. UTM parameters - unique tracking URL per influencer.
 2. Unique promo/coupon codes per creator.
 3. Affiliate tracking links (GRIN, Aspire, Upfluence).
 4. Post-purchase surveys asking "How did you hear about us?"
@@ -543,19 +543,19 @@ Based on cross-platform analysis, the brand home dashboard universally shows:
 
 | Section | What It Shows | Priority |
 |---------|-------------|----------|
-| **Action items / To-dos** | Content needing approval, applications to review, overdue items | Highest — drives daily workflow |
-| **Active campaigns** | Status cards for each active campaign with progress indicators | High — campaign overview |
-| **Pipeline view** | Draft → Recruiting → In Progress → Publishing → Monitoring → Completed | High — lifecycle tracking |
-| **Recent activity feed** | Creator submissions, status changes, team actions | Medium — awareness |
-| **Key metrics** | Aggregate engagement, reach, spend across all campaigns | Medium — health check |
+| **Action items / To-dos** | Content needing approval, applications to review, overdue items | Highest - drives daily workflow |
+| **Active campaigns** | Status cards for each active campaign with progress indicators | High - campaign overview |
+| **Pipeline view** | Draft → Recruiting → In Progress → Publishing → Monitoring → Completed | High - lifecycle tracking |
+| **Recent activity feed** | Creator submissions, status changes, team actions | Medium - awareness |
+| **Key metrics** | Aggregate engagement, reach, spend across all campaigns | Medium - health check |
 
 ### Campaign Pipeline Management
 
 Most platforms organize campaigns in pipeline/kanban views:
-- **Influencer Hero** — Visual, pipeline-based CRM with smart tagging, deal stages
-- **SARAL** — Track influencers in different stages, filter with tags
-- **Modash** — Pipeline: outreach → negotiation → publishing
-- **Upfluence** — See all creators hired, drafts submitted, sales generated, payments issued in one place
+- **Influencer Hero** - Visual, pipeline-based CRM with smart tagging, deal stages
+- **SARAL** - Track influencers in different stages, filter with tags
+- **Modash** - Pipeline: outreach → negotiation → publishing
+- **Upfluence** - See all creators hired, drafts submitted, sales generated, payments issued in one place
 
 ### Notification & Alert Patterns
 
@@ -575,14 +575,14 @@ Most platforms organize campaigns in pipeline/kanban views:
 
 ### Multi-Campaign Management
 
-- **CreatorIQ** — Configurable dashboards per campaign or across all campaigns
-- **GRIN** — Customize and execute multiple campaigns simultaneously
-- **Insense** — Centralized dashboard monitoring all campaigns, statuses, applications, messages
-- **Later Influence** — Organize multiple campaigns with automated workflows and stage-specific messaging
+- **CreatorIQ** - Configurable dashboards per campaign or across all campaigns
+- **GRIN** - Customize and execute multiple campaigns simultaneously
+- **Insense** - Centralized dashboard monitoring all campaigns, statuses, applications, messages
+- **Later Influence** - Organize multiple campaigns with automated workflows and stage-specific messaging
 
 ### Key Insight for PopsDrops
 
-> The brand home should be **action-driven, not metric-driven**. Lead with "What needs your attention now?" — pending content reviews, new applications, overdue items. Then active campaigns with progress bars. Then aggregate metrics. The pipeline/kanban view for campaign lifecycle (draft → recruiting → in_progress → publishing → monitoring → completed) maps directly to PopsDrops' 6-phase model. Notifications must be configurable — premium brands won't tolerate spam.
+> The brand home should be **action-driven, not metric-driven**. Lead with "What needs your attention now?" - pending content reviews, new applications, overdue items. Then active campaigns with progress bars. Then aggregate metrics. The pipeline/kanban view for campaign lifecycle (draft → recruiting → in_progress → publishing → monitoring → completed) maps directly to PopsDrops' 6-phase model. Notifications must be configurable - premium brands won't tolerate spam.
 
 ---
 
@@ -590,26 +590,26 @@ Most platforms organize campaigns in pipeline/kanban views:
 
 ### Budget Tracking Patterns
 
-#### Aspire — Most Detailed
+#### Aspire - Most Detailed
 - Annual, monthly, or project-level budgets.
 - View creator payments with filters, tags, and status updates.
 - Monitor all payments in one place with exportable data.
 
-#### Traackr — Most Analytical
+#### Traackr - Most Analytical
 - Budget calculator with **suggested fees based on past performance**.
 - Spend tracking over time across markets, brands, campaigns, tiers.
 - Multi-currency support.
 - ROI reporting: cost per impression, engagement, and view.
 - Spend efficiency metrics for data-driven budget decisions.
 
-#### Upfluence — Most Integrated
+#### Upfluence - Most Integrated
 - Revenue, ROI, AOV, commissions in one dashboard.
 - One-click payments.
 - Influencer gifting: creators select products directly from brand's store.
 - Personalized coupon code and sales tracking.
 
-#### Collabstr — Escrow Model
-- All payments through escrow — funds released only when brand approves content.
+#### Collabstr - Escrow Model
+- All payments through escrow - funds released only when brand approves content.
 - Transparent pricing: influencers set rates, brands see pricing upfront.
 - 10% marketplace fee (Basic) or 5% (Premium).
 
@@ -642,7 +642,7 @@ Since PopsDrops tracks payment status only (pending/invoiced/paid) without proce
 
 ### Key Insight for PopsDrops
 
-> Since PopsDrops doesn't process payments, the budget management view should focus on: (1) budget allocation with per-creator breakdown, (2) payment status tracking (pending/invoiced/paid), (3) cost efficiency metrics (CPE, CPM per creator), (4) budget utilization visualization, (5) multi-currency display for cross-border campaigns. Traackr's "suggested fees based on past performance" is a powerful feature — PopsDrops could show rate benchmarks during campaign creation. Skip escrow/payment processing entirely.
+> Since PopsDrops doesn't process payments, the budget management view should focus on: (1) budget allocation with per-creator breakdown, (2) payment status tracking (pending/invoiced/paid), (3) cost efficiency metrics (CPE, CPM per creator), (4) budget utilization visualization, (5) multi-currency display for cross-border campaigns. Traackr's "suggested fees based on past performance" is a powerful feature - PopsDrops could show rate benchmarks during campaign creation. Skip escrow/payment processing entirely.
 
 ---
 
@@ -657,7 +657,7 @@ Since PopsDrops tracks payment status only (pending/invoiced/paid) without proce
 | **Admin/Owner** | Full access, billing, team management, all campaigns |
 | **Campaign Manager** | Create/edit campaigns, approve content, manage creators |
 | **Reviewer** | Review content, leave feedback, approve/reject |
-| **Viewer/Read-only** | View campaigns, reports — no edit permissions |
+| **Viewer/Read-only** | View campaigns, reports - no edit permissions |
 | **Finance** | Payment approvals, budget management |
 
 **Enterprise-specific:**
@@ -698,10 +698,10 @@ Since PopsDrops tracks payment status only (pending/invoiced/paid) without proce
 
 ### Workflow Automation
 
-- **Later Influence** — 20 predefined digital activities, many almost entirely automated
-- **Aspire** — Automates 90% of manual tasks
-- **Upfluence** — Customizable workflow tool
-- **impact.com** — Automated task reminders and payouts
+- **Later Influence** - 20 predefined digital activities, many almost entirely automated
+- **Aspire** - Automates 90% of manual tasks
+- **Upfluence** - Customizable workflow tool
+- **impact.com** - Automated task reminders and payouts
 
 **Common automation triggers:**
 - Creator application → auto-notify campaign manager
@@ -713,7 +713,7 @@ Since PopsDrops tracks payment status only (pending/invoiced/paid) without proce
 
 ### Key Insight for PopsDrops
 
-> For MVP with invite-only brands, start with 2 roles: Owner (full access) and Member (campaign access, no billing). Add Reviewer and Viewer roles when brands request team features. Audit trails are non-negotiable for premium brands — log every approval, rejection, and status change with timestamp and user. Workflow automation should be event-driven: content submitted → notify reviewer, 24h no action → escalate. Skip agency collaboration for now.
+> For MVP with invite-only brands, start with 2 roles: Owner (full access) and Member (campaign access, no billing). Add Reviewer and Viewer roles when brands request team features. Audit trails are non-negotiable for premium brands - log every approval, rejection, and status change with timestamp and user. Workflow automation should be event-driven: content submitted → notify reviewer, 24h no action → escalate. Skip agency collaboration for now.
 
 ---
 
@@ -832,9 +832,9 @@ A brand is ready for their first campaign when:
 - Structured deliverable definition per platform per content type
 
 **Don't:**
-- Don't require all fields upfront — progressive disclosure
-- Don't make brand guidelines a blocker — optional enhancement
-- Don't build campaign templates for MVP — let brands save their own
+- Don't require all fields upfront - progressive disclosure
+- Don't make brand guidelines a blocker - optional enhancement
+- Don't build campaign templates for MVP - let brands save their own
 
 ### 2. Creator Discovery
 
@@ -846,7 +846,7 @@ A brand is ready for their first campaign when:
 - "Already talking about your brand" detection
 
 **Don't:**
-- Don't build "Tinder swipe" matching — not premium enough
+- Don't build "Tinder swipe" matching - not premium enough
 - Don't show raw follower counts without engagement context
 - Don't mix cross-platform metrics in search results
 
@@ -860,8 +860,8 @@ A brand is ready for their first campaign when:
 - Recommended/best-fit indicators on applications
 
 **Don't:**
-- Don't build bulk operations for MVP — premium brands review individually
-- Don't auto-accept/auto-reject — maintain human judgment
+- Don't build bulk operations for MVP - premium brands review individually
+- Don't auto-accept/auto-reject - maintain human judgment
 
 ### 4. Content Review
 
@@ -874,8 +874,8 @@ A brand is ready for their first campaign when:
 - Color-coded status indicators (overdue/pending/approved/draft/revision)
 
 **Don't:**
-- Don't build annotation-on-video for MVP — text feedback is sufficient
-- Don't allow unlimited revisions — enforce max from brief
+- Don't build annotation-on-video for MVP - text feedback is sufficient
+- Don't allow unlimited revisions - enforce max from brief
 - Don't build content library for MVP
 
 ### 5. Reporting
@@ -888,8 +888,8 @@ A brand is ready for their first campaign when:
 - Aggregate campaign summary with key metrics
 
 **Don't:**
-- Don't build real-time dashboards for MVP — 8-24h refresh is fine
-- Don't calculate ROI/ROAS — PopsDrops doesn't process payments
+- Don't build real-time dashboards for MVP - 8-24h refresh is fine
+- Don't calculate ROI/ROAS - PopsDrops doesn't process payments
 - Don't mix cross-platform raw metrics
 
 ### 6. Brand Dashboard
@@ -901,8 +901,8 @@ A brand is ready for their first campaign when:
 - Notification center with configurable frequency
 
 **Don't:**
-- Don't lead with metrics — lead with actions
-- Don't build a "news feed" — brands aren't on social media
+- Don't lead with metrics - lead with actions
+- Don't build a "news feed" - brands aren't on social media
 
 ### 7. Budget & Payments
 
@@ -913,8 +913,8 @@ A brand is ready for their first campaign when:
 - Rate benchmarks during campaign creation (Traackr model)
 
 **Don't:**
-- Don't build payment processing — status tracking only
-- Don't build invoicing — just track status
+- Don't build payment processing - status tracking only
+- Don't build invoicing - just track status
 
 ### 8. Team & Permissions
 
@@ -926,7 +926,7 @@ A brand is ready for their first campaign when:
 **Don't:**
 - Don't build complex role hierarchies for MVP
 - Don't build agency collaboration for MVP
-- Don't build approval chains for MVP — single approver is fine
+- Don't build approval chains for MVP - single approver is fine
 
 ### 9. Onboarding
 
@@ -945,12 +945,12 @@ A brand is ready for their first campaign when:
 ### 10. What Sets Premium Apart
 
 The platforms that serve luxury/enterprise brands (CreatorIQ, Traackr) differentiate through:
-- **Creator vetting depth** — SafeIQ analyzing text, images, video, audio across languages
-- **Brand safety as a core feature** — not an afterthought
-- **Multi-market intelligence** — benchmarking across regions
-- **Relationship management** — tracking relationship depth over time, not just transactions
-- **Spend efficiency analytics** — not just "how much did we spend" but "how efficiently"
-- **Concierge support** — dedicated implementation managers, workshops, playbooks
+- **Creator vetting depth** - SafeIQ analyzing text, images, video, audio across languages
+- **Brand safety as a core feature** - not an afterthought
+- **Multi-market intelligence** - benchmarking across regions
+- **Relationship management** - tracking relationship depth over time, not just transactions
+- **Spend efficiency analytics** - not just "how much did we spend" but "how efficiently"
+- **Concierge support** - dedicated implementation managers, workshops, playbooks
 
 PopsDrops should align with this tier in positioning and feature depth, even if MVP feature count is smaller. Quality over quantity. Every feature shipped should work at Chanel-level expectations.
 

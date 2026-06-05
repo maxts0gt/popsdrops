@@ -76,7 +76,7 @@ export function isRTLLocale(locale: string) {
   return false;
 }
 
-/** Fallback display names — Hermes has limited Intl.DisplayNames support. */
+/** Fallback display names - Hermes has limited Intl.DisplayNames support. */
 const NATIVE_NAMES: Record<string, string> = {
   en: "English", ar: "العربية", bn: "বাংলা", de: "Deutsch", el: "Ελληνικά",
   es: "Español", fa: "فارسی", fr: "Français", he: "עברית", hi: "हिन्दी",

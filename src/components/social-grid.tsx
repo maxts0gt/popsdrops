@@ -2,8 +2,8 @@
 
 import { useRef, useEffect, useCallback } from "react";
 
-// Lightweight symbols — small, delicate, atmospheric
-const CHARS = ["·", "♡", "✦", "○", "♥", "+", "△", "◇", "★", "◦"];
+// Lightweight symbols - small, delicate, atmospheric
+const CHARS = ["·", "♡", "○", "♥", "+", "△", "◇", "◦", "□", "◌"];
 
 const CELL = 20;
 const FONT_SIZE = 9;

@@ -10,7 +10,7 @@ export default function TermsPage() {
     <div className="bg-white pt-28 pb-20 sm:pt-36">
       <article className="prose prose-slate mx-auto max-w-3xl px-6 prose-headings:tracking-tight prose-h1:text-3xl prose-h2:text-xl prose-h3:text-base">
         <h1>Terms of Service</h1>
-        <p className="text-sm text-slate-500">Last updated: March 29, 2026</p>
+        <p className="text-sm text-slate-500">Last updated: May 18, 2026</p>
 
         <p>
           These Terms of Service (&quot;Terms&quot;) govern your access to and use of the PopsDrops platform
@@ -62,8 +62,8 @@ export default function TermsPage() {
         <h2>4. User Roles</h2>
         <h3>Creators</h3>
         <p>
-          Creators may connect social media accounts, set rates, apply to campaigns, submit content for
-          review, and build a public profile on the platform. Creators are responsible for delivering
+          Creators may add social media handles, set rates, apply to campaigns, submit content for
+          review, provide performance evidence, and build a public profile on the platform. Creators are responsible for delivering
           content that meets campaign briefs and complying with applicable advertising disclosure laws
           in their jurisdiction.
         </p>
@@ -139,16 +139,22 @@ export default function TermsPage() {
 
         <h2>9. Fees</h2>
         <p>
-          The Service is currently free for all users during our launch period. We reserve the right to
-          introduce fees for brands in the future. If we do, we will provide at least 30 days&apos; notice
-          before any fees take effect. Creators will not be charged fees for using the platform.
+          Brands may be charged a one-time campaign service fee for launching a campaign. The exact
+          fee is shown before payment and may vary by campaign package. Payment is processed through
+          Stripe Checkout. Creators are not charged for using PopsDrops.
+        </p>
+        <p>
+          PopsDrops does not process creator compensation. Brands and creators handle compensation
+          outside the platform, and any creator payment status shown in PopsDrops is workflow tracking
+          only.
         </p>
 
         <h2>10. Privacy</h2>
         <p>
           Your use of the Service is subject to our <Link href="/privacy" className="text-foreground underline">Privacy Policy</Link>,
-          which describes how we collect, use, and protect your personal information. By using the Service,
-          you consent to our data practices as described in the Privacy Policy.
+          which describes how we collect, use, protect, retain, and disclose personal information. Some
+          features, such as access requests, policy acknowledgements, privacy requests, and campaign
+          agreements, may require separate acknowledgement before you continue.
         </p>
 
         <h2>11. Disclaimers</h2>

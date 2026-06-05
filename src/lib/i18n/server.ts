@@ -46,7 +46,7 @@ export async function getLocale(): Promise<string> {
       }
     }
   } catch {
-    // Not logged in or profile doesn't have locale — continue
+    // Not logged in or profile doesn't have locale - continue
   }
 
   // 3. Accept-Language header

@@ -2,7 +2,7 @@
  * Generate all app icon and splash screen assets for PopsDrops mobile.
  *
  * Brand: Pure black background, white "P" lettermark.
- * Premium, minimal — the kind of icon Chanel or Hermès would respect.
+ * Premium, minimal - the kind of icon Chanel or Hermès would respect.
  *
  * Usage: node mobile/scripts/generate-icons.mjs
  * Requires: sharp (available via next in the root workspace)
@@ -19,7 +19,7 @@ const BLACK = "#000000";
 const WHITE = "#FFFFFF";
 
 /**
- * App icon — 1024x1024.
+ * App icon - 1024x1024.
  * Pure black with a clean white "P" lettermark centered.
  * Inter Bold style, generous weight, optically centered.
  */
@@ -49,7 +49,7 @@ async function generateAppIcon() {
 }
 
 /**
- * Adaptive icon foreground (Android) — 1024x1024 with padding.
+ * Adaptive icon foreground (Android) - 1024x1024 with padding.
  * Android adaptive icons need the content within the safe zone (66% of canvas).
  * Pure black bg is set via backgroundColor in app.json.
  */
@@ -78,7 +78,7 @@ async function generateAdaptiveIcon() {
 }
 
 /**
- * Splash screen icon — centered "PopsDrops" wordmark.
+ * Splash screen icon - centered "PopsDrops" wordmark.
  * Displayed on black background during app launch.
  */
 async function generateSplashIcon() {
@@ -106,7 +106,7 @@ async function generateSplashIcon() {
 }
 
 /**
- * Favicon — 48x48 for web.
+ * Favicon - 48x48 for web.
  */
 async function generateFavicon() {
   const size = 48;

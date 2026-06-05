@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { isValidElement, useState, useTransition } from "react";
 import { Star } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,13 @@ interface ReviewDialogProps {
   revieweeName: string;
   children: React.ReactNode;
 }
+
+type ReviewTriggerProps = {
+  children?: React.ReactNode;
+  className?: string;
+  size?: "default" | "xs" | "sm" | "lg" | "icon" | "icon-xs" | "icon-sm" | "icon-lg";
+  variant?: "default" | "outline" | "secondary" | "ghost" | "destructive" | "link";
+};
 
 export function ReviewDialog({
   campaignId,
@@ -60,10 +68,23 @@ export function ReviewDialog({
   }
 
   const displayRating = hoveredRating || rating;
+  const triggerElement = isValidElement<ReviewTriggerProps>(children)
+    ? children
+    : null;
+  const triggerContent = triggerElement?.props.children ?? children;
+  const triggerClassName = cn(
+    buttonVariants({
+      variant: triggerElement?.props.variant ?? "outline",
+      size: triggerElement?.props.size ?? "sm",
+    }),
+    triggerElement?.props.className,
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={<>{children}</>} />
+      <DialogTrigger type="button" className={triggerClassName}>
+        {triggerContent}
+      </DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Rate {revieweeName}</DialogTitle>
@@ -108,7 +129,7 @@ export function ReviewDialog({
 
           {/* Comment */}
           <Textarea
-            placeholder="Optional — share details about your experience..."
+            placeholder="Optional - share details about your experience..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             rows={3}
@@ -121,10 +142,11 @@ export function ReviewDialog({
         </div>
 
         <DialogFooter>
-          <DialogClose>
-            <Button variant="ghost" size="sm">
-              Cancel
-            </Button>
+          <DialogClose
+            type="button"
+            className={buttonVariants({ variant: "ghost", size: "sm" })}
+          >
+            Cancel
           </DialogClose>
           <Button
             size="sm"

@@ -5,6 +5,8 @@ import {
   getSafeMobileLocale,
   resolveMobileBundleTranslations,
 } from "./mobile-bundles";
+import { MOBILE_TRANSLATION_LOCALES } from "./generated/mobile-translation-locales";
+import { MOBILE_TRANSLATION_BUNDLES } from "./generated/mobile-translation-manifest";
 
 describe("mobile translation bundles", () => {
   it("uses a bundled locale when one is available", () => {
@@ -59,5 +61,15 @@ describe("mobile translation bundles", () => {
 
     expect(fallback["tab.home"]).toBe("Home");
     expect(fallback["preferences.languageTitle"]).toBe("Language");
+  });
+
+  it("keeps generated mobile bundles free of removed room chat copy", () => {
+    for (const locale of MOBILE_TRANSLATION_LOCALES) {
+      const bundle = MOBILE_TRANSLATION_BUNDLES[locale]!;
+
+      expect(bundle["room.chat"]).toBeUndefined();
+      expect(bundle["room.noMessages"]).toBeUndefined();
+      expect(bundle["room.messagePlaceholder"]).toBeUndefined();
+    }
   });
 });

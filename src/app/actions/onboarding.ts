@@ -1,7 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { buildCreatorOnboardingSocialFields } from "@/lib/creator-socials";
 import type { Platform } from "@/lib/constants";
@@ -111,25 +110,4 @@ export async function submitBrandOnboarding(input: {
 
   revalidatePath("/", "layout");
   return { success: true as const };
-}
-
-export async function selectRole(role: "creator" | "brand") {
-  const user = await getUser();
-  const supabase = await createClient();
-
-  // Upsert profile with selected role
-  const { error } = await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      role,
-      full_name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "User",
-      email: user.email!,
-    },
-    { onConflict: "id" }
-  );
-
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/", "layout");
-  redirect(`/onboarding/${role}`);
 }

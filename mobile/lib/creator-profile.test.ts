@@ -81,6 +81,37 @@ describe("buildCreatorProfileViewModel", () => {
     expect(viewModel.connectedPlatforms).toEqual([]);
     expect(viewModel.hasRateCard).toBe(false);
   });
+
+  it("treats stored whole-number completeness as a percentage, not a fraction", () => {
+    const viewModel = buildCreatorProfileViewModel({
+      profile: {
+        fullName: "Dev Creator",
+        avatarUrl: null,
+        email: "creator@example.com",
+      },
+      creator: {
+        bio: "Launch creator.",
+        primaryMarket: "united_states",
+        languages: ["english"],
+        niches: ["beauty"],
+        rating: 0,
+        campaignsCompleted: 0,
+        avgResponseTimeHours: null,
+        tier: "rising",
+        profileCompleteness: 90,
+        rateCard: { tiktok: { video: 300 } },
+        socialAccounts: {
+          instagram: null,
+          tiktok: { handle: "@dev", followers: 42000 },
+          snapchat: null,
+          youtube: null,
+          facebook: null,
+        },
+      },
+    });
+
+    expect(viewModel.completenessPercent).toBe(90);
+  });
 });
 
 describe("validateCreatorProfileBasics", () => {

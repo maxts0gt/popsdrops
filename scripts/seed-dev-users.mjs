@@ -2,8 +2,8 @@
 /**
  * Seed dev users via Supabase Admin API.
  *
- * Creates real auth users with passwords so the dev-login route works.
- * Safe to run multiple times — skips users that already exist.
+ * Creates confirmed auth users so the dev-login route can issue magic-link sessions.
+ * Safe to run multiple times.
  *
  * Usage:  node scripts/seed-dev-users.mjs
  * Requires: NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
@@ -27,8 +27,6 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
-const DEV_PASSWORD = "dev-password-123";
-
 const DEV_USERS = [
   {
     email: "creator@dev.popsdrops.com",
@@ -51,7 +49,6 @@ const DEV_USERS = [
 ];
 
 async function seedUser(user) {
-  // Check if user already exists
   const { data: existing } = await supabase.auth.admin.listUsers();
   const found = existing?.users?.find((u) => u.email === user.email);
 
@@ -59,13 +56,10 @@ async function seedUser(user) {
 
   if (found) {
     console.log(`  ✓ ${user.email} already exists (${found.id})`);
-    // Update password in case it changed
-    await supabase.auth.admin.updateUserById(found.id, { password: DEV_PASSWORD });
     userId = found.id;
   } else {
     const { data, error } = await supabase.auth.admin.createUser({
       email: user.email,
-      password: DEV_PASSWORD,
       email_confirm: true,
       user_metadata: user.user_metadata,
     });
@@ -153,8 +147,7 @@ async function main() {
     console.log();
   }
 
-  console.log("Done! Dev login credentials:");
-  console.log(`  Password for all: ${DEV_PASSWORD}`);
+  console.log("Dev users are ready for /dev/login:");
   console.log(`  Creator: creator@dev.popsdrops.com`);
   console.log(`  Brand:   brand@dev.popsdrops.com`);
   console.log(`  Admin:   admin@dev.popsdrops.com`);

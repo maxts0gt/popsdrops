@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import {
   Download,
   Pause,
@@ -31,6 +32,7 @@ import {
 import {
   CAMPAIGN_STATUS_TEXT_COLORS,
   CAMPAIGN_STATUS_LABELS,
+  formatCurrency,
   formatBudgetRange,
 } from "@/lib/constants";
 import type { CampaignStatus } from "@/lib/constants";
@@ -38,14 +40,24 @@ import { useI18n } from "@/lib/i18n/context";
 import { createClient } from "@/lib/supabase/client";
 import { getSingleRelation } from "@/lib/supabase/relations";
 import { pauseCampaign, cancelCampaign, resumeCampaign } from "@/app/actions/admin";
+import type { PaymentStatusType } from "@/types/database";
 import { toast } from "sonner";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-type CampaignSortKey = "title" | "brand_name" | "status" | "created_at";
+type CampaignSortKey =
+  | "title"
+  | "brand_name"
+  | "status"
+  | "service_fee_status"
+  | "service_fee_cents"
+  | "member_count"
+  | "created_at";
 type SortDir = "asc" | "desc";
+type AttentionFilter = "all" | "payment" | "launch" | "reporting";
+type AttentionKind = Exclude<AttentionFilter, "all">;
 
 interface CampaignRow {
   id: string;
@@ -54,13 +66,51 @@ interface CampaignRow {
   max_creators: number;
   markets: string[];
   created_at: string;
+  service_fee_cents: number | null;
+  service_fee_currency: string | null;
+  service_fee_status: PaymentStatusType;
   brand_name: string;
   member_count: number;
+  report_correction_count: number;
+  report_missed_count: number;
 }
 
-type CampaignQueryRow = Omit<CampaignRow, "brand_name" | "member_count"> & {
+type CampaignQueryRow = Omit<
+  CampaignRow,
+  "brand_name" | "member_count" | "report_correction_count" | "report_missed_count"
+> & {
   brand?: { full_name: string | null } | { full_name: string | null }[] | null;
 };
+
+type ReportTaskExceptionRow = {
+  campaign_id: string;
+  status: string;
+};
+
+type CampaignAttentionItem = {
+  actionLabel: string;
+  campaignId: string;
+  detail: string;
+  href: string;
+  id: string;
+  kind: AttentionKind;
+  label: string;
+  title: string;
+};
+
+const attentionFilters: Array<{ key: AttentionFilter; label: string }> = [
+  { key: "all", label: "All" },
+  { key: "payment", label: "Payment" },
+  { key: "launch", label: "Launch" },
+  { key: "reporting", label: "Reporting" },
+];
+
+const paymentExceptionStatuses = new Set<PaymentStatusType>([
+  "failed",
+  "refunded",
+  "disputed",
+  "overdue",
+]);
 
 async function fetchCampaignRows(): Promise<CampaignRow[]> {
   const supabase = createClient();
@@ -69,6 +119,7 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
     .from("campaigns")
     .select(`
       id, title, status, max_creators, markets, created_at,
+      service_fee_cents, service_fee_currency, service_fee_status,
       brand:profiles!campaigns_brand_id_fkey (full_name)
     `)
     .order("created_at", { ascending: false })
@@ -85,22 +136,116 @@ async function fetchCampaignRows(): Promise<CampaignRow[]> {
         .select("campaign_id")
         .in("campaign_id", campaignIds)
     : { data: [] };
+  const { data: reportTaskRows } = campaignIds.length > 0
+    ? await supabase
+        .from("campaign_report_tasks")
+        .select("campaign_id,status")
+        .in("campaign_id", campaignIds)
+        .in("status", ["missed", "needs_revision"])
+    : { data: [] };
 
   const memberCounts = new Map<string, number>();
   for (const row of memberRows ?? []) {
     memberCounts.set(row.campaign_id, (memberCounts.get(row.campaign_id) ?? 0) + 1);
   }
+  const reportCounts = new Map<
+    string,
+    { correctionCount: number; missedCount: number }
+  >();
+  for (const row of (reportTaskRows ?? []) as ReportTaskExceptionRow[]) {
+    const current = reportCounts.get(row.campaign_id) ?? {
+      correctionCount: 0,
+      missedCount: 0,
+    };
+    if (row.status === "missed") {
+      current.missedCount += 1;
+    }
+    if (row.status === "needs_revision") {
+      current.correctionCount += 1;
+    }
+    reportCounts.set(row.campaign_id, current);
+  }
 
   return campaigns.map((campaign) => {
     const brand = getSingleRelation(campaign.brand);
+    const reportCount = reportCounts.get(campaign.id);
 
     return {
       ...campaign,
       status: campaign.status as CampaignStatus,
+      service_fee_status: campaign.service_fee_status as PaymentStatusType,
       brand_name: brand?.full_name ?? "Unknown",
       member_count: memberCounts.get(campaign.id) ?? 0,
+      report_correction_count: reportCount?.correctionCount ?? 0,
+      report_missed_count: reportCount?.missedCount ?? 0,
     };
   });
+}
+
+function serviceFeeTone(status: PaymentStatusType) {
+  if (status === "paid") return "border-slate-200 bg-slate-50 text-slate-700";
+  if (
+    status === "failed" ||
+    status === "refunded" ||
+    status === "disputed" ||
+    status === "overdue"
+  ) {
+    return "border-red-200 bg-red-50 text-red-700";
+  }
+  if (status === "invoiced") return "border-amber-200 bg-amber-50 text-amber-900";
+  return "border-slate-200 bg-white text-muted-foreground";
+}
+
+function serviceFeeLabel(status: PaymentStatusType) {
+  return status[0].toUpperCase() + status.slice(1);
+}
+
+function attentionTone(kind: AttentionKind) {
+  if (kind === "payment") return "border-red-200 bg-red-50 text-red-700";
+  if (kind === "reporting") return "border-amber-200 bg-amber-50 text-amber-900";
+  return "border-slate-200 bg-slate-50 text-slate-700";
+}
+
+function getCampaignAttentionItems(campaign: CampaignRow): CampaignAttentionItem[] {
+  const items: CampaignAttentionItem[] = [];
+
+  if (paymentExceptionStatuses.has(campaign.service_fee_status)) {
+    items.push({
+      actionLabel: "Open finance",
+      campaignId: campaign.id,
+      detail: `${serviceFeeLabel(campaign.service_fee_status)} service fee needs finance review.`,
+      href: `/admin/campaigns/${campaign.id}?focus=finance#admin-finance-exception`,
+      id: `${campaign.id}:payment`,
+      kind: "payment",
+      label: "Payment exception",
+      title: campaign.title,
+    });
+  }
+
+  const reportExceptionCount =
+    campaign.report_correction_count + campaign.report_missed_count;
+  if (reportExceptionCount > 0) {
+    const parts = [
+      campaign.report_missed_count > 0
+        ? `${campaign.report_missed_count} missed`
+        : null,
+      campaign.report_correction_count > 0
+        ? `${campaign.report_correction_count} correction`
+        : null,
+    ].filter(Boolean);
+    items.push({
+      actionLabel: "Open campaign",
+      campaignId: campaign.id,
+      detail: `${parts.join(", ")} report task${reportExceptionCount === 1 ? " needs" : "s need"} review.`,
+      href: `/admin/campaigns/${campaign.id}?focus=reporting#admin-reporting-exceptions`,
+      id: `${campaign.id}:reporting`,
+      kind: "reporting",
+      label: "Reporting exception",
+      title: campaign.title,
+    });
+  }
+
+  return items;
 }
 
 // ---------------------------------------------------------------------------
@@ -121,9 +266,16 @@ function CampaignSortableHead({
   onSort: (key: CampaignSortKey) => void;
 }) {
   const isActive = currentKey === key;
+  const ariaSort = isActive
+    ? currentDir === "asc"
+      ? "ascending"
+      : "descending"
+    : "none";
   return (
-    <TableHead>
+    <TableHead aria-sort={ariaSort}>
       <button
+        type="button"
+        data-testid="admin-campaigns-sort-header"
         onClick={() => onSort(key)}
         className="inline-flex items-center gap-1 hover:text-foreground transition-colors"
       >
@@ -148,6 +300,7 @@ export default function AdminCampaignsPage() {
   const [loading, setLoading] = useState(true);
   const [sortKey, setSortKey] = useState<CampaignSortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [attentionFilter, setAttentionFilter] = useState<AttentionFilter>("all");
 
   const [dialogState, setDialogState] = useState<{
     type: "pause" | "cancel" | "resume" | null;
@@ -228,7 +381,7 @@ export default function AdminCampaignsPage() {
     const supabase = createClient();
     const { data } = await supabase
       .from("campaigns")
-      .select("title, status, created_at, budget_min, budget_max, budget_currency, platforms, markets")
+      .select("title, status, created_at, budget_min, budget_max, budget_currency, service_fee_cents, service_fee_currency, service_fee_status, platforms, markets")
       .order("created_at", { ascending: false });
 
     if (!data || data.length === 0) {
@@ -236,10 +389,25 @@ export default function AdminCampaignsPage() {
       return;
     }
 
-    const headers = ["Title", "Status", "Created", "Budget", "Platforms", "Markets"];
+    const headers = [
+      "Title",
+      "Status",
+      "Service fee",
+      "Fee status",
+      "Created",
+      "Budget",
+      "Platforms",
+      "Markets",
+    ];
     const rows = data.map((c) => [
       c.title,
       c.status,
+      formatCurrency(
+        (c.service_fee_cents ?? 0) / 100,
+        locale,
+        (c.service_fee_currency ?? "usd").toUpperCase(),
+      ),
+      c.service_fee_status,
       new Date(c.created_at).toLocaleDateString(),
       formatBudgetRange(c.budget_min, c.budget_max, locale, c.budget_currency),
       Array.isArray(c.platforms) ? c.platforms.join("; ") : "",
@@ -275,12 +443,30 @@ export default function AdminCampaignsPage() {
   ];
 
   const maxCount = Math.max(1, ...funnelStages.map((s) => statusCounts[s.status] ?? 0));
+  const attentionItems = campaigns.flatMap(getCampaignAttentionItems);
+  const attentionCounts = attentionFilters.reduce(
+    (counts, filter) => {
+      counts[filter.key] =
+        filter.key === "all"
+          ? attentionItems.length
+          : attentionItems.filter((item) => item.kind === filter.key).length;
+      return counts;
+    },
+    {} as Record<AttentionFilter, number>,
+  );
+  const filteredAttentionItems =
+    attentionFilter === "all"
+      ? attentionItems
+      : attentionItems.filter((item) => item.kind === attentionFilter);
 
   // Sort campaigns
   const sorted = [...campaigns].sort((a, b) => {
     const dir = sortDir === "asc" ? 1 : -1;
     const aVal = a[sortKey] ?? "";
     const bVal = b[sortKey] ?? "";
+    if (typeof aVal === "number" && typeof bVal === "number") {
+      return (aVal - bVal) * dir;
+    }
     if (typeof aVal === "string" && typeof bVal === "string") {
       return aVal.localeCompare(bVal) * dir;
     }
@@ -311,6 +497,90 @@ export default function AdminCampaignsPage() {
           <Download className="size-4" /> Export CSV
         </Button>
       </div>
+
+      <Card data-testid="admin-campaign-attention-panel" className="mb-6">
+        <CardHeader>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <CardTitle>Needs attention</CardTitle>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Payment, launch, and reporting exceptions across live campaigns
+              </p>
+            </div>
+            <span className="text-sm font-semibold tabular-nums text-foreground">
+              {attentionCounts.all} open
+            </span>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            {attentionFilters.map((filter) => {
+              const active = attentionFilter === filter.key;
+              return (
+                <button
+                  key={filter.key}
+                  type="button"
+                  data-testid="admin-campaign-attention-filter"
+                  onClick={() => setAttentionFilter(filter.key)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                    active
+                      ? "border-slate-900 bg-slate-900 text-white"
+                      : "border-border bg-white text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {filter.label} {attentionCounts[filter.key]}
+                </button>
+              );
+            })}
+          </div>
+
+          {filteredAttentionItems.length > 0 ? (
+            <div className="divide-y divide-border/70 rounded-lg border border-border/70">
+              {filteredAttentionItems.map((item) => (
+                <div
+                  key={item.id}
+                  data-testid="admin-campaign-attention-row"
+                  className="grid min-w-0 gap-3 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center"
+                >
+                  <div className="min-w-0">
+                    <div className="flex min-w-0 flex-wrap items-center gap-2">
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${attentionTone(item.kind)}`}
+                      >
+                        {item.label}
+                      </span>
+                      <Link
+                        href={`/admin/campaigns/${item.campaignId}`}
+                        className="min-w-0 truncate text-sm font-semibold text-foreground transition-colors hover:text-foreground/80"
+                      >
+                        {item.title}
+                      </Link>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {item.detail}
+                    </p>
+                  </div>
+                  <Link
+                    href={item.href}
+                    className="inline-flex h-8 w-fit max-w-full items-center justify-center justify-self-start whitespace-nowrap rounded-md border border-input bg-background px-3 text-sm font-medium text-foreground transition-colors hover:bg-muted sm:justify-self-end"
+                  >
+                    {item.actionLabel}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-lg border border-dashed border-border px-4 py-6 text-center">
+              <p className="text-sm font-semibold text-foreground">
+                No open exceptions
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                The selected queue has no payment, launch, or reporting blockers.
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Funnel Visualization */}
       <Card className="mb-6">
@@ -345,81 +615,108 @@ export default function AdminCampaignsPage() {
           <CardTitle>All Campaigns</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <CampaignSortableHead label="Campaign" sortKey="title" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-                <CampaignSortableHead label="Brand" sortKey="brand_name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-                <CampaignSortableHead label="Status" sortKey="status" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-                <TableHead>Creators</TableHead>
-                <CampaignSortableHead label="Created" sortKey="created_at" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
-                <TableHead className="text-end">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sorted.map((c) => {
-                const showPauseCancel = ["recruiting", "in_progress", "publishing", "monitoring"].includes(c.status);
-                const showResume = c.status === "paused";
-                return (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-medium">{c.title}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.brand_name}</TableCell>
-                    <TableCell>
-                      <span className={`text-xs font-medium ${CAMPAIGN_STATUS_TEXT_COLORS[c.status]}`}>
-                        {CAMPAIGN_STATUS_LABELS[c.status]}
-                      </span>
-                    </TableCell>
-                    <TableCell>{c.member_count}/{c.max_creators ?? "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {new Date(c.created_at).toLocaleDateString(locale, {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </TableCell>
-                    <TableCell className="text-end">
-                      {showPauseCancel && (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-amber-600 hover:text-amber-700"
-                            onClick={() => openDialog("pause", c)}
-                          >
-                            <Pause className="size-3.5" /> Pause
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => openDialog("cancel", c)}
-                          >
-                            <XCircle className="size-3.5" /> Cancel
-                          </Button>
-                        </div>
-                      )}
-                      {showResume && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-foreground hover:text-foreground/80"
-                          onClick={() => openDialog("resume", c)}
+          <div className="overflow-x-auto">
+            <Table className="min-w-[900px]">
+              <TableHeader>
+                <TableRow>
+                  <CampaignSortableHead label="Campaign" sortKey="title" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <CampaignSortableHead label="Service fee" sortKey="service_fee_status" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <CampaignSortableHead label="Brand" sortKey="brand_name" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <CampaignSortableHead label="Status" sortKey="status" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <CampaignSortableHead label="Creators" sortKey="member_count" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <CampaignSortableHead label="Created" sortKey="created_at" currentKey={sortKey} currentDir={sortDir} onSort={handleSort} />
+                  <TableHead className="text-end">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sorted.map((c) => {
+                  const showPauseCancel = ["recruiting", "in_progress", "publishing", "monitoring"].includes(c.status);
+                  const showResume = c.status === "paused";
+                  return (
+                    <TableRow key={c.id}>
+                      <TableCell className="w-64 max-w-64 font-medium">
+                        <Link
+                          href={`/admin/campaigns/${c.id}`}
+                          className="block truncate text-foreground transition-colors hover:text-foreground/80"
                         >
-                          <Play className="size-3.5" /> Resume
-                        </Button>
-                      )}
+                          {c.title}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col items-start gap-1">
+                          <span className="text-sm font-semibold tabular-nums text-foreground">
+                            {formatCurrency(
+                              (c.service_fee_cents ?? 0) / 100,
+                              locale,
+                              (c.service_fee_currency ?? "usd").toUpperCase(),
+                            )}
+                          </span>
+                          <span
+                            data-testid="admin-campaigns-service-fee-status"
+                            className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${serviceFeeTone(c.service_fee_status)}`}
+                          >
+                            {serviceFeeLabel(c.service_fee_status)}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{c.brand_name}</TableCell>
+                      <TableCell>
+                        <span className={`text-xs font-medium ${CAMPAIGN_STATUS_TEXT_COLORS[c.status]}`}>
+                          {CAMPAIGN_STATUS_LABELS[c.status]}
+                        </span>
+                      </TableCell>
+                      <TableCell>{c.member_count}/{c.max_creators ?? "-"}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {new Date(c.created_at).toLocaleDateString(locale, {
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </TableCell>
+                      <TableCell className="text-end">
+                        {showPauseCancel && (
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-amber-600 hover:text-amber-700"
+                              onClick={() => openDialog("pause", c)}
+                            >
+                              <Pause className="size-3.5" /> Pause
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-red-600 hover:text-red-700"
+                              onClick={() => openDialog("cancel", c)}
+                            >
+                              <XCircle className="size-3.5" /> Cancel
+                            </Button>
+                          </div>
+                        )}
+                        {showResume && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-foreground hover:text-foreground/80"
+                            onClick={() => openDialog("resume", c)}
+                          >
+                            <Play className="size-3.5" /> Resume
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {sorted.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground/70">
+                      No campaigns yet
                     </TableCell>
                   </TableRow>
-                );
-              })}
-              {sorted.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="py-8 text-center text-sm text-muted-foreground/70">
-                    No campaigns yet
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

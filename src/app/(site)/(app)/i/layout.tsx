@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { Home, Search, FolderOpen, DollarSign, User } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 import { NotificationBell } from "@/components/shared/notification-bell";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { PageTransition } from "@/components/page-transition";
 
 const navItems = [
@@ -62,7 +61,6 @@ export default function CreatorAppLayout({
           </Link>
           <div className="hidden lg:block" />
           <div className="flex items-center gap-1">
-            <ThemeToggle />
             <NotificationBell href="/i/notifications" />
           </div>
         </header>

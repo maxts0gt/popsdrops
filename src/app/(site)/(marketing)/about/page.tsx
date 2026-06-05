@@ -48,7 +48,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* PULL QUOTE — the core insight */}
+      {/* PULL QUOTE - the core insight */}
       <section className="border-y border-slate-100 bg-slate-50/50 py-16 sm:py-20">
         <div className="mx-auto max-w-2xl px-6">
           <motion.blockquote
@@ -79,7 +79,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* TWO SIDES — what we enable */}
+      {/* TWO SIDES - what we enable */}
       <section className="border-y border-slate-100 bg-slate-50/50 py-20 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div {...fade}>
@@ -107,7 +107,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* STANDARDS — invite-only */}
+      {/* STANDARDS - invite-only */}
       <section className="py-20 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div {...fade}>
@@ -127,7 +127,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* BEYOND — connections */}
+      {/* BEYOND - connections */}
       <section className="border-y border-slate-100 bg-slate-50/50 py-20 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div {...fade}>
@@ -144,7 +144,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* ORIGIN — who we are */}
+      {/* ORIGIN - who we are */}
       <section className="py-20 sm:py-24">
         <div className="mx-auto max-w-2xl px-6">
           <motion.div {...fade}>
@@ -164,7 +164,7 @@ export default function AboutPage() {
         </div>
       </section>
 
-      {/* CLOSING — typographic moment */}
+      {/* CLOSING - typographic moment */}
       <section className="border-t border-slate-100 bg-slate-50/50 py-24 sm:py-32">
         <div className="mx-auto max-w-2xl px-6 text-center">
           <motion.div {...fade}>

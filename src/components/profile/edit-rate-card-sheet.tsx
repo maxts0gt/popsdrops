@@ -140,7 +140,7 @@ export function EditRateCardSheet({
                           type="number"
                           min={0}
                           step={10}
-                          placeholder="—"
+                          placeholder="-"
                           value={getRate(platform, format)}
                           onChange={(e) =>
                             updateRate(platform, format, e.target.value)
