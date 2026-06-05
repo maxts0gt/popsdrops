@@ -215,7 +215,9 @@ describe("public shared report route", () => {
     );
     expect(sharedReportDataSource).toContain("buildReportCompositionExportData(baseReport");
     expect(sharedReportDataSource).toContain("buildReportLeadershipHandoff");
-    expect(sharedReportDataSource).toContain("leadershipHandoff: buildReportLeadershipHandoff(baseReport)");
+    expect(sharedReportDataSource).toContain("buildReportProofOperations");
+    expect(sharedReportDataSource).toContain("const leadershipHandoff = buildReportLeadershipHandoff(baseReport)");
+    expect(sharedReportDataSource).toContain("proofOperations: buildReportProofOperations({");
     expect(sharedReportDataSource).toContain("reportPlan?.report_block_ids");
     expect(sharedViewSource).toContain("hasExecutiveSummary");
     expect(sharedViewSource).toContain("hasReportTrust");

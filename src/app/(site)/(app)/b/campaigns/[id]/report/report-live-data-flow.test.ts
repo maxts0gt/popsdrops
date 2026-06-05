@@ -1396,6 +1396,7 @@ describe("campaign report live data flow", () => {
     expect(stringsSource).toContain('"evidence.summary.missing": "Missing proof"');
     expect(englishBundleSource).toContain('"evidence.command.countsLabel": "Proof basis"');
     expect(reportPageSource).toContain("buildReportLeadershipHandoff(fullReportExportData)");
+    expect(reportPageSource).toContain("buildReportProofOperations(reportExportDataWithoutProofOperations)");
     expect(reportPageSource).toContain(
       "leadershipHandoff={selectedReportLeadershipHandoff}",
     );

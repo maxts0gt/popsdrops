@@ -76,6 +76,18 @@ export interface ReportLeadershipHandoff {
   proofBasis: ReportLeadershipProofBasisItem[];
 }
 
+export type ReportProofOperationsScope = "single" | "scale";
+
+export interface ReportProofOperations {
+  scope: ReportProofOperationsScope;
+  state: ReportLeadershipHandoffState;
+  label: string;
+  decision: string;
+  verifiedCoverage: string;
+  attentionCount: number;
+  proofBasis: ReportLeadershipProofBasisItem[];
+}
+
 export interface ReportExportBlock {
   id: string;
   title: string;
@@ -140,6 +152,7 @@ export interface ReportExportData {
   trust: ReportExportTrustItem[];
   story?: ReportExportStory;
   leadershipHandoff?: ReportLeadershipHandoff;
+  proofOperations?: ReportProofOperations;
   recommendations: ReportExportRecommendation[];
   sections: ReportExportSection[];
   creators: ReportExportCreator[];
@@ -245,6 +258,7 @@ export function buildJsonContent(data: ReportExportData): string {
       ...normalized,
       story: buildReportExportStory(normalized),
       leadershipHandoff: buildReportLeadershipHandoff(normalized),
+      proofOperations: buildReportProofOperations(normalized),
     },
     null,
     2,
@@ -474,6 +488,28 @@ function buildLeadershipHandoffCsvRows(data: ReportExportData): string[][] {
   ];
 }
 
+function buildProofOperationsCsvRows(data: ReportExportData): string[][] {
+  const operations = buildReportProofOperations(data);
+
+  return [
+    ["Proof Operations"],
+    ["Field", "Value"],
+    ["Scope", operations.scope],
+    ["State", operations.state],
+    ["Label", operations.label],
+    ["Decision", operations.decision],
+    ["Verified coverage", operations.verifiedCoverage],
+    ["Attention count", String(operations.attentionCount)],
+    ["Proof basis", "Label", "Value"],
+    ...operations.proofBasis.map((item) => [
+      "Proof basis",
+      item.label,
+      String(item.value),
+    ]),
+    [],
+  ];
+}
+
 export function buildCsvContent(data: ReportExportData): string {
   data = normalizeReportExportData(data);
 
@@ -547,6 +583,7 @@ export function buildCsvContent(data: ReportExportData): string {
     ]),
     [],
     ...buildLeadershipHandoffCsvRows(data),
+    ...buildProofOperationsCsvRows(data),
     ...buildProofReviewCsvRows(data),
     ["Recommendations"],
     ["Title", "Value", "Detail"],
@@ -1144,6 +1181,30 @@ export function buildReportLeadershipHandoff(
   };
 }
 
+export function buildReportProofOperations(
+  data: ReportExportData,
+): ReportProofOperations {
+  if (data.proofOperations) return data.proofOperations;
+
+  const handoff = buildReportLeadershipHandoff(data);
+  const included = handoff.proofBasis.find((item) => item.key === "included")?.value ?? 0;
+  const total = handoff.proofBasis.reduce((sum, item) => sum + item.value, 0);
+  const attentionCount = handoff.proofBasis
+    .filter((item) => item.key !== "included")
+    .reduce((sum, item) => sum + item.value, 0);
+  const scope: ReportProofOperationsScope = total >= 50 ? "scale" : "single";
+
+  return {
+    scope,
+    state: handoff.state,
+    label: scope === "scale" ? "Scale proof room" : "Proof room",
+    decision: handoff.decision,
+    verifiedCoverage: `${included}/${total}`,
+    attentionCount,
+    proofBasis: handoff.proofBasis,
+  };
+}
+
 function buildHtmlLeadershipImpactSummary(data: ReportExportData): string {
   const summaryItems = getReportLeadershipImpactSummary(data);
 
@@ -1161,6 +1222,32 @@ function buildHtmlLeadershipImpactSummary(data: ReportExportData): string {
           </article>`,
         )
         .join("")}
+    </div>
+  </div>`;
+}
+
+function buildHtmlProofOperations(data: ReportExportData): string {
+  const operations = buildReportProofOperations(data);
+  const attentionLabel =
+    operations.attentionCount === 1
+      ? "1 open proof action"
+      : `${operations.attentionCount} open proof actions`;
+
+  return `<div class="proof-operations" data-proof-operations-scope="${escapeHtml(operations.scope)}" data-proof-operations-state="${escapeHtml(operations.state)}" aria-label="Proof operations">
+    <div class="proof-operations-head">
+      <p>Proof operations</p>
+      <strong>${escapeHtml(operations.label)}</strong>
+      <span>${escapeHtml(operations.decision)}</span>
+    </div>
+    <div class="proof-operations-grid">
+      <article>
+        <p>Verified coverage</p>
+        <strong>${escapeHtml(operations.verifiedCoverage)} verified</strong>
+      </article>
+      <article>
+        <p>Attention queue</p>
+        <strong>${escapeHtml(attentionLabel)}</strong>
+      </article>
     </div>
   </div>`;
 }
@@ -1852,7 +1939,7 @@ function buildHtmlTrustGrid(data: ReportExportData): string {
   if (!data.trust.length) return "";
   const title = getReportBlockTitle(data, "report_trust", "Report trust");
 
-  return `<section class="trust-grid" aria-label="${escapeHtml(title)}" data-section-label="${escapeHtml(title)}">
+  return `${buildHtmlProofOperations(data)}<section class="trust-grid" aria-label="${escapeHtml(title)}" data-section-label="${escapeHtml(title)}">
         ${data.trust
           .map(
             (item) => {
@@ -2902,6 +2989,64 @@ export function buildHtmlDocument(data: ReportExportData): string {
         line-height: 1.25;
         margin-top: 8px;
       }
+      .proof-operations {
+        background: #fff;
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        display: grid;
+        gap: 16px;
+        grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+        margin-bottom: 14px;
+        padding: 16px;
+      }
+      .proof-operations-head p {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .proof-operations-head strong {
+        color: var(--value);
+        display: block;
+        font-size: 15px;
+        font-weight: 580;
+        margin-top: 7px;
+      }
+      .proof-operations-head span {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+        line-height: 1.45;
+        margin-top: 5px;
+      }
+      .proof-operations-grid {
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      .proof-operations article {
+        background: var(--soft);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+      }
+      .proof-operations article p {
+        color: var(--muted);
+        font-size: 11px;
+        font-weight: 650;
+        margin: 0;
+      }
+      .proof-operations article strong {
+        color: var(--value);
+        display: block;
+        font-family: var(--mono-font);
+        font-size: 13px;
+        font-weight: 520;
+        line-height: 1.45;
+        margin-top: 7px;
+      }
       .proof-card {
         border: 1px solid var(--line);
         border-radius: 16px;
@@ -3245,6 +3390,7 @@ export function buildHtmlDocument(data: ReportExportData): string {
         .trust-grid {
           grid-template-columns: 1fr;
         }
+        .proof-operations { grid-template-columns: 1fr; }
          .metric-tile + .metric-tile {
            border-inline-start: 0;
            border-top: 1px solid var(--line);

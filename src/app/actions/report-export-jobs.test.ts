@@ -54,6 +54,7 @@ describe("report export jobs", () => {
     )?.[1];
 
     expect(sharedReportSource).toContain("export async function buildCampaignSharedReport");
+    expect(sharedReportSource).toContain("buildReportProofOperations");
     expect(actionSource).toContain("requestReportExport");
     expect(actionSource).toContain("buildCampaignSharedReport");
     expect(actionSource).toContain("buildReportCompositionExportData");
@@ -89,8 +90,10 @@ describe("report export jobs", () => {
     expect(edgeSource).toContain("chartMetricKey: z.enum");
     expect(edgeSource).toContain("const reportStorySchema = z.object");
     expect(edgeSource).toContain("const leadershipHandoffSchema = z.object");
+    expect(edgeSource).toContain("const proofOperationsSchema = z.object");
     expect(edgeSource).toContain("story: reportStorySchema.optional()");
     expect(edgeSource).toContain("leadershipHandoff: leadershipHandoffSchema.optional()");
+    expect(edgeSource).toContain("proofOperations: proofOperationsSchema.optional()");
     expect(edgeSource).toContain("proofBasis: z.array(leadershipProofBasisItemSchema)");
     expect(edgeSource).toContain("buildReportFilename(");
     expect(edgeSource).toContain("report.composition?.reportTitle ?? report.campaignTitle");

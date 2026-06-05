@@ -62,6 +62,16 @@ const leadershipHandoffSchema = z.object({
   proofBasis: z.array(leadershipProofBasisItemSchema).max(8),
 });
 
+const proofOperationsSchema = z.object({
+  scope: z.enum(["single", "scale"]),
+  state: z.enum(["ready", "hold"]),
+  label: z.string().trim().min(1).max(120),
+  decision: z.string().trim().min(1).max(320),
+  verifiedCoverage: z.string().trim().regex(/^\d+\/\d+$/),
+  attentionCount: z.number().int().nonnegative().max(100000),
+  proofBasis: z.array(leadershipProofBasisItemSchema).max(8),
+});
+
 const reportSchema = z.object({
   campaignTitle: z.string().trim().min(1).max(180),
   dateRange: z.string().trim().min(1).max(120),
@@ -135,6 +145,7 @@ const reportSchema = z.object({
     .max(24),
   story: reportStorySchema.optional(),
   leadershipHandoff: leadershipHandoffSchema.optional(),
+  proofOperations: proofOperationsSchema.optional(),
   recommendations: z
     .array(
       z.object({

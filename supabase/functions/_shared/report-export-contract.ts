@@ -1,1 +1,1 @@
-export const REPORT_EXPORT_CONTRACT_VERSION = "report-export-report-plan-v7-2026-06-05";
+export const REPORT_EXPORT_CONTRACT_VERSION = "report-export-proof-ops-v8-2026-06-05";

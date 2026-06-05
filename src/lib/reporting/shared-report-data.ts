@@ -9,6 +9,7 @@ import { CAMPAIGN_ASSET_BUCKET_ID } from "@/lib/campaigns/creative-kit-upload";
 import {
   buildReportLeadershipHandoff,
   buildReportExportStory,
+  buildReportProofOperations,
   buildReportProofReviewProvenance,
   type ReportExportCreator,
   type ReportExportData,
@@ -900,9 +901,14 @@ export async function buildCampaignSharedReport(
     sections,
     creators,
   };
+  const leadershipHandoff = buildReportLeadershipHandoff(baseReport);
   const baseReportWithLeadershipHandoff: ReportExportData = {
     ...baseReport,
-    leadershipHandoff: buildReportLeadershipHandoff(baseReport),
+    leadershipHandoff,
+    proofOperations: buildReportProofOperations({
+      ...baseReport,
+      leadershipHandoff,
+    }),
   };
 
   if (!shouldApplyCampaignComposition) {

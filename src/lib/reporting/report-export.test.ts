@@ -491,6 +491,99 @@ describe("report export helpers", () => {
     expect(csv).toContain("Proof basis,Missing proof,1");
   });
 
+  it("exports proof operations readiness for a 100-read proof room", () => {
+    const data: ReportExportData = {
+      ...exportData,
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Evidence-backed reads",
+          value: "96/100",
+          detail: "Native analytics screenshots",
+        },
+        {
+          key: "verified_reads",
+          label: "Verified reads",
+          value: "91/100",
+          detail: "Brand-reviewed proof",
+        },
+        {
+          key: "report_status",
+          label: "Report status",
+          value: "2 correction pending",
+          detail: "96/100 submitted",
+        },
+      ],
+    };
+    const json = JSON.parse(buildJsonContent(data)) as ReportExportData;
+    const csv = buildCsvContent(data);
+    const html = buildHtmlDocument(data);
+
+    expect(json.proofOperations).toEqual({
+      scope: "scale",
+      state: "hold",
+      label: "Scale proof room",
+      decision: "Resolve correction requests before leadership sharing.",
+      verifiedCoverage: "91/100",
+      attentionCount: 9,
+      proofBasis: [
+        { key: "included", label: "Included", value: 91 },
+        { key: "needs-review", label: "Needs review", value: 3 },
+        { key: "corrections", label: "Corrections", value: 2 },
+        { key: "missing-proof", label: "Missing proof", value: 4 },
+      ],
+    });
+    expect(csv).toContain("Proof Operations");
+    expect(csv).toContain("Scope,scale");
+    expect(csv).toContain("Label,Scale proof room");
+    expect(csv).toContain("Verified coverage,91/100");
+    expect(csv).toContain("Attention count,9");
+    expect(html).toContain('class="proof-operations"');
+    expect(html).toContain('data-proof-operations-scope="scale"');
+    expect(html).toContain('data-proof-operations-state="hold"');
+    expect(html).toContain("Scale proof room");
+    expect(html).toContain("91/100 verified");
+    expect(html).toContain("9 open proof actions");
+  });
+
+  it("keeps proof operations visible when an export selects report trust without primary story", () => {
+    const html = buildHtmlDocument({
+      ...exportData,
+      blocks: [
+        {
+          id: "report_trust",
+          title: "Report trust",
+          detail: "Evidence coverage and review state.",
+        },
+      ],
+      trust: [
+        {
+          key: "evidence_backed_reads",
+          label: "Evidence-backed reads",
+          value: "96/100",
+          detail: "Native analytics screenshots",
+        },
+        {
+          key: "verified_reads",
+          label: "Verified reads",
+          value: "91/100",
+          detail: "Brand-reviewed proof",
+        },
+        {
+          key: "report_status",
+          label: "Report status",
+          value: "2 correction pending",
+          detail: "96/100 submitted",
+        },
+      ],
+    });
+
+    expect(html).not.toContain("Primary report story");
+    expect(html).toContain('class="proof-operations"');
+    expect(html).toContain('data-proof-operations-scope="scale"');
+    expect(html).toContain("91/100 verified");
+  });
+
   it("keeps a precomputed leadership handoff authoritative when visible trust tiles are filtered", () => {
     const data: ReportExportData = {
       ...exportData,

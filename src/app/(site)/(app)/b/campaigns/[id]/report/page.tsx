@@ -78,6 +78,7 @@ import {
   type ReportExportTrustItem,
   buildReportLeadershipHandoff,
   buildReportExportStory,
+  buildReportProofOperations,
   buildReportProofReviewProvenance,
   getReportTrustDecision,
 } from "@/lib/reporting/report-export";
@@ -5647,7 +5648,7 @@ export default function CampaignReportPage() {
     creators: creatorExportRows,
   });
   const selectedReportLeadershipHandoff = buildReportLeadershipHandoff(fullReportExportData);
-  const reportExportData = {
+  const reportExportDataWithoutProofOperations = {
     ...buildReportCompositionExportData(fullReportExportData, {
       blockIds: selectedReportBlockIds,
       chartModeId: selectedReportChartModeId,
@@ -5663,6 +5664,10 @@ export default function CampaignReportPage() {
           : null,
     }),
     leadershipHandoff: selectedReportLeadershipHandoff,
+  };
+  const reportExportData = {
+    ...reportExportDataWithoutProofOperations,
+    proofOperations: buildReportProofOperations(reportExportDataWithoutProofOperations),
   };
   const selectedReportTrustDecision = getReportTrustDecision(reportExportData);
   const selectedReportStory = buildReportExportStory(reportExportData);

@@ -50,15 +50,29 @@ function assertArtifactContainsSourceProof(format: ReportExportArtifactFormat, t
           "Creator evidence reviewed by brand",
           "Proof review",
           "Reviewer recorded",
+          "proofOperations",
           "recommendations",
           "Top creator",
         ]
+      : format === "html"
+        ? [
+            "Data source",
+            "Brand-reviewed proof",
+            "Creator evidence reviewed by brand",
+            "Proof review",
+            "Reviewer recorded",
+            "Proof operations",
+            "proof-operations",
+            "Recommendations",
+            "Top creator",
+          ]
       : [
           "Data source",
           "Brand-reviewed proof",
           "Creator evidence reviewed by brand",
           "Proof review",
           "Reviewer recorded",
+          "Proof Operations",
           "Recommendations",
           "Top creator",
         ];
@@ -73,6 +87,13 @@ function assertArtifactContainsSourceProof(format: ReportExportArtifactFormat, t
     const parsed = JSON.parse(text) as {
       recommendations?: Array<{ title?: string; value?: string; detail?: string }>;
       proofReview?: { value?: string; detail?: string };
+      proofOperations?: {
+        attentionCount?: number;
+        proofBasis?: Array<{ key?: string; value?: number }>;
+        scope?: string;
+        state?: string;
+        verifiedCoverage?: string;
+      };
       story?: { evidenceTrail?: string };
       trust?: Array<{ label?: string; value?: string; detail?: string }>;
     };
@@ -97,6 +118,16 @@ function assertArtifactContainsSourceProof(format: ReportExportArtifactFormat, t
 
     if (!topCreator?.value || !topCreator.detail) {
       throw new Error("JSON report export does not preserve data-backed recommendations.");
+    }
+
+    if (
+      !parsed.proofOperations ||
+      !["single", "scale"].includes(parsed.proofOperations.scope ?? "") ||
+      !["ready", "hold"].includes(parsed.proofOperations.state ?? "") ||
+      !/^\d+\/\d+$/.test(parsed.proofOperations.verifiedCoverage ?? "") ||
+      !parsed.proofOperations.proofBasis?.some((item) => item.key === "included")
+    ) {
+      throw new Error("JSON report export does not preserve proof operations readiness.");
     }
   } else if (!/Reviewed \d{4}\/\d{2}\/\d{2}/.test(text)) {
     throw new Error(`Missing proof review date in ${format} report export artifact.`);

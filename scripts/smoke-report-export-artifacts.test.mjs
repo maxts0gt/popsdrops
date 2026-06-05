@@ -33,7 +33,14 @@ describe("report export artifact smoke contract", () => {
     expect(source).toContain("Proof view");
     expect(source).toContain("Evidence audit");
     expect(source).toContain("Global Proof Room");
+    expect(source).toContain("Proof Operations");
+    expect(source).toContain("Proof operations");
+    expect(source).toContain("proof-operations");
+    expect(source).toContain("proofOperations");
     expect(source).toContain("JSON report export does not preserve decision story.");
+    expect(source).toContain(
+      "JSON report export does not preserve proof operations readiness.",
+    );
     expect(source).toContain("cleanupApplicationFlowSmokeData");
   });
 
@@ -47,11 +54,21 @@ describe("report export artifact smoke contract", () => {
     expect(edgeSource).toContain("story?: ReportExportStory");
     expect(edgeSource).toContain("story: buildReportExportStory(normalized)");
     expect(edgeSource).toContain("export function buildReportExportStory");
+    expect(edgeSource).toContain("proofOperations?: ReportProofOperations");
     expect(edgeSource).toContain(
-      'const statusText = `${reportStatus?.label ?? ""} ${reportStatus?.value ?? ""}`.toLowerCase();',
+      "proofOperations: buildReportProofOperations(normalized)",
     );
-    expect(edgeSource).not.toContain(
-      'const statusText = `${reportStatus?.label ?? ""} ${reportStatus?.value ?? ""} ${reportStatus?.detail ?? ""}`.toLowerCase();',
+    expect(edgeSource).toContain("export function buildReportProofOperations");
+    expect(edgeSource).toContain("Proof Operations");
+    expect(edgeSource).toContain("data-proof-operations-scope");
+    expect(edgeSource).toContain(
+      'const statusValueText = `${reportStatus?.label ?? ""} ${reportStatus?.value ?? ""}`.toLowerCase();',
+    );
+    expect(edgeSource).toContain(
+      'const statusText = `${statusValueText} ${reportStatus?.detail ?? ""}`.toLowerCase();',
+    );
+    expect(edgeSource).toContain(
+      'if (/\\bmissing|incomplete|pending|submitted|unreviewed|awaiting\\b/.test(statusValueText))',
     );
   });
 });
